@@ -11,8 +11,16 @@ body{
   text-align: center;
 }
 
+.logo {
+  width: 60px;
+  height: auto;
+  margin-bottom: 5px;
+  margin-right: -150px;
+}
+
 .site-title{
   font-size: 2rem;
+  font-weight: bold;
 }
 
 .nav {
@@ -20,7 +28,7 @@ body{
   color: white;
   display: flex;
   justify-content: space-between;
-  align-items: stretch;
+  align-items: center;
   gap: 2rem;
   padding: 0 1rem;
 }
