@@ -11,52 +11,64 @@ const Footer=()=>{
             <div className="sb__footer section_padding">
                 <div className="sb__footer-links">
                     <div className="sb__footer-links-div">
-                        <h4>For Business</h4>
-                        <a href="/employer">
-                            <p>Employer</p>
+                        <h4>Platform</h4>
+                        <a href="/overlay">
+                            <p>Live Overlay</p>
                         </a>
-                        <a href="/emp">
-                            <p>Emp</p>
+                        <a href="/leaderboard">
+                            <p>Leaderboards</p>
                         </a>
-                        <a href="/individual">
-                            <p>Individual</p>
-                        </a>
-                    </div>
-                    <div className="sb__footer-links-div">
-                        <h4>Resources</h4>
-                        <a href="/resource">
-                            <p>Resource Center</p>
-                        </a>
-                        <a href="/resource">
-                            <p>Testimonials</p>
-                        </a>
-                        <a href="/resource">
-                            <p>STV</p>
+                        <a href="/vetos">
+                            <p>Vetos</p>
                         </a>
                     </div>
                     <div className="sb__footer-links-div">
-                        <h4>Partners</h4>
-                        <a href="/employer">
-                            <p>Lead Developer</p>
+                        <h4>Broadcast</h4>
+                        <a href="/overlay">
+                            <p>Observer Tools</p>
+                        </a>
+                        <a href="/overlay">
+                            <p>Live Match Data</p>
+                        </a>
+                        <a href="/overlay">
+                            <p>HUD Control</p>
+                        </a>
+                        <a href="/overlay">
+                            <p>Scoreboards</p>
                         </a>
                     </div>
                     <div className="sb__footer-links-div">
-                        <h4>Company</h4>
+                        <h4>Developers</h4>
                         <a href="/about">
-                            <p>About</p>
+                            <p>About the Project</p>
                         </a>
-                        <a href="/press">
-                            <p>Press</p>
+                        <a href="/about">
+                            <p>Tech Stack</p>
                         </a>
-                        <a href="/career">
-                            <p>Career</p>
+                        <a href="/about">
+                            <p>GitHub</p>
+                        </a>
+                        <a href="/about">
+                            <p>API Docs</p>
+                        </a>
+                    </div>
+                    <div className="sb__footer-links-div">
+                        <h4>WYKSync</h4>
+                        <a href="/about">
+                            <p>Our Team</p>
+                        </a>
+                         <a href="/about">
+                            <p>Capstone</p>
+                        </a>
+                        <a href="/about">
+                            <p>Press Kit</p>
                         </a>
                          <a href="/contact">
-                            <p>Contact</p>
+                            <p>Contact Us</p>
                         </a>
                     </div>
                     <div className="sb__footer-links-div">
-                        <h4>Coming soon on</h4>
+                        <h4>Follow Us</h4>
                         <div className="socialmedia">
                             <p><img src={fb} alt=""/></p>
                             <p><img src={twitter} alt=""/></p>
