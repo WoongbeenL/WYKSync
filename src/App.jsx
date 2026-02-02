@@ -30,7 +30,7 @@ function App() {
   return (
     <>
       <Navbar />
-      <div className="container">
+      <div className={Component === Home ? "" : "container"}>
         <Component />
       </div>
       <Footer/>
