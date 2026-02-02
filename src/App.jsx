@@ -4,6 +4,8 @@ import Overlay from "./pages/Overlay";
 import Tournaments from "./pages/Tournaments";
 import Vetos from "./pages/Vetos";
 import Home from "./pages/Home";
+import Footer from "./components/Footer";
+
 
 function App() {
   let Component;
@@ -31,6 +33,7 @@ function App() {
       <div className="container">
         <Component />
       </div>
+      <Footer/>
     </>
   );
 }
