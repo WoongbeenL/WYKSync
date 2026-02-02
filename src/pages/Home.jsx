@@ -1,22 +1,42 @@
 export default function Home() {
   return (
     <>
-    <h1>HOME</h1>
+    <h1>WYKSync</h1>
+    <h3>Real-Time Valorant Broadcast Overlays</h3>
     <p>
-      Our goal is to take overlays for valorant to another level of improvement.
+      Short paragraph about our project. Short paragraph about our project. Short paragraph about our project. Short paragraph about our project.
     </p>
+
+    <button>Launch Overlay</button>
+    <button>Observer Login</button>
+
+    <h2>The Problem</h2>
     <p>
-      We want to have the ability to live update information and make things
-      easier for broadcasts.
-    </p>
-    <p>
-      We are a group of 3 developers who started by working with valorant
-      broadcasts first hand at our esports facility.
-    </p>
-    <p>
-        We strive for an easier overlay solution for broadcasts all around.
+      talk about manual input being an issue and using multiple tools to keep overlays updated needing the have brackets from tournament websites along with map vetos etc.
     </p>
     
+    <h2>Our Solution</h2>
+    <p>
+      what we plan to fix and resolve. talk about the connection between this application and our overlay. talk about the vetos being more readable.
+    </p>
+
+    <h2>Platform Features</h2>
+    <p>insert features from our document report</p>
+    <ul>
+      <li>one</li>
+      <li>two</li>
+      <li>three</li>
+      <li>four</li>
+    </ul>
+
+    <h2>Meet the Team</h2>
+    <p>
+      Built by a student team of three developers with hands on experiences within the esports production world.
+    </p>
+
+    <h2>Ready to start broadcasting smarter?</h2>
+    <button>Open Overlay Demo</button>
+    <button>Contact Us</button>
   </>
   );
 }
