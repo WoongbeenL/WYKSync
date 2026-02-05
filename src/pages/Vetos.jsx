@@ -9,6 +9,27 @@ export default function Vetos() {
   //this stores what mode the user chooses "coin" or "manual"
   const [mode, setMode] = useState(null); 
 
+  const [coinWinner, setCoinWinner] = useState(null);
+  const [team1, setTeam1] = useState(null);
+  const [team2, setTeam2] = useState(null);
+
+  // Runs when the Coin Flip button is pressed
+  const runCoinFlip = () => {
+    const winner = Math.random() < 0.5 ? teamA : teamB;
+    setCoinWinner(winner);
+  };
+
+  // Winner chooses which team number they want
+  const chooseTeam = (choice) => {
+    if (choice === "team1") {
+      setTeam1(coinWinner);
+      setTeam2(coinWinner === teamA ? teamB : teamA);
+    } else {
+      setTeam2(coinWinner);
+      setTeam1(coinWinner === teamA ? teamB : teamA);
+    }
+  };
+
   return (
     <div className="vetos">
       <h1>Map Vetos</h1>
@@ -42,8 +63,32 @@ export default function Vetos() {
       )}
 
       {/* if coin was chosen*/}
-      {mode === "coin" && (
-        <p>Coin flip will decide whether {teamA} or {teamB} chooses first.</p>
+      {mode === "coin" && !coinWinner && (
+        <button onClick={runCoinFlip}>Flip Coin</button>
+        )}
+
+      {/* Show winner */}
+      {coinWinner && !team1 && (
+        <>
+          <p>{coinWinner} won the coin flip!</p>
+          <p>Choose your team:</p>
+
+          <button onClick={() => chooseTeam("team1")}>
+            Be Team 1
+          </button>
+
+          <button onClick={() => chooseTeam("team2")}>
+            Be Team 2
+          </button>
+        </>
+      )}
+      {/* Final result */}
+      {team1 && team2 && (
+        <div>
+          <h3>Final Teams</h3>
+          <p>Team 1: {team1}</p>
+          <p>Team 2: {team2}</p>
+        </div>
       )}
 
      {/* if manual was chosen*/}
