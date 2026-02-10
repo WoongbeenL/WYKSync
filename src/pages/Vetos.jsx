@@ -13,11 +13,19 @@ export default function Vetos() {
   const [team1, setTeam1] = useState(null);
   const [team2, setTeam2] = useState(null);
 
+  //initiallized state for selected value
+  const[selectedMapPool, setSelectedMapPool] = useState(null);
+
   // Runs when the Coin Flip button is pressed
   const runCoinFlip = () => {
     const winner = Math.random() < 0.5 ? teamA : teamB;
     setCoinWinner(winner);
   };
+
+  //Handle the change event to update the state
+  const handleChange = (event) => {
+    setSelectedMapPool(event.target.value);
+  }
 
   // Winner chooses which team number they want
   const chooseTeam = (choice) => {
@@ -36,6 +44,15 @@ export default function Vetos() {
       <p>
         Enter both team names to begin the veto process.
       </p>
+      <label>
+        Pick a Map Pool:
+        <select value={selectedMapPool} onChange={handleChange}>
+          <option value="11.3">Patch 11.3</option>
+          <option value="10.2">Patch 10.2</option>
+          <option value="9.3">Patch 9.3</option>
+          <option value="custom">Custom</option>
+        </select>
+      </label>
 
     {/*TODO: Replace with login needed to continue. */}
       {/* Team Inputs */}
