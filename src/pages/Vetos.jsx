@@ -2,6 +2,8 @@ import "./vetos.css";
 // useState allows page to remember values like team names
 import { useState } from "react";
 
+//TODO: Add a link for each team to do map vetos along with spectators or find a different way to differentiate it.
+
 export default function Vetos() {
 // these store what the user types for team names
   const [teamA, setTeamA] = useState("");
@@ -47,16 +49,12 @@ export default function Vetos() {
 
   return (
     <div className="vetos">
-      <h1>Map Vetos</h1>
-      <p>
-        Enter both team names to begin the veto process.
-      </p>
-      <label>
+      <div className="dropdown_menus">
+         <label>
         Pick a Map Pool:
         <select value={selectedMapPool} onChange={handleChange}>
-          <option value="11.3">Patch 11.3</option>
-          <option value="10.2">Patch 10.2</option>
-          <option value="9.3">Patch 9.3</option>
+          <option value="all">All Maps</option>
+          <option value="comp">Competitive Pool</option>
           {/*TODO: Add functionality to be given a checklist for custom*/}
           <option value="custom">Custom</option>
         </select>
@@ -68,8 +66,17 @@ export default function Vetos() {
           <option value="bo1">Best of 1</option>
           <option value="bo3">Best of 3</option>
           <option value="bo5">Best of 5</option>
+          <option value="custom">Custom</option>
         </select>
       </label>
+      </div>
+
+      <div className="title_n_paragraph">
+        <h1>Map Vetos</h1>
+        <p>
+          Enter both team names to begin the veto process.
+        </p>
+      </div>
 
     {/*TODO: Replace with login needed to continue. */}
       {/* Team Inputs */}
