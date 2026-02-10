@@ -83,6 +83,7 @@ export default function Vetos() {
         </>
       )}
       {/* Final result */}
+      {/* TODO: Add Logic to Map Bans Need to Add Map Pool Feature ability to pick what maps are in rotation (7 maps). Then what Type of Vetos BO1, BO3, BO5.*/}
       {team1 && team2 && (
         <div>
           <h3>Final Teams</h3>
