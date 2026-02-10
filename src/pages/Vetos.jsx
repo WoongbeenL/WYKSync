@@ -1,3 +1,4 @@
+import "./vetos.css";
 // useState allows page to remember values like team names
 import { useState } from "react";
 
@@ -15,6 +16,7 @@ export default function Vetos() {
 
   //initiallized state for selected value
   const[selectedMapPool, setSelectedMapPool] = useState(null);
+  const [selectedVeto, setSelectedVeto] = useState(null);
 
   // Runs when the Coin Flip button is pressed
   const runCoinFlip = () => {
@@ -25,6 +27,11 @@ export default function Vetos() {
   //Handle the change event to update the state
   const handleChange = (event) => {
     setSelectedMapPool(event.target.value);
+  }
+
+   //Handle the change event to update the state
+  const vetoPick = (event) => {
+    setSelectedVeto(event.target.value);
   }
 
   // Winner chooses which team number they want
@@ -50,7 +57,17 @@ export default function Vetos() {
           <option value="11.3">Patch 11.3</option>
           <option value="10.2">Patch 10.2</option>
           <option value="9.3">Patch 9.3</option>
+          {/*TODO: Add functionality to be given a checklist for custom*/}
           <option value="custom">Custom</option>
+        </select>
+      </label>
+       <label>
+        Pick a Map Veto:
+        <select value={selectedVeto} onChange={vetoPick}>
+          {/*TODO: Add functionality to modify the way vetos go depending on this choice.*/}
+          <option value="bo1">Best of 1</option>
+          <option value="bo3">Best of 3</option>
+          <option value="bo5">Best of 5</option>
         </select>
       </label>
 
@@ -102,10 +119,21 @@ export default function Vetos() {
       {/* Final result */}
       {/* TODO: Add Logic to Map Bans Need to Add Map Pool Feature ability to pick what maps are in rotation (7 maps). Then what Type of Vetos BO1, BO3, BO5.*/}
       {team1 && team2 && (
-        <div>
+        <div className='final'>
+          <>
           <h3>Final Teams</h3>
           <p>Team 1: {team1}</p>
           <p>Team 2: {team2}</p>
+          </>
+          <>
+          <button>map1</button>
+          <button>map2</button>
+          <button>map3</button>
+          <button>map4</button>
+          <button>map5</button>
+          <button>map6</button>
+          <button>map7</button>
+          </>
         </div>
       )}
 
