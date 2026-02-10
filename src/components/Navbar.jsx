@@ -1,10 +1,10 @@
 import { Children } from "react";
-import fishImg from "../assets/fish.jpg";
+import logoImg from "../assets/WYKSync.png";
 
 export default function Navbar() {
   return (
     <nav className="nav">
-      <img src={fishImg} alt="Logo" className="logo" />
+      <img src={logoImg} alt="Logo" className="logo" />
       <a href="/" className="site-title">
         WYKSync
       </a>
