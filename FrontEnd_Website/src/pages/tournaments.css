@@ -9,9 +9,44 @@
 }
 
 .tournament-input {
+  background: #111;
+  padding: 1.5rem;
+  border-radius: 10px;
+  margin-bottom: 3rem;
   display: flex;
   gap: 1rem;
-  margin-bottom: 2rem;
+  flex-wrap: wrap;
+  border: 1px solid #222;
+}
+
+.tournament-input input {
+  background: #1c1c1c;
+  border: 1px solid #333;
+  color: white;
+  padding: 0.7rem;
+  border-radius: 6px;
+  flex: 1;
+  min-width: 180px;
+}
+
+.tournament-input input:focus {
+  outline: none;
+  border-color: #ff4655;
+}
+
+.tournament-input button {
+  background: #ff4655;
+  border: none;
+  padding: 0.8rem 1.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+  color: white;
+  transition: 0.2s ease;
+}
+
+.tournament-input button:hover {
+  background: #ff2a3f;
 }
 
 .tournament-grid {
