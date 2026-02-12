@@ -13,6 +13,9 @@ export default function Tournaments() {
 
   // track which tournament is currently open
   const [selectedTournament, setSelectedTournament] = useState(null);
+  // track which tab is active in details view
+  const [activeTab, setActiveTab] = useState("about");
+
 
   // adds new tournament
   const addTournament = () => {
@@ -44,17 +47,82 @@ export default function Tournaments() {
 
       {/* If a tournament is selected, show details page */}
       {selectedTournament ? (
-        <div className="tournament-details">
+      <div className="tournament-details">
+      <button className="back-btn" onClick={() => {setSelectedTournament(null);setActiveTab("about");}}>
+        Back to Tournaments
+      </button>
+      <h2>{selectedTournament.name}</h2>
 
-          <h2>{selectedTournament.name}</h2>
-          <p><strong>Teams:</strong> {selectedTournament.teams}</p>
-          <p><strong>Prize Pool:</strong> ${selectedTournament.prizePool}</p>
+      {/* Tabs */}
+      <div className="tournament-tabs">
+        <button
+          className={activeTab === "about" ? "active" : ""}
+          onClick={() => setActiveTab("about")}
+        >
+          About
+        </button>
 
-          <button onClick={() => setSelectedTournament(null)}>
-            Back to Tournaments
-          </button>
+        <button
+          className={activeTab === "rules" ? "active" : ""}
+          onClick={() => setActiveTab("rules")}
+        >
+          Rules
+        </button>
 
-        </div>
+        <button
+          className={activeTab === "prizes" ? "active" : ""}
+          onClick={() => setActiveTab("prizes")}
+        >
+          Prizes
+        </button>
+
+        <button
+          className={activeTab === "schedule" ? "active" : ""}
+          onClick={() => setActiveTab("schedule")}
+        >
+          Schedule
+        </button>
+      </div>
+
+  {/* Tab Content */}
+  <div className="tournament-content">
+
+    {activeTab === "about" && (
+      <>
+        <p><strong>Teams:</strong> {selectedTournament.teams}</p>
+        <p><strong>Prize Pool:</strong> ${selectedTournament.prizePool}</p>
+        <p>This tournament is part of the WYKSync competitive series.</p>
+      </>
+    )}
+
+    {activeTab === "rules" && (
+      <>
+        <p>• Standard Valorant competitive rules apply.</p>
+        <p>• All matches are Best of 3.</p>
+        <p>• Overtime enabled.</p>
+      </>
+    )}
+
+    {activeTab === "prizes" && (
+      <>
+        <p>1st Place: 60%</p>
+        <p>2nd Place: 30%</p>
+        <p>3rd Place: 10%</p>
+      </>
+    )}
+
+    {activeTab === "schedule" && (
+      <>
+        <p>Group Stage: TBD</p>
+        <p>Playoffs: TBD</p>
+        <p>Grand Finals: TBD</p>
+      </>
+    )}
+
+  </div>
+
+</div>
+
       ) : (
         <>
           {/* Input n add Button */}
