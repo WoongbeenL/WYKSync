@@ -1,4 +1,5 @@
 import { useState } from "react";
+import "./tournaments.css";
 
 export default function Tournaments() {
 
@@ -9,6 +10,9 @@ export default function Tournaments() {
   const [name, setName] = useState("");
   const [teams, setTeams] = useState("");
   const [prizePool, setPrizePool] = useState("");
+
+  // track which tournament is currently open
+  const [selectedTournament, setSelectedTournament] = useState(null);
 
   // adds new tournament
   const addTournament = () => {
@@ -38,57 +42,90 @@ export default function Tournaments() {
     <div className="tournaments">
       <h1>Tournaments</h1>
 
-      {/* Input n add Button */}
-      <div className="tournament-input">
+      {/* If a tournament is selected, show details page */}
+      {selectedTournament ? (
+        <div className="tournament-details">
 
-        <input
-          type="text"
-          placeholder="Tournament Name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-        />
+          <h2>{selectedTournament.name}</h2>
+          <p><strong>Teams:</strong> {selectedTournament.teams}</p>
+          <p><strong>Prize Pool:</strong> ${selectedTournament.prizePool}</p>
 
-        <input
-          type="number"
-          placeholder="Number of Teams"
-          value={teams}
-          onChange={(e) => setTeams(e.target.value)}
-        />
+          <button onClick={() => setSelectedTournament(null)}>
+            Back to Tournaments
+          </button>
 
-        <input
-          type="number"
-          placeholder="Prize Pool ($)"
-          value={prizePool}
-          onChange={(e) => setPrizePool(e.target.value)}
-        />
+        </div>
+      ) : (
+        <>
+          {/* Input n add Button */}
+          <div className="tournament-input">
 
-        <button onClick={addTournament}>
-          Add Tournament
-        </button>
+            <input
+              type="text"
+              placeholder="Tournament Name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
 
-      </div>
+            <input
+              type="number"
+              placeholder="Number of Teams"
+              value={teams}
+              onChange={(e) => setTeams(e.target.value)}
+            />
 
-       {/* Tournament List */}
-      <ul>
-        {tournaments.length === 0 && (
-          <p>No tournaments created yet.</p>
-        )}
+            <input
+              type="number"
+              placeholder="Prize Pool ($)"
+              value={prizePool}
+              onChange={(e) => setPrizePool(e.target.value)}
+            />
 
-        {tournaments.map((tournament) => (
-          <li key={tournament.id}>
-            <strong>{tournament.name}</strong> — 
-            {tournament.teams} Teams — 
-            ${tournament.prizePool} Prize Pool
-
-            <button
-              onClick={() => deleteTournament(tournament.id)}
-              style={{ marginLeft: "10px" }}
-            >
-              Delete
+            <button onClick={addTournament}>
+              Add Tournament
             </button>
-          </li>
-        ))}
-      </ul>
+
+          </div>
+
+          {/* Tournament Grid */}
+          <div className="tournament-grid">
+            {tournaments.length === 0 && (
+              <p>No tournaments created yet.</p>
+            )}
+
+            {tournaments.map((tournament) => (
+              <div
+                key={tournament.id}
+                className="tournament-card"
+                onClick={() => setSelectedTournament(tournament)}
+              >
+                {/* Image Placeholder */}
+                <div className="tournament-image">
+                  Image
+                </div>
+
+                {/* Tournament Info */}
+                <div className="tournament-info">
+                  <h3>{tournament.name}</h3>
+                  <p>{tournament.teams} Teams</p>
+                  <p>${tournament.prizePool} Prize Pool</p>
+                </div>
+
+                {/* Delete Button */}
+                <button
+                  className="delete-btn"
+                  onClick={(e) => {
+                    e.stopPropagation(); // prevents card click
+                    deleteTournament(tournament.id);
+                  }}
+                >
+                  Delete
+                </button>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }
