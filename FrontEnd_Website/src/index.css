@@ -2,6 +2,14 @@
   box-sizing: border-box;
 }
 
+:root {
+  --bg-dark: #0f0f0f;
+  --bg-panel: #181818;
+  --accent: #ff4655;
+  --text-light: #eaeaea;
+}
+
+
 body{
   margin: 0;
 }
@@ -24,14 +32,13 @@ body{
 }
 
 .nav {
-  background-color: grey;
-  color: white;
+  background-color: var(--bg-panel);
+  color: var(--text-light);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 2rem;
-  padding: 0 1rem;
 }
+
 
 .nav ul {
   padding: 0;
