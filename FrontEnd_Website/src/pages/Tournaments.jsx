@@ -6,25 +6,32 @@ export default function Tournaments() {
   const [tournaments, setTournaments] = useState([]);
 
   //save input field value
-  const [newTournament, setNewTournament] = useState("");
+  const [name, setName] = useState("");
+  const [teams, setTeams] = useState("");
+  const [prizePool, setPrizePool] = useState("");
 
   // adds new tournament
   const addTournament = () => {
-    if (newTournament.trim() === "") return;
+    if (!name || !teams || !prizePool) return;
 
-    const tournament = {
+    const newTournament = {
       id: Date.now(), // unique ID
-      name: newTournament
+      name: name,
+      teams: teams,
+      prizePool: prizePool
     };
 
-    setTournaments([...tournaments, tournament]);
-    setNewTournament(""); // clear input
+    setTournaments([...tournaments, newTournament]);
+
+    // clear input
+    setName("");
+    setTeams("");
+    setPrizePool("");
   };
 
-  // Delete tournament
+  //Delete tournament
   const deleteTournament = (id) => {
-    const updated = tournaments.filter(t => t.id !== id);
-    setTournaments(updated);
+    setTournaments(tournaments.filter(t => t.id !== id));
   };
 
   return (
@@ -33,18 +40,35 @@ export default function Tournaments() {
 
       {/* Input n add Button */}
       <div className="tournament-input">
+
         <input
           type="text"
-          placeholder="Enter tournament name"
-          value={newTournament}
-          onChange={(e) => setNewTournament(e.target.value)}
+          placeholder="Tournament Name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
         />
+
+        <input
+          type="number"
+          placeholder="Number of Teams"
+          value={teams}
+          onChange={(e) => setTeams(e.target.value)}
+        />
+
+        <input
+          type="number"
+          placeholder="Prize Pool ($)"
+          value={prizePool}
+          onChange={(e) => setPrizePool(e.target.value)}
+        />
+
         <button onClick={addTournament}>
           Add Tournament
         </button>
+
       </div>
 
-      {/* Tournament List */}
+       {/* Tournament List */}
       <ul>
         {tournaments.length === 0 && (
           <p>No tournaments created yet.</p>
@@ -52,7 +76,10 @@ export default function Tournaments() {
 
         {tournaments.map((tournament) => (
           <li key={tournament.id}>
-            {tournament.name}
+            <strong>{tournament.name}</strong> — 
+            {tournament.teams} Teams — 
+            ${tournament.prizePool} Prize Pool
+
             <button
               onClick={() => deleteTournament(tournament.id)}
               style={{ marginLeft: "10px" }}
