@@ -15,13 +15,13 @@ const [user, setUser] = useState(null);
   let Component;
   switch (window.location.pathname) {
     case "/tournaments":
-      Component = Tournaments;
+      Component = user ? Tournaments : Login;
       break;
     case "/leaderboard":
       Component = Leaderboard;
       break;
     case "/vetos":
-      Component = Vetos;
+      Component = user ? Vetos : Login;
       break;
     case "/overlay":
       Component = Overlay;
