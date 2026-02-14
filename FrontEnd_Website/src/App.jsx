@@ -15,13 +15,13 @@ const [user, setUser] = useState(null);
   let Component;
   switch (window.location.pathname) {
     case "/tournaments":
-      Component = user ? Tournaments : Login;
+      Component = user ? () => <Tournaments user={user}/> : () => <Login onLogic={setUser}/>;
       break;
     case "/leaderboard":
       Component = Leaderboard;
       break;
     case "/vetos":
-      Component = user ? Vetos : Login;
+      Component = user ? Vetos : () => <Login onLogin={setUser}/>;
       break;
     case "/overlay":
       Component = Overlay;
