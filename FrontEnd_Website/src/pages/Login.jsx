@@ -8,6 +8,7 @@ export default function Login({onLogin}){
         if (!username || !password) return;
 
         onLogin(username);
+        window.location.pathname = "/tournaments";
     };
 
     return(
