@@ -9,8 +9,8 @@ export default function Login({onLogin}){
         e.preventDefault(); 
         if (!username || !password) return;
 
-        onLogin(username);
-        window.location.pathname = "/tournaments";
+        onLogin(username);window.history.pushState({}, "", "/tournaments");
+        window.dispatchEvent(new Event("popstate"));
     };
 
     return(
