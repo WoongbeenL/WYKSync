@@ -20,6 +20,7 @@ app.use(cors({
 
 app.use(express.json());
 
+// Root of API
 app.get("/", (req, res) => {
   res.json({
     service: "WYKSync API",
@@ -28,10 +29,12 @@ app.get("/", (req, res) => {
   })
 });
 
+// /health Route of API
 app.get("/health", (req, res) => {
   res.status(200).json({ status: "ok" });
 });
 
+// Error handler
 app.use((err, req, res, next) => {
   console.error(err);
   res.status(500).send("Internal Server Error");
