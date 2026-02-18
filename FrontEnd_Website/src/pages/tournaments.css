@@ -49,6 +49,35 @@
   background: #ff2a3f;
 }
 
+.tournament-auth-cta {
+  background: #111;
+  padding: 1.2rem 1.5rem;
+  border-radius: 10px;
+  margin-bottom: 3rem;
+  border: 1px solid #222;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  color: #f1f1f1;
+}
+
+.tournament-auth-cta a {
+  background: #ff4655;
+  border: none;
+  padding: 0.7rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+  color: white;
+  text-decoration: none;
+  transition: 0.2s ease;
+}
+
+.tournament-auth-cta a:hover {
+  background: #ff2a3f;
+}
+
 .tournament-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));

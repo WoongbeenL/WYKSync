@@ -1,7 +1,7 @@
 import { useState } from "react";
 import "./tournaments.css";
 
-export default function Tournaments() {
+export default function Tournaments({ user }) {
 
   //save all tournaments
   const [tournaments, setTournaments] = useState([]);
@@ -122,38 +122,41 @@ export default function Tournaments() {
   </div>
 
 </div>
-
       ) : (
         <>
-          {/* Input n add Button */}
-          <div className="tournament-input">
+            {user ? (
+            <div className="tournament-input">
+              <input
+                type="text"
+                placeholder="Tournament Name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
 
-            <input
-              type="text"
-              placeholder="Tournament Name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
+              <input
+                type="number"
+                placeholder="Number of Teams"
+                value={teams}
+                onChange={(e) => setTeams(e.target.value)}
+              />
 
-            <input
-              type="number"
-              placeholder="Number of Teams"
-              value={teams}
-              onChange={(e) => setTeams(e.target.value)}
-            />
+              <input
+                type="number"
+                placeholder="Prize Pool ($)"
+                value={prizePool}
+                onChange={(e) => setPrizePool(e.target.value)}
+              />
 
-            <input
-              type="number"
-              placeholder="Prize Pool ($)"
-              value={prizePool}
-              onChange={(e) => setPrizePool(e.target.value)}
-            />
-
-            <button onClick={addTournament}>
-              Add Tournament
-            </button>
-
-          </div>
+              <button onClick={addTournament}>
+                Add Tournament
+              </button>
+            </div>
+          ) : (
+            <div className="tournament-auth-cta">
+              <p>Log in to create a tournament.</p>
+              <a href="/login">Go to Login</a>
+            </div>
+          )}
 
           {/* Tournament Grid */}
           <div className="tournament-grid">
@@ -180,15 +183,17 @@ export default function Tournaments() {
                 </div>
 
                 {/* Delete Button */}
-                <button
-                  className="delete-btn"
-                  onClick={(e) => {
-                    e.stopPropagation(); // prevents card click
-                    deleteTournament(tournament.id);
-                  }}
-                >
-                  Delete
-                </button>
+                {user && (
+                  <button
+                    className="delete-btn"
+                    onClick={(e) => {
+                      e.stopPropagation(); // prevents card click
+                      deleteTournament(tournament.id);
+                    }}
+                  >
+                    Delete
+                  </button>
+                )}
               </div>
             ))}
           </div>
