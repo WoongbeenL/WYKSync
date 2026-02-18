@@ -6,11 +6,18 @@
 * Description  : This is a Node.js file to host a backend server for WYKSync.
 */
 
+require('dotenv').config();
+
 const express = require("express");
 const cors = require("cors");
 
 const app = express();
-app.use(cors());
+
+// Seucirity Middleware
+app.use(cors({
+  origin: process.env.FRONTEND_URL
+}));
+
 app.use(express.json());
 
 app.get("/", (req, res) => {
@@ -22,14 +29,16 @@ app.get("/", (req, res) => {
 });
 
 app.get("/health", (req, res) => {
-  res.send("Backend running");
+  res.status(200).json({ status: "ok" });
 });
 
-app.use(cors({
-  origin: process.env.FRONTEND_URL
-}));
+app.use((err, req, res, next) => {
+  console.error(err);
+  res.status(500).send("Internal Server Error");
+});
 
 const PORT = process.env.PORT || 10000;
+
 app.listen(PORT, "0.0.0.0", () =>
-  console.log(`Server running on ${PORT}`)
+  console.log(`Server running on port ${PORT}`)
 );
