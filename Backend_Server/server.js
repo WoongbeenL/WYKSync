@@ -29,6 +29,7 @@ app.get("/", (req, res) => {
 });
 
 app.get("/health", (req, res) => {
+  console.log("SUPABASE URL:", process.env.SUPABASE_URL);
   res.status(200).json({ status: "ok" });
 });
 
