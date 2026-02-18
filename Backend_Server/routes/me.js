@@ -1,16 +1,16 @@
 /*
-* File Name    : me.js
-* Project      : PROG3221 - Capstone Project
-* Programmers  : Will Lee
-* Date         : 2/17/2026
-* Description  : This is a js file to handle /me route.
-*/
+ * File Name    : me.js
+ * Project      : PROG3221 - Capstone Project
+ * Programmers  : Will Lee
+ * Date         : 2/17/2026
+ * Description  : This is a js file to handle /me route.
+ */
 
-const express = require('express');
-const router = express.Router;
+const express = require("express");
+const router = express.Router();
 
-const supabase = require('../lib/supabase');
-const requireUser = require('../middleware/requireUser');
+const supabase = require("../lib/supabase");
+const requireUser = require("../middleware/requireUser");
 
 router.use(requireUser);
 
@@ -23,20 +23,65 @@ router.use(requireUser);
                   is_onboarded: Boolean. Has user been onboarded?
                   created_at: Timestampz. When profile was created
                   updated_at: Timestampz. When profile was updated
+   Purpose      : This route returns the user data based on user ID.
 */
-router.get('/', async (req, res) => {
-    const { data, error } = await supabase
-    .from('profile')
-    .select('id, display_name, is_onboarded, created_at,updated_at')
-    .eq('id',req.user.id)
-    .single();
+router.get("/", async (req, res) => {
+  try {
+    const userId = req.user.id;
 
-    if (error) {
-        console.error(error);
-        return res.status(500).send('Failed to fetch profile');
-    }
+    const { data, error } = await supabase
+      .from("profile")
+      .select("id, display_name, is_onboarded")
+      .eq("id", userId)
+      .single();
+
+    if (error) throw error;
 
     res.json(data);
+  } catch (err) {
+    console.error("GET /me error: ", err);
+    res.status(500).json({ error: "Server Error" });
+  }
+});
+
+/*
+   Route Name   : PATCH /me/profile
+   Parameter    : Request object with current user id
+   Return       : Json response
+                  result: String. Returns the result of the request.
+
+   Purpose      : This route handles completing user profiles.
+*/
+router.patch("/profile", async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { display_name } = req.body;
+
+    if (!display_name || !display_name.trim()) {
+      return res.status(400).json({ error: "display_name is required" });
+    }
+
+    const { data, error } = await supabase
+      .from("profile")
+      .update({
+        display_name: display_name.trim(),
+        is_onboarded: true,
+      })
+      .eq("id", userId)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    res.json({
+      result: "Success",
+      profile: data,
+    });
+  } catch (err) {
+    res.status(500).json({
+      error: "Server Error",
+    });
+  }
 });
 
 module.exports = router;
