@@ -122,7 +122,7 @@ export default function Login({ onLogin }) {
   };
 
   const testBackend = async () => {
-    const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
+    const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
     setBackendTestResult("Testing backend...");
 
