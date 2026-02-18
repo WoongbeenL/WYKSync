@@ -15,10 +15,21 @@ const meRoutes = require("./routes/me");
 
 const app = express();
 
+const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  "http://localhost:5173",
+].filter(Boolean);
+
 // Security Middleware
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "https://localhost:5173",
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(newError("Not allowed by CORS"));
+      }
+    },
   }),
 );
 
