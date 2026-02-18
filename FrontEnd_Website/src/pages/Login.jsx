@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { isSupabaseConfigured, supabase } from "../lib/supabaseClient";
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -8,17 +9,23 @@ export default function Login({ onLogin }) {
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const goToTournaments = () => {
     window.history.pushState({}, "", "/tournaments");
     window.dispatchEvent(new Event("popstate"));
   };
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
 
     if (!email || !password) {
       setError("Email and password are required.");
+      return;
+    }
+
+    if (!isSupabaseConfigured || !supabase) {
+      setError("Supabase is not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.");
       return;
     }
 
@@ -28,7 +35,21 @@ export default function Login({ onLogin }) {
     }
 
     setError("");
-    onLogin(email);
+    setIsSubmitting(true);
+
+    const { data, error: loginError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    setIsSubmitting(false);
+
+    if (loginError) {
+      setError(loginError.message);
+      return;
+    }
+
+    onLogin(data.user?.email || email);
     goToTournaments();
   };
 
@@ -49,7 +70,7 @@ export default function Login({ onLogin }) {
     setMode("profile");
   };
 
-  const handleProfile = (e) => {
+  const handleProfile = async (e) => {
     e.preventDefault();
 
     if (!displayName.trim()) {
@@ -57,9 +78,39 @@ export default function Login({ onLogin }) {
       return;
     }
 
+    if (!isSupabaseConfigured || !supabase) {
+      setError("Supabase is not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.");
+      return;
+    }
+
     setError("");
-    onLogin(email);
-    goToTournaments();
+    setIsSubmitting(true);
+
+    const { data, error: signupError } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          display_name: displayName.trim(),
+        },
+      },
+    });
+
+    setIsSubmitting(false);
+
+    if (signupError) {
+      setError(signupError.message);
+      return;
+    }
+
+    if (data.session) {
+      onLogin(data.user?.email || email);
+      goToTournaments();
+      return;
+    }
+
+    setError("Signup successful. Check your email to verify, then log in.");
+    setMode("login");
   };
 
   const switchMode = (nextMode) => {
@@ -98,12 +149,14 @@ export default function Login({ onLogin }) {
               type="email"
               placeholder="Email"
               value={email}
+              autoComplete="email"
               onChange={(e) => setEmail(e.target.value)}
             />
             <input
               type="password"
               placeholder="Password"
               value={password}
+              autoComplete={mode === "login" ? "current-password" : "new-password"}
               onChange={(e) => setPassword(e.target.value)}
             />
           </>
@@ -113,18 +166,31 @@ export default function Login({ onLogin }) {
           <input
             placeholder="Display Name"
             value={displayName}
+            autoComplete="nickname"
             onChange={(e) => setDisplayName(e.target.value)}
           />
         )}
 
         {error && <p>{error}</p>}
 
-        <button type="submit">
+        <button
+          type="submit"
+          disabled={isSubmitting || !isSupabaseConfigured}
+          title={
+            !isSupabaseConfigured
+              ? "Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your environment."
+              : ""
+          }
+        >
           {mode === "login"
-            ? "Login"
+            ? isSubmitting
+              ? "Logging in..."
+              : "Login"
             : mode === "signup"
               ? "Continue"
-              : "Finish Sign Up"}
+              : isSubmitting
+                ? "Creating account..."
+                : "Finish Sign Up"}
         </button>
       </div>
     </form>

@@ -6,32 +6,70 @@ import Vetos from "./pages/Vetos";
 import Home from "./pages/Home";
 import Footer from "./components/Footer";
 import Login from "./pages/Login";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { isSupabaseConfigured, supabase } from "./lib/supabaseClient";
 
 function App() {
   
 const [user, setUser] = useState(null);
+  const path = window.location.pathname;
 
-  let Component;
-  switch (window.location.pathname) {
+  useEffect(() => {
+    if (!isSupabaseConfigured || !supabase) {
+      return;
+    }
+
+    const loadSession = async () => {
+      const { data } = await supabase.auth.getSession();
+      setUser(data.session?.user?.email || null);
+    };
+
+    loadSession();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setUser(session?.user?.email || null);
+      }
+    );
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, []);
+
+  const handleLogout = async () => {
+    if (!supabase) {
+      setUser(null);
+      return;
+    }
+
+    await supabase.auth.signOut();
+    setUser(null);
+  };
+
+  let page;
+  switch (path) {
     case "/tournaments":
-      Component = () => <Tournaments user={user}/>;
+      page = <Tournaments user={user} />;
       break;
     case "/leaderboard":
-      Component = Leaderboard;
+      page = <Leaderboard />;
       break;
     case "/vetos":
-      Component = Vetos;
+      page = <Vetos />;
       break;
     case "/overlay":
-      Component = Overlay;
+      page = <Overlay />;
       break;
     case "/login":
-      Component = () => <Login onLogin={setUser} />;
+      page = <Login onLogin={setUser} />;
       break;
     case "/":
     case "/home":
-      Component = Home;
+      page = <Home />;
+      break;
+    default:
+      page = <Home />;
       break;
   }
   return (
@@ -41,14 +79,14 @@ const [user, setUser] = useState(null);
       {user ? (
         <>
           <span>Logged in as {user}</span>
-          <button onClick={() => setUser(null)}>Logout</button>
+          <button onClick={handleLogout}>Logout</button>
         </>
       ) : (
         <a href="/login">Login</a>
       )}
     </div>
-      <div className={Component === Home ? "" : "container"}>
-        <Component />
+      <div className={path === "/" || path === "/home" ? "" : "container"}>
+        {page}
       </div>
       <Footer/>
     </>
