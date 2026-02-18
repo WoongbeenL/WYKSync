@@ -1,5 +1,5 @@
 /*
-* Filename     : supabase.js
+* File Name    : supabase.js
 * Project      : PROG3221 - Capstone Project
 * Programmers  : Will Lee
 * Date         : 2/17/2026

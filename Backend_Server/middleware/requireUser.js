@@ -1,5 +1,5 @@
 /*
-* Filename     : requireUser.js
+* File Name    : requireUser.js
 * Project      : PROG3221 - Capstone Project
 * Programmers  : Will Lee
 * Date         : 2/17/2026
