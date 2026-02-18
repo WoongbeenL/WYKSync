@@ -15,7 +15,7 @@ const app = express();
 
 // Seucirity Middleware
 app.use(cors({
-  origin: process.env.FRONTEND_URL
+  origin: process.env.FRONTEND_URL || "https://localhost:5173"
 }));
 
 app.use(express.json());
