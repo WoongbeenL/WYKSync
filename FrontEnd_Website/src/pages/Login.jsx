@@ -10,6 +10,7 @@ export default function Login({ onLogin }) {
   const [displayName, setDisplayName] = useState("");
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [backendTestResult, setBackendTestResult] = useState("");
 
   const goToTournaments = () => {
     window.history.pushState({}, "", "/tournaments");
@@ -92,6 +93,8 @@ export default function Login({ onLogin }) {
       options: {
         data: {
           display_name: displayName.trim(),
+          full_name: displayName.trim(),
+          username: displayName.trim(),
         },
       },
     });
@@ -116,6 +119,20 @@ export default function Login({ onLogin }) {
   const switchMode = (nextMode) => {
     setMode(nextMode);
     setError("");
+  };
+
+  const testBackend = async () => {
+    const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
+
+    setBackendTestResult("Testing backend...");
+
+    try {
+      const response = await fetch(`${backendUrl}/`);
+      const body = await response.text();
+      setBackendTestResult(`Backend OK (${response.status}): ${body}`);
+    } catch (err) {
+      setBackendTestResult(`Backend error: ${err.message}`);
+    }
   };
 
   return (
@@ -192,6 +209,12 @@ export default function Login({ onLogin }) {
                 ? "Creating account..."
                 : "Finish Sign Up"}
         </button>
+
+        <button type="button" onClick={testBackend}>
+          Test Backend
+        </button>
+
+        {backendTestResult && <p>{backendTestResult}</p>}
       </div>
     </form>
   );
