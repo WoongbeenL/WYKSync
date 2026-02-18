@@ -30,7 +30,7 @@ router.get("/", async (req, res) => {
     const userId = req.user.id;
 
     const { data, error } = await supabase
-      .from("profile")
+      .from("profiles")
       .select("id, display_name, is_onboarded")
       .eq("id", userId)
       .single();
@@ -62,7 +62,7 @@ router.patch("/profile", async (req, res) => {
     }
 
     const { data, error } = await supabase
-      .from("profile")
+      .from("profiles")
       .update({
         display_name: display_name.trim(),
         is_onboarded: true,
