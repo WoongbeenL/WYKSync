@@ -7,6 +7,18 @@ const backendUrl = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, "");
 const buildBackendFetchError = (action, err) =>
   `${action} failed: ${err.message}. Check VITE_BACKEND_URL, backend status, and CORS allowlist for http://localhost:5173 and https://wyksync.vercel.app.`;
 
+const parseBackendError = async (response, fallback) => {
+  const text = await response.text();
+  if (!text) return fallback;
+
+  try {
+    const parsed = JSON.parse(text);
+    return parsed.error || parsed.message || text;
+  } catch {
+    return text;
+  }
+};
+
 export default function Login({ onLogin }) {
   const [mode, setMode] = useState("login");
   const [email, setEmail] = useState("");
@@ -120,9 +132,12 @@ export default function Login({ onLogin }) {
       });
 
       if (!meResponse.ok) {
-        const message = await meResponse.text();
+        const message = await parseBackendError(
+          meResponse,
+          `GET /me failed with status ${meResponse.status}.`
+        );
         setIsSubmitting(false);
-        setError(message || `GET /me failed with status ${meResponse.status}.`);
+        setError(message);
         return;
       }
 
@@ -181,13 +196,18 @@ export default function Login({ onLogin }) {
         },
         body: JSON.stringify({
           display_name: displayName.trim(),
+          displayName: displayName.trim(),
+          username: displayName.trim(),
         }),
       });
 
       if (!response.ok) {
-        const message = await response.text();
+        const message = await parseBackendError(
+          response,
+          `PATCH /me/profile failed with status ${response.status}.`
+        );
         setIsSubmitting(false);
-        setError(message || `PATCH /me/profile failed with status ${response.status}.`);
+        setError(message);
         return;
       }
 
