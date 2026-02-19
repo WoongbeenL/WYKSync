@@ -3,6 +3,7 @@ import "./vetos.css";
 import { useState } from "react";
 
 //TODO: Add a link for each team to do map vetos along with spectators or find a different way to differentiate it.
+const ALL_MAPS = ["Ascent", "Bind", "Haven", "Split", "Lotus", "Sunset", "Icebox"];
 
 export default function Vetos() {
 // these store what the user types for team names
@@ -17,8 +18,12 @@ export default function Vetos() {
   const [team2, setTeam2] = useState(null);
 
   //initiallized state for selected value
-  const[selectedMapPool, setSelectedMapPool] = useState(null);
-  const [selectedVeto, setSelectedVeto] = useState(null);
+  const[selectedMapPool, setSelectedMapPool] = useState("all");
+  const [selectedVeto, setSelectedVeto] = useState("bo1");
+  const [currentTurn, setCurrentTurn] = useState(null);
+  const [actingAs, setActingAs] = useState("spectator");
+  const [mapStates, setMapStates] = useState({});
+  const [banHistory, setBanHistory] = useState([]);
 
   // Runs when the Coin Flip button is pressed
   const runCoinFlip = () => {
@@ -45,6 +50,70 @@ export default function Vetos() {
       setTeam2(coinWinner);
       setTeam1(coinWinner === teamA ? teamB : teamA);
     }
+    setCurrentTurn(coinWinner);
+    setActingAs("spectator");
+    setBanHistory([]);
+    setMapStates(
+      ALL_MAPS.reduce((acc, map) => {
+        acc[map] = { status: "available", by: null };
+        return acc;
+      }, {})
+    );
+  };
+
+  const startManualOrder = (firstTeam) => {
+    const secondTeam = firstTeam === teamA ? teamB : teamA;
+    setTeam1(firstTeam);
+    setTeam2(secondTeam);
+    setCurrentTurn(firstTeam);
+    setCoinWinner(null);
+    setActingAs("spectator");
+    setBanHistory([]);
+    setMapStates(
+      ALL_MAPS.reduce((acc, map) => {
+        acc[map] = { status: "available", by: null };
+        return acc;
+      }, {})
+    );
+  };
+
+  const targetRemainingByVeto = {
+    bo1: 1,
+    bo3: 3,
+    bo5: 5,
+    custom: 1,
+  };
+
+  const targetRemaining = targetRemainingByVeto[selectedVeto] || 1;
+  const availableMaps = ALL_MAPS.filter((map) => (mapStates[map]?.status || "available") === "available");
+  const vetoComplete = team1 && team2 && availableMaps.length <= targetRemaining;
+
+  const handleBanMap = (mapName) => {
+    if (!team1 || !team2 || vetoComplete) return;
+
+    const actingTeamName =
+      actingAs === "team1" ? team1 : actingAs === "team2" ? team2 : null;
+
+    if (!actingTeamName || actingTeamName !== currentTurn) return;
+    if ((mapStates[mapName]?.status || "available") !== "available") return;
+
+    const nextMapStates = {
+      ...mapStates,
+      [mapName]: { status: "banned", by: currentTurn },
+    };
+    const nextAvailableCount = ALL_MAPS.filter(
+      (map) => (nextMapStates[map]?.status || "available") === "available"
+    ).length;
+
+    setMapStates(nextMapStates);
+    setBanHistory((prev) => [...prev, { team: currentTurn, map: mapName }]);
+
+    if (nextAvailableCount <= targetRemaining) {
+      setCurrentTurn(null);
+      return;
+    }
+
+    setCurrentTurn(currentTurn === team1 ? team2 : team1);
   };
 
   return (
@@ -131,22 +200,67 @@ export default function Vetos() {
           <h3>Final Teams</h3>
           <p>Team 1: {team1}</p>
           <p>Team 2: {team2}</p>
+          <label>
+            You are:
+            <select value={actingAs} onChange={(e) => setActingAs(e.target.value)}>
+              <option value="spectator">Spectator</option>
+              <option value="team1">{team1}</option>
+              <option value="team2">{team2}</option>
+            </select>
+          </label>
+          {!vetoComplete && <p>Current turn: {currentTurn || "None"}</p>}
+          {vetoComplete && (
+            <p>
+              Veto complete. Remaining map(s): {availableMaps.join(", ")}
+            </p>
+          )}
           </>
           <>
-          <button>map1</button>
-          <button>map2</button>
-          <button>map3</button>
-          <button>map4</button>
-          <button>map5</button>
-          <button>map6</button>
-          <button>map7</button>
+          {ALL_MAPS.map((map) => {
+            const mapState = mapStates[map] || { status: "available", by: null };
+            const actingTeamName =
+              actingAs === "team1" ? team1 : actingAs === "team2" ? team2 : null;
+            const isLocked = vetoComplete || !actingTeamName || actingTeamName !== currentTurn;
+            const isBanned = mapState.status === "banned";
+            return (
+              <button
+                key={map}
+                onClick={() => handleBanMap(map)}
+                disabled={isLocked || isBanned}
+                className={isBanned ? "map-btn banned" : "map-btn available"}
+                title={
+                  isBanned
+                    ? `Banned by ${mapState.by}`
+                    : isLocked
+                      ? "Not your turn"
+                      : `Ban ${map}`
+                }
+              >
+                {map}
+              </button>
+            );
+          })}
           </>
+          {banHistory.length > 0 && (
+            <div className="ban-history">
+              <h4>Ban Order</h4>
+              {banHistory.map((entry, index) => (
+                <p key={`${entry.map}-${index}`}>
+                  {index + 1}. {entry.team} banned {entry.map}
+                </p>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
      {/* if manual was chosen*/}
       {mode === "manual" && (
-        <p>Manually choose which team goes first.</p>
+        <div className="manual-order">
+          <p>Manually choose which team goes first.</p>
+          <button onClick={() => startManualOrder(teamA)}>{teamA} goes first</button>
+          <button onClick={() => startManualOrder(teamB)}>{teamB} goes first</button>
+        </div>
       )}
     </div>
   );
