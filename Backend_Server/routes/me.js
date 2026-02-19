@@ -49,7 +49,7 @@ router.get("/", async (req, res) => {
    Parameter    : Request object with current user id
    Return       : Json response
                   result: String. Returns the result of the request.
-
+                  profile: Object.
    Purpose      : This route handles completing user profiles.
 */
 router.patch("/profile", async (req, res) => {
@@ -73,14 +73,10 @@ router.patch("/profile", async (req, res) => {
 
     if (error) throw error;
 
-    res.json({
-      result: "Success",
-      profile: data,
-    });
+    res.json({ profile: data });
   } catch (err) {
-    res.status(500).json({
-      error: "Server Error",
-    });
+    console.error("PATCH /me/profile error: ", err);
+    res.status(500).json({ error: "Server Error" });
   }
 });
 
