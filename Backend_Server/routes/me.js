@@ -53,6 +53,10 @@ router.get("/", async (req, res) => {
 */
 router.patch("/profile", async (req, res) => {
   try {
+    if (req.user.id == NULL || req.user.id == undefined) {
+      console.error("PATCH /me/profile error: NULL User ID");
+      return res.status(400).json({ error: "User ID is NULL or undefiend!" });
+    }
     const userId = req.user.id;
     const { display_name } = req.body;
 
