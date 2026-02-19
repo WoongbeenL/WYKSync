@@ -60,6 +60,8 @@ router.patch("/profile", async (req, res) => {
       return res.status(400).json({ error: "display_name is required" });
     }
 
+    console.log("userId from token:", userId);
+
     const { data, error } = await supabase
       .from("profiles")
       .update({
