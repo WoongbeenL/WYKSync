@@ -21,8 +21,6 @@ router.use(requireUser);
                   id: UUID. User ID
                   display name: CITEXT. Display Name
                   is_onboarded: Boolean. Has user been onboarded?
-                  created_at: Timestampz. When profile was created
-                  updated_at: Timestampz. When profile was updated
    Purpose      : This route returns the user data based on user ID.
 */
 router.get("/", async (req, res) => {
@@ -60,8 +58,6 @@ router.patch("/profile", async (req, res) => {
       return res.status(400).json({ error: "display_name is required" });
     }
 
-    console.log("userId from token:", userId);
-
     const { data, error } = await supabase
       .from("profiles")
       .update({
@@ -73,8 +69,17 @@ router.patch("/profile", async (req, res) => {
       .single();
 
     if (error) {
+      // Check for specific error codes.
       if (error.code === "PGRST116") {
         return res.status(404).json({ error: "Profile not found" });
+      }
+      if (error.code === "23514") {
+        return res
+          .status(400)
+          .json({ error: "display_name must be between 3 and 20 characters" });
+      }
+      if (error.code === "23505") {
+        return res.status(409).json({ error: "display_name is already taken" });
       }
       throw error;
     }
