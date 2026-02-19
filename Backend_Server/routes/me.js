@@ -53,7 +53,7 @@ router.get("/", async (req, res) => {
 */
 router.patch("/profile", async (req, res) => {
   try {
-    if (req.user.id == NULL || req.user.id == undefined) {
+    if (!req.user.id) {
       console.error("PATCH /me/profile error: NULL User ID");
       return res.status(400).json({ error: "User ID is NULL or undefiend!" });
     }
@@ -79,7 +79,7 @@ router.patch("/profile", async (req, res) => {
     res.json({ profile: data });
   } catch (err) {
     console.error("PATCH /me/profile error: ", err);
-    res.status(500).json({ error: "Server Error" });
+    res.status(500).json({ error: err });
   }
 });
 
