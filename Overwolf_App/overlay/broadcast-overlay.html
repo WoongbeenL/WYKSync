@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WYKSync Overlay</title>
+  <style>
+    :root {
+      --team0-color: #4ade80;
+      --team1-color: #ef4444;
+      --bg: rgba(0, 0, 0, 0.85);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: transparent;
+      color: #fff;
+      overflow: hidden;
+    }
+
+    .state-banner {
+      position: fixed;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--bg);
+      padding: 8px 20px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .state-banner.visible { opacity: 1; }
+    .state-banner.menu { color: #888; }
+    .state-banner.agent_select { color: #fbbf24; }
+    .state-banner.loading { color: #60a5fa; }
+    .state-banner.in_game { opacity: 0; }
+
+    .scoreboard {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      background: var(--bg);
+      border-radius: 8px;
+      padding: 10px 0;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .scoreboard.visible { opacity: 1; }
+
+    .team {
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+      min-width: 120px;
+    }
+
+    .team.b { flex-direction: row-reverse; }
+
+    .team-info { text-align: center; }
+    .team.a .team-info { text-align: left; }
+    .team.b .team-info { text-align: right; }
+
+    .team-name {
+      font-size: 0.65rem;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .team-score {
+      font-size: 2.5rem;
+      font-weight: bold;
+      line-height: 1;
+    }
+
+    .team.a .team-score { color: var(--team0-color); }
+    .team.b .team-score { color: var(--team1-color); }
+
+    .divider {
+      padding: 0 24px;
+      text-align: center;
+      border-left: 1px solid rgba(255,255,255,0.1);
+      border-right: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .round-label {
+      font-size: 0.55rem;
+      color: #888;
+      text-transform: uppercase;
+    }
+
+    .round-number {
+      font-size: 1.4rem;
+      font-weight: 600;
+    }
+
+    .map-name {
+      font-size: 0.6rem;
+      color: #60a5fa;
+      margin-top: 2px;
+    }
+
+    .round-phase {
+      font-size: 0.5rem;
+      color: #fbbf24;
+      text-transform: uppercase;
+      margin-top: 4px;
+    }
+
+    .players {
+      position: fixed;
+      top: 100px;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .players.team-0 { left: 20px; }
+    .players.team-1 { right: 20px; }
+
+    .player {
+      display: flex;
+      align-items: center;
+      background: var(--bg);
+      border-radius: 4px;
+      padding: 5px 8px;
+      width: 260px;
+      opacity: 0;
+      transition: opacity 0.3s, transform 0.2s;
+    }
+
+    .player.visible { opacity: 1; }
+    .player.dead { opacity: 0.35; }
+    .player.observing { 
+      border: 1px solid #fbbf24;
+      transform: scale(1.02);
+    }
+
+    .players.team-1 .player { flex-direction: row-reverse; }
+
+    .player-agent {
+      width: 28px;
+      height: 28px;
+      border-radius: 4px;
+      background: rgba(255,255,255,0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.5rem;
+      flex-shrink: 0;
+    }
+
+    .player-info {
+      flex: 1;
+      padding: 0 8px;
+      min-width: 0;
+    }
+
+    .players.team-0 .player-info { text-align: left; }
+    .players.team-1 .player-info { text-align: right; }
+
+    .player-name {
+      font-size: 0.75rem;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .player-stats {
+      font-size: 0.6rem;
+      color: #888;
+    }
+
+    .player-weapon {
+      font-size: 0.5rem;
+      color: #666;
+    }
+
+    .player-ult {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.5rem;
+      font-weight: bold;
+    }
+
+    .player-ult.ready { 
+      background: #e94560;
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+
+    .players.team-1 .player-ult { margin-left: 0; margin-right: 6px; }
+
+    .spike-indicator {
+      color: #e94560;
+      font-size: 0.65rem;
+      margin-left: 4px;
+    }
+
+    .debug {
+      position: fixed;
+      bottom: 10px;
+      left: 10px;
+      background: var(--bg);
+      padding: 10px 14px;
+      border-radius: 6px;
+      font-size: 0.65rem;
+      color: #888;
+      max-width: 350px;
+      font-family: monospace;
+    }
+
+    .debug-row {
+      margin: 2px 0;
+    }
+
+    .debug-label {
+      color: #666;
+    }
+
+    .debug-value {
+      color: #4ade80;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="state-banner" id="state-banner">MENU</div>
+
+  <div class="scoreboard" id="scoreboard">
+    <div class="team a">
+      <div class="team-info">
+        <div class="team-name">TEAM 0</div>
+        <div class="team-score" id="score-a">0</div>
+      </div>
+    </div>
+    <div class="divider">
+      <div class="round-label">ROUND</div>
+      <div class="round-number" id="round">0</div>
+      <div class="map-name" id="map">-</div>
+      <div class="round-phase" id="phase">-</div>
+    </div>
+    <div class="team b">
+      <div class="team-info">
+        <div class="team-name">TEAM 1</div>
+        <div class="team-score" id="score-b">0</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="players team-0" id="players-0"></div>
+  <div class="players team-1" id="players-1"></div>
+
+  <div class="debug" id="debug">
+    <div class="debug-row"><span class="debug-label">Status:</span> <span class="debug-value" id="d-status">Connecting...</span></div>
+    <div class="debug-row"><span class="debug-label">State:</span> <span class="debug-value" id="d-state">-</span></div>
+    <div class="debug-row"><span class="debug-label">Map:</span> <span class="debug-value" id="d-map">-</span></div>
+    <div class="debug-row"><span class="debug-label">Round:</span> <span class="debug-value" id="d-round">-</span></div>
+    <div class="debug-row"><span class="debug-label">Players:</span> <span class="debug-value" id="d-players">0</span></div>
+  </div>
+
+  <script>
+    const CONFIG = {
+      wsUrl: 'ws://localhost:8765',
+      showDebug: true
+    };
+
+    let gameData = null;
+
+    const el = {
+      stateBanner: document.getElementById('state-banner'),
+      scoreboard: document.getElementById('scoreboard'),
+      scoreA: document.getElementById('score-a'),
+      scoreB: document.getElementById('score-b'),
+      round: document.getElementById('round'),
+      map: document.getElementById('map'),
+      phase: document.getElementById('phase'),
+      players0: document.getElementById('players-0'),
+      players1: document.getElementById('players-1'),
+      debug: document.getElementById('debug'),
+      dStatus: document.getElementById('d-status'),
+      dState: document.getElementById('d-state'),
+      dMap: document.getElementById('d-map'),
+      dRound: document.getElementById('d-round'),
+      dPlayers: document.getElementById('d-players')
+    };
+
+    if (!CONFIG.showDebug) el.debug.style.display = 'none';
+
+    let ws = null;
+
+    function connect() {
+      el.dStatus.textContent = 'Connecting...';
+      ws = new WebSocket(CONFIG.wsUrl);
+
+      ws.onopen = () => {
+        el.dStatus.textContent = 'Connected';
+      };
+
+      ws.onmessage = (e) => {
+        try {
+          const msg = JSON.parse(e.data);
+          if (msg.type === 'game-data') {
+            gameData = msg.data;
+            updateOverlay();
+          }
+        } catch (err) {
+          console.error('Parse error:', err);
+        }
+      };
+
+      ws.onclose = () => {
+        el.dStatus.textContent = 'Disconnected';
+        setTimeout(connect, 3000);
+      };
+    }
+
+    function updateOverlay() {
+      if (!gameData) return;
+
+      const state = gameData.gameState || 'unknown';
+
+      // Update debug
+      el.dState.textContent = state;
+      el.dMap.textContent = gameData.map || '-';
+      el.dRound.textContent = `${gameData.roundNumber} (${gameData.roundPhase || '-'})`;
+      el.dPlayers.textContent = gameData.players?.length || 0;
+
+      // State banner
+      el.stateBanner.className = 'state-banner visible ' + state;
+      el.stateBanner.textContent = formatState(state);
+
+      // Only show scoreboard in game
+      if (state === 'in_game') {
+        el.scoreboard.classList.add('visible');
+        
+        el.scoreA.textContent = gameData.score?.team0 || 0;
+        el.scoreB.textContent = gameData.score?.team1 || 0;
+        el.round.textContent = gameData.roundNumber || 0;
+        el.map.textContent = gameData.map || '-';
+        el.phase.textContent = gameData.roundPhase || '';
+
+        updatePlayers();
+      } else {
+        el.scoreboard.classList.remove('visible');
+        el.players0.innerHTML = '';
+        el.players1.innerHTML = '';
+      }
+    }
+
+    function formatState(state) {
+      switch (state) {
+        case 'menu': return 'Main Menu';
+        case 'agent_select': return 'Agent Select';
+        case 'loading': return 'Loading...';
+        case 'in_game': return '';
+        case 'closed': return 'Game Closed';
+        default: return state;
+      }
+    }
+
+    function updatePlayers() {
+      if (!gameData.players) return;
+
+      const team0 = gameData.players.filter(p => p.team === 0);
+      const team1 = gameData.players.filter(p => p.team === 1);
+      const observing = gameData.observing || '';
+
+      el.players0.innerHTML = team0.map(p => playerHTML(p, observing)).join('');
+      el.players1.innerHTML = team1.map(p => playerHTML(p, observing)).join('');
+
+      document.querySelectorAll('.player').forEach((p, i) => {
+        setTimeout(() => p.classList.add('visible'), i * 30);
+      });
+    }
+
+    function playerHTML(p, observing) {
+      const dead = !p.isAlive;
+      const ultReady = p.ultPoints >= p.ultMax && p.ultMax > 0;
+      const isObserving = p.name && observing && p.name.includes(observing.split('#')[0]);
+
+      return `
+        <div class="player ${dead ? 'dead' : ''} ${isObserving ? 'observing' : ''}">
+          <div class="player-agent">${p.agent || '?'}</div>
+          <div class="player-info">
+            <div class="player-name">
+              ${p.name || 'Unknown'}
+              ${p.hasSpike ? '<span class="spike-indicator">💣</span>' : ''}
+            </div>
+            <div class="player-stats">${p.kills}/${p.deaths}/${p.assists} • $${p.money}</div>
+            <div class="player-weapon">${p.weapon || '-'}</div>
+          </div>
+          <div class="player-ult ${ultReady ? 'ready' : ''}">${ultReady ? '✓' : p.ultPoints + '/' + p.ultMax}</div>
+        </div>
+      `;
+    }
+
+    connect();
+  </script>
+</body>
+</html>

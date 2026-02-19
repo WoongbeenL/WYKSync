@@ -1,143 +1,81 @@
-console.log('renderer script');
+declare const wyksync: {
+  onStatusUpdate: (callback: (status: string) => void) => void;
+  onLogMessage: (callback: (...args: any[]) => void) => void;
+  getInfo: () => Promise<any>;
+  setFeatures: () => Promise<boolean>;
+};
 
-//@ts-ignore
-window.gep.onMessage(function(...args) {
-  console.info(...args);
+const statusEl = document.getElementById('status') as HTMLDivElement;
+const logEl = document.getElementById('log') as HTMLDivElement;
+const btnInfo = document.getElementById('btn-info') as HTMLButtonElement;
+const btnFeatures = document.getElementById('btn-features') as HTMLButtonElement;
+const btnClear = document.getElementById('btn-clear') as HTMLButtonElement;
 
-  let item = ''
-  args.forEach(arg => {
-    item = `${item}-${JSON.stringify(arg)}`;
-  })
-  addMessageToTerminal(item);
+function updateStatus(status: string): void {
+  statusEl.textContent = status;
 
-});
+  statusEl.classList.remove('connected', 'waiting', 'error');
 
-
-const btn = document.querySelector('#clearTerminalTextAreaBtn') as HTMLButtonElement;
-
-btn.addEventListener('click', function(e) {
-  var begin = new Date().getTime();
-  const terminal = document.querySelector('#TerminalTextArea');
-  terminal.innerHTML = '';
-});
-
-const setRequiredBtn = document.querySelector('#setRequiredFeaturesBtn') as HTMLButtonElement;
-setRequiredBtn.addEventListener('click', async function(e) {
-  try {
-    // @ts-ignore
-    await window.gep.setRequiredFeature();
-    addMessageToTerminal('setRequiredFeatures ok');
-  } catch (error) {
-    addMessageToTerminal('setRequiredFeatures error');
-    alert('setRequiredFeatures error' + error);
+  if (status.toLowerCase().includes('connected') ||
+      status.toLowerCase().includes('started')) {
+    statusEl.classList.add('connected');
+  } else if (status.toLowerCase().includes('error') ||
+             status.toLowerCase().includes('failed')) {
+    statusEl.classList.add('error');
+  } else {
+    statusEl.classList.add('waiting');
   }
-});
-
-const getInfoBtn = document.querySelector('#getInfoBtn') as HTMLButtonElement;
-getInfoBtn.addEventListener('click', async function(e) {
-  try {
-    // @ts-ignore
-    const info = await window.gep.getInfo();
-    addMessageToTerminal(JSON.stringify(info));
-  } catch (error) {
-    addMessageToTerminal('getInfo error');
-    alert('getInfo error' + error);
-  }
-});
-
-const createOSRBtn = document.querySelector('#createOSR') as HTMLButtonElement;
-createOSRBtn.addEventListener('click', async function(e) {
-  try {
-    // @ts-ignore
-    const info = await window.osr.openOSR();
-  } catch (error) {
-    addMessageToTerminal('createOSR error');
-  }
-});
-
-const visibilityOSRBtn = document.querySelector('#visibilityOSR') as HTMLButtonElement;
-visibilityOSRBtn.addEventListener('click', async function(e) {
-  try {
-    // @ts-ignore
-    const info = await window.osr.toggle();
-  } catch (error) {
-    console.log(error);
-    addMessageToTerminal('toggle osr error');
-  }
-});
-
-
-const updateHotkeyBtn = document.querySelector('#updateHotkey') as HTMLButtonElement;
-updateHotkeyBtn.addEventListener('click', async function(e) {
-  try {
-    // @ts-ignore
-    const info = await window.osr.updateHotkey();
-  } catch (error) {
-    console.log(error);
-    addMessageToTerminal('toggle osr error');
-  }
-});
-
-
-function addMessageToTerminal(message) {
-  const terminal = document.querySelector('#TerminalTextArea');
-  // $('#TerminalTextArea');
-  terminal.append(message + '\n');
-  terminal.scrollTop = terminal.scrollHeight;
 }
 
-export function sendExclusiveOptions() {
-  const color = (document.getElementById('colorPicker') as HTMLInputElement).value;
+function addLog(message: string, ...args: any[]): void {
+  const time = new Date().toLocaleTimeString();
+  const entry = document.createElement('div');
+  entry.className = 'log-entry';
 
-  const r = parseInt(color.substr(1,2), 16);
-  const g = parseInt(color.substr(3,2), 16);
-  const b = parseInt(color.substr(5,2), 16);
-  const a = (document.getElementById('opacityRange') as HTMLInputElement).value;
+  let text = message;
+  if (args.length > 0) {
+    text += ' ' + args.map(a => {
+      if (typeof a === 'object') {
+        try {
+          return JSON.stringify(a);
+        } catch {
+          return String(a);
+        }
+      }
+      return String(a);
+    }).join(' ');
+  }
 
-  const options = {
-     color: `rgba(${r},${g},${b},${a})`,
-     animationDuration:
-      parseInt((document.getElementById('animationDurationRange') as HTMLInputElement).value)
-  };
-
-  // @ts-ignore
-  window.overlay.updateExclusiveOptions(options);
+  entry.innerHTML = `<span class="time">${time}</span>${text}`;
+  logEl.appendChild(entry);
+  logEl.scrollTop = logEl.scrollHeight;
 }
 
+function clearLog(): void {
+  logEl.innerHTML = '';
+}
 
+wyksync.onStatusUpdate(updateStatus);
+wyksync.onLogMessage(addLog);
 
-const opacityRange = document.getElementById('opacityRange') as HTMLInputElement;
-opacityRange.addEventListener('change', (ev) => {
-  sendExclusiveOptions();
-})
+btnInfo.addEventListener('click', async () => {
+  try {
+    const info = await wyksync.getInfo();
+    addLog('Game Info:', info);
+  } catch (e) {
+    addLog('Error getting info:', e);
+  }
+});
 
-const animationDurationRange = document.getElementById('animationDurationRange') as HTMLInputElement;
-animationDurationRange.addEventListener('change', (ev) => {
-  sendExclusiveOptions();
-})
+btnFeatures.addEventListener('click', async () => {
+  try {
+    const result = await wyksync.setFeatures();
+    addLog('Set features result:', result);
+  } catch (e) {
+    addLog('Error setting features:', e);
+  }
+});
 
-const colorPicker = document.getElementById('colorPicker') as HTMLInputElement;
-colorPicker.addEventListener('change', (ev) => {
-  sendExclusiveOptions();
-})
+btnClear.addEventListener('click', clearLog);
 
-
-document.querySelectorAll('[name="behavior"]').forEach(
-  (radio)=>{radio.addEventListener('change',(a)=>{
-    const radio = a.target as HTMLInputElement;
-    if (radio.checked) {
-      // @ts-ignore
-      window.overlay.setExclusiveModeHotkeyBehavior(radio.value);
-    }
-  })
-})
-
-document.querySelectorAll('[name="exclusiveType"]').forEach(
-  (radio)=>{radio.addEventListener('change',(a)=>{
-    const radio = a.target as HTMLInputElement;
-    if (radio.checked) {
-      // @ts-ignore
-      window.overlay.setExclusiveModeType(radio.value);
-    }
-  })
-})
+addLog('WYKSync ready');
