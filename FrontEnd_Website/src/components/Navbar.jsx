@@ -1,13 +1,14 @@
-import { Children } from "react";
 import logoImg from "../assets/WYKSync.png";
 
 export default function Navbar() {
   return (
     <nav className="nav">
-      <img src={logoImg} alt="Logo" className="logo" />
-      <a href="/" className="site-title">
-        WYKSync
-      </a>
+      <div className="nav-brand">
+        <img src={logoImg} alt="Logo" className="logo" />
+        <a href="/" className="site-title">
+          WYKSync
+        </a>
+      </div>
       <ul>
         <CustomLink href="/home">Home</CustomLink>
         <CustomLink href="/tournaments">Tournaments</CustomLink>

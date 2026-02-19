@@ -21,3 +21,36 @@
   line-height: 1.6;
   color: #aaa;
 }
+
+.final {
+  margin-top: 1.5rem;
+}
+
+.map-btn {
+  margin: 0.4rem;
+  padding: 0.6rem 1rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.map-btn.available {
+  background: #ff4655;
+  color: #fff;
+}
+
+.map-btn.banned {
+  background: #444;
+  color: #bbb;
+  text-decoration: line-through;
+  cursor: not-allowed;
+}
+
+.map-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.ban-history {
+  margin-top: 1rem;
+}
