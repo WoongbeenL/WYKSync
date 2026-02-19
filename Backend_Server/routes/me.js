@@ -53,12 +53,6 @@ router.get("/", async (req, res) => {
 */
 router.patch("/profile", async (req, res) => {
   try {
-    // REMOVE LATER --------------------------------------------------
-    if (!req.user.id) {
-      console.error("PATCH /me/profile error: NULL User ID");
-      return res.status(400).json({ error: "User ID is NULL or undefiend!" });
-    }
-    // REMOVE LATER --------------------------------------------------^^^^^^^^^^^^^^^^^^^^^^^^
     const userId = req.user.id;
     const { display_name } = req.body;
 
@@ -76,12 +70,17 @@ router.patch("/profile", async (req, res) => {
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      if (error.code === "PGRST116") {
+        return res.status(404).json({ error: "Profile not found" });
+      }
+      throw error;
+    }
 
     res.json({ profile: data });
   } catch (err) {
     console.error("PATCH /me/profile error: ", err);
-    res.status(500).json({ error: err });
+    res.status(500).json({ error: "Server Error" });
   }
 });
 
