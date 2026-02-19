@@ -1,12 +1,16 @@
 import { useState } from "react";
 import { isSupabaseConfigured, supabase } from "../lib/supabaseClient";
+import "./login.css";
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+// backend base url from env with trailing slash removed
 const backendUrl = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, "");
 
+// builds a clearer fetch error message for backend calls
 const buildBackendFetchError = (action, err) =>
   `${action} failed: ${err.message}. Check VITE_BACKEND_URL, backend status, and CORS allowlist for http://localhost:5173 and https://wyksync.vercel.app.`;
 
+// parses error whether backend returns text or json
 const parseBackendError = async (response, fallback) => {
   const text = await response.text();
   if (!text) return fallback;
@@ -20,21 +24,24 @@ const parseBackendError = async (response, fallback) => {
 };
 
 export default function Login({ onLogin }) {
+  // mode decides which screen to show
   const [mode, setMode] = useState("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
+  // keep token for patch me profile call
   const [profileToken, setProfileToken] = useState("");
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [backendTestResult, setBackendTestResult] = useState("");
 
   const goToTournaments = () => {
+    // quick route change to tournaments
     window.history.pushState({}, "", "/tournaments");
     window.dispatchEvent(new Event("popstate"));
   };
 
   const handleLogin = async (e) => {
+    // stops full page refresh on form submit
     e.preventDefault();
 
     if (!email || !password) {
@@ -55,6 +62,7 @@ export default function Login({ onLogin }) {
     setError("");
     setIsSubmitting(true);
 
+    // logs user in through supabase auth
     const { data, error: loginError } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -66,10 +74,12 @@ export default function Login({ onLogin }) {
       return;
     }
 
+    // asks backend if user is already onboarded
     await handlePostAuth(data.session, data.user?.email || email);
   };
 
   const handleSignup = async (e) => {
+    // stops full page refresh on form submit
     e.preventDefault();
 
     if (!email || !password) {
@@ -90,6 +100,7 @@ export default function Login({ onLogin }) {
     setError("");
     setIsSubmitting(true);
 
+    // creates account in supabase auth
     const { data, error: signupError } = await supabase.auth.signUp({
       email,
       password,
@@ -108,16 +119,19 @@ export default function Login({ onLogin }) {
       return;
     }
 
+    // same post auth flow as login once session exists
     await handlePostAuth(data.session, data.user?.email || email);
   };
 
   const handlePostAuth = async (session, userEmail) => {
+    // frontend cannot continue without backend url
     if (!backendUrl) {
       setIsSubmitting(false);
       setError("Backend URL is missing. Add VITE_BACKEND_URL.");
       return;
     }
 
+    // token is required for protected backend routes
     if (!session?.access_token) {
       setIsSubmitting(false);
       setError("Auth token missing. Please try logging in again.");
@@ -125,6 +139,7 @@ export default function Login({ onLogin }) {
     }
 
     try {
+      // gets profile + onboarding status from backend
       const meResponse = await fetch(`${backendUrl}/me`, {
         headers: {
           Authorization: `Bearer ${session.access_token}`,
@@ -143,6 +158,7 @@ export default function Login({ onLogin }) {
 
       const meData = await meResponse.json();
 
+      // onboarded users go straight into app
       if (meData.is_onboarded) {
         setIsSubmitting(false);
         onLogin(userEmail);
@@ -150,6 +166,7 @@ export default function Login({ onLogin }) {
         return;
       }
 
+      // not onboarded users are sent to profile setup step
       setIsSubmitting(false);
       setProfileToken(session.access_token);
       setDisplayName(meData.display_name || "");
@@ -161,9 +178,14 @@ export default function Login({ onLogin }) {
   };
 
   const handleOnboarding = async (e) => {
+    // stops full page refresh on form submit
     e.preventDefault();
 
-    if (!displayName.trim()) {
+    // read latest display name from the submitted form
+    const formData = new FormData(e.currentTarget);
+    const typedDisplayName = String(formData.get("display_name") || "").trim();
+
+    if (!typedDisplayName) {
       setError("Please enter a display name.");
       return;
     }
@@ -175,6 +197,7 @@ export default function Login({ onLogin }) {
 
     let token = profileToken;
     if (!token && supabase) {
+      // fallback if token state was cleared
       const { data: sessionData } = await supabase.auth.getSession();
       token = sessionData.session?.access_token || "";
     }
@@ -184,10 +207,12 @@ export default function Login({ onLogin }) {
       return;
     }
 
+    setDisplayName(typedDisplayName);
     setError("");
     setIsSubmitting(true);
 
     try {
+      // saves display name and completes onboarding
       const response = await fetch(`${backendUrl}/me/profile`, {
         method: "PATCH",
         headers: {
@@ -195,9 +220,7 @@ export default function Login({ onLogin }) {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          display_name: displayName.trim(),
-          displayName: displayName.trim(),
-          username: displayName.trim(),
+          display_name: typedDisplayName,
         }),
       });
 
@@ -221,30 +244,14 @@ export default function Login({ onLogin }) {
   };
 
   const switchMode = (nextMode) => {
+    // switching tabs should also clear stale error text
     setMode(nextMode);
     setError("");
   };
 
-  const testBackend = async () => {
-    if (!backendUrl) {
-      setBackendTestResult("Backend URL missing. Add VITE_BACKEND_URL.");
-      return;
-    }
-
-    setBackendTestResult("Testing backend...");
-
-    try {
-      const response = await fetch(`${backendUrl}/`);
-      const body = await response.text();
-      setBackendTestResult(`Backend OK (${response.status}): ${body}`);
-    } catch (err) {
-      setBackendTestResult(buildBackendFetchError("Backend root request", err));
-    }
-  };
-
   return (
     <form
-      className="login"
+      className="auth-page"
       onSubmit={
         mode === "login"
           ? handleLogin
@@ -253,23 +260,32 @@ export default function Login({ onLogin }) {
             : handleOnboarding
       }
     >
-      <div className="login">
-        <div>
-          <button type="button" onClick={() => switchMode("login")}>
+      <div className="auth-card">
+        <div className="auth-tabs">
+          <button
+            type="button"
+            className={mode === "login" ? "auth-tab active" : "auth-tab"}
+            onClick={() => switchMode("login")}
+          >
             Login
           </button>
-          <button type="button" onClick={() => switchMode("signup")}>
+          <button
+            type="button"
+            className={mode === "signup" ? "auth-tab active" : "auth-tab"}
+            onClick={() => switchMode("signup")}
+          >
             Sign Up
           </button>
         </div>
 
-        {mode === "login" && <h1>Login</h1>}
-        {mode === "signup" && <h1>Sign Up</h1>}
-        {mode === "onboarding" && <h1>Complete Profile</h1>}
+        {mode === "login" && <h1 className="auth-title">Login</h1>}
+        {mode === "signup" && <h1 className="auth-title">Sign Up</h1>}
+        {mode === "onboarding" && <h1 className="auth-title">Complete Profile</h1>}
 
         {(mode === "login" || mode === "signup") && (
           <>
             <input
+              className="auth-input"
               type="email"
               placeholder="Email"
               value={email}
@@ -277,6 +293,7 @@ export default function Login({ onLogin }) {
               onChange={(e) => setEmail(e.target.value)}
             />
             <input
+              className="auth-input"
               type="password"
               placeholder="Password"
               value={password}
@@ -288,6 +305,8 @@ export default function Login({ onLogin }) {
 
         {mode === "onboarding" && (
           <input
+            className="auth-input"
+            name="display_name"
             placeholder="Display Name"
             value={displayName}
             autoComplete="nickname"
@@ -295,9 +314,9 @@ export default function Login({ onLogin }) {
           />
         )}
 
-        {error && <p>{error}</p>}
+        {error && <p className="auth-error">{error}</p>}
 
-        <button type="submit" disabled={isSubmitting}>
+        <button className="auth-submit" type="submit" disabled={isSubmitting}>
           {mode === "login"
             ? isSubmitting
               ? "Logging in..."
@@ -310,12 +329,6 @@ export default function Login({ onLogin }) {
                 ? "Saving profile..."
                 : "Save Profile"}
         </button>
-
-        <button type="button" onClick={testBackend}>
-          Test Backend
-        </button>
-
-        {backendTestResult && <p>{backendTestResult}</p>}
       </div>
     </form>
   );

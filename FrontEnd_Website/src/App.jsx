@@ -12,7 +12,13 @@ import { isSupabaseConfigured, supabase } from "./lib/supabaseClient";
 function App() {
   
 const [user, setUser] = useState(null);
-  const path = window.location.pathname;
+  const [path, setPath] = useState(window.location.pathname);
+
+  useEffect(() => {
+    const handleRouteChange = () => setPath(window.location.pathname);
+    window.addEventListener("popstate", handleRouteChange);
+    return () => window.removeEventListener("popstate", handleRouteChange);
+  }, []);
 
   useEffect(() => {
     if (!isSupabaseConfigured || !supabase) {
