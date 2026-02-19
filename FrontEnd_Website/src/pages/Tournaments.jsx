@@ -12,7 +12,6 @@ export default function Tournaments({ user }) {
   const [rules, setRules] = useState(
     "Standard competitive rules apply. All matches are Best of 3."
   );
-  const [participantsInput, setParticipantsInput] = useState("");
   const [selectedTournament, setSelectedTournament] = useState(null);
   const [activeTab, setActiveTab] = useState("overview");
 
@@ -24,21 +23,8 @@ export default function Tournaments({ user }) {
   const addTournament = () => {
     if (!name || !teams || !prizePool || !organizer || !startDateTime) return;
 
-    const totalTeams = Number(teams);
-    const parsedParticipants = participantsInput
-      .split(",")
-      .map((entry) => entry.trim())
-      .filter(Boolean);
-
-    const participants = parsedParticipants.slice(0, totalTeams);
-
-    const standings = participants
-      .slice(0, Math.min(4, participants.length))
-      .map((team, index) => ({
-        rank: index + 1,
-        team,
-        record: "0-0",
-      }));
+    const participants = [];
+    const standings = [];
 
     const newTournament = {
       id: Date.now(),
@@ -62,7 +48,6 @@ export default function Tournaments({ user }) {
     setStartDateTime("");
     setFormat("Single Elimination");
     setRules("Standard competitive rules apply. All matches are Best of 3.");
-    setParticipantsInput("");
   };
 
   const deleteTournament = (id) => {
@@ -292,13 +277,6 @@ export default function Tournaments({ user }) {
                 <option value="Double Elimination">Double Elimination</option>
                 <option value="Round Robin">Round Robin</option>
               </select>
-
-              <input
-                type="text"
-                placeholder="Participants (comma separated)"
-                value={participantsInput}
-                onChange={(e) => setParticipantsInput(e.target.value)}
-              />
 
               <input
                 type="text"
