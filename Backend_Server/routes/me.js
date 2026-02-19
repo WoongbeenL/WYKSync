@@ -48,8 +48,7 @@ router.get("/", async (req, res) => {
    Route Name   : PATCH /me/profile
    Parameter    : Request object with current user id
    Return       : Json response
-                  result: String. Returns the result of the request.
-                  profile: Object.
+                  profile: Object. Returns selected rows from Supabase.
    Purpose      : This route handles completing user profiles.
 */
 router.patch("/profile", async (req, res) => {
