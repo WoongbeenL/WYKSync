@@ -1,421 +1,996 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WYKSync Overlay</title>
+  <meta charset="utf-8" />
+  <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+  <title>WYKSync — Valorant Spectator HUD</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+    rel="stylesheet" />
   <style>
+    /* ============================
+     ROOT & RESET
+     ============================ */
     :root {
-      --team0-color: #4ade80;
-      --team1-color: #ef4444;
-      --bg: rgba(0, 0, 0, 0.85);
+      --gold: #C9A84C;
+      --gold-light: #E2CA7A;
+      --gold-dark: #A08030;
+      --white: #FFFFFF;
+      --off-white: #F0EDE6;
+      --bg-panel: rgba(12, 12, 20, 0.88);
+      --bg-panel-dark: rgba(15, 25, 35, 0.94);
+      --border-gold: rgba(201, 168, 76, 0.35);
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --text-primary: #FFFFFF;
+      --text-secondary: #B0A890;
+      --text-muted: #706850;
+      --health-high: #4ade80;
+      --health-mid: #fbbf24;
+      --health-low: #ef4444;
     }
 
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
     body {
-      font-family: 'Segoe UI', sans-serif;
+      font-family: 'Inter', sans-serif;
       background: transparent;
-      color: #fff;
+      color: var(--white);
       overflow: hidden;
+      height: 100vh;
+      width: 100vw;
     }
 
+    /* ============================
+     ANIMATIONS
+     ============================ */
+    @keyframes pulse-glow {
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0.5;
+      }
+    }
+
+    @keyframes health-pulse {
+
+      0%,
+      100% {
+        filter: brightness(1);
+      }
+
+      50% {
+        filter: brightness(1.4);
+      }
+    }
+
+    @keyframes slide-up {
+      from {
+        opacity: 0;
+        transform: translateY(12px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* ============================
+     GLASS PANEL
+     ============================ */
+    .glass {
+      background: var(--bg-panel);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid var(--border-subtle);
+    }
+
+    /* ============================
+     STATE BANNER (non-game states)
+     ============================ */
     .state-banner {
       position: fixed;
-      top: 10px;
+      top: 12px;
       left: 50%;
       transform: translateX(-50%);
-      background: var(--bg);
-      padding: 8px 20px;
+      background: var(--bg-panel-dark);
+      padding: 8px 28px;
       border-radius: 20px;
-      font-size: 0.8rem;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      font-weight: 700;
+      opacity: 0;
+      transition: opacity 0.4s;
+      z-index: 100;
+      border: 1px solid var(--border-gold);
+    }
+
+    .state-banner.visible {
+      opacity: 1;
+    }
+
+    .state-banner.menu {
+      color: #888;
+    }
+
+    .state-banner.agent_select {
+      color: var(--gold);
+    }
+
+    .state-banner.loading {
+      color: #60a5fa;
+    }
+
+    .state-banner.in_game {
+      opacity: 0;
+    }
+
+    /* ============================
+     TOP HUD BAR (Scoreboard)
+     ============================ */
+    .top-bar {
+      position: fixed;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: flex-start;
+      z-index: 90;
+      opacity: 0;
+      transition: opacity 0.4s;
+    }
+
+    .top-bar.visible {
+      opacity: 1;
+    }
+
+    /* -- Wing decorations -- */
+    .wing {
+      width: 58px;
+      height: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .wing svg {
+      width: 52px;
+      height: 44px;
+    }
+
+    .wing-left svg {
+      transform: scaleX(1);
+    }
+
+    .wing-right svg {
+      transform: scaleX(-1);
+    }
+
+    /* -- Team panels -- */
+    .top-team {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 14px;
+      height: 50px;
+      background: rgba(15, 25, 35, 0.94);
+      min-width: 200px;
+    }
+
+    .top-team-a {
+      border-radius: 0 0 0 4px;
+      border-left: 2px solid var(--gold);
+    }
+
+    .top-team-b {
+      border-radius: 0 0 4px 0;
+      flex-direction: row-reverse;
+      border-right: 2px solid var(--gold);
+    }
+
+    .top-team-info {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .top-team-b .top-team-info {
+      text-align: right;
+    }
+
+    .top-team-name {
+      font-size: 0.7rem;
+      font-weight: 800;
       text-transform: uppercase;
       letter-spacing: 2px;
-      opacity: 0;
-      transition: opacity 0.3s;
+      color: var(--gold-light);
     }
 
-    .state-banner.visible { opacity: 1; }
-    .state-banner.menu { color: #888; }
-    .state-banner.agent_select { color: #fbbf24; }
-    .state-banner.loading { color: #60a5fa; }
-    .state-banner.in_game { opacity: 0; }
-
-    .scoreboard {
-      position: fixed;
-      top: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      display: flex;
-      align-items: center;
-      background: var(--bg);
-      border-radius: 8px;
-      padding: 10px 0;
-      opacity: 0;
-      transition: opacity 0.3s;
-    }
-
-    .scoreboard.visible { opacity: 1; }
-
-    .team {
-      display: flex;
-      align-items: center;
-      padding: 0 24px;
-      min-width: 120px;
-    }
-
-    .team.b { flex-direction: row-reverse; }
-
-    .team-info { text-align: center; }
-    .team.a .team-info { text-align: left; }
-    .team.b .team-info { text-align: right; }
-
-    .team-name {
-      font-size: 0.65rem;
-      color: #888;
+    .top-team-sub {
+      font-size: 0.45rem;
+      color: var(--text-muted);
       text-transform: uppercase;
       letter-spacing: 1px;
     }
 
-    .team-score {
-      font-size: 2.5rem;
-      font-weight: bold;
+    .top-team-score {
+      font-size: 2rem;
+      font-weight: 900;
+      color: var(--white);
       line-height: 1;
-    }
-
-    .team.a .team-score { color: var(--team0-color); }
-    .team.b .team-score { color: var(--team1-color); }
-
-    .divider {
-      padding: 0 24px;
+      min-width: 30px;
       text-align: center;
-      border-left: 1px solid rgba(255,255,255,0.1);
-      border-right: 1px solid rgba(255,255,255,0.1);
     }
 
-    .round-label {
-      font-size: 0.55rem;
-      color: #888;
-      text-transform: uppercase;
+    /* -- Timer gap (transparent space for native Valorant timer) -- */
+    .timer-gap {
+      width: 110px;
+      height: 50px;
+      flex-shrink: 0;
+      /* Fully transparent — the native Valorant timer shows through */
     }
 
-    .round-number {
-      font-size: 1.4rem;
-      font-weight: 600;
-    }
-
-    .map-name {
-      font-size: 0.6rem;
-      color: #60a5fa;
-      margin-top: 2px;
-    }
-
-    .round-phase {
-      font-size: 0.5rem;
-      color: #fbbf24;
-      text-transform: uppercase;
-      margin-top: 4px;
-    }
-
-    .players {
+    /* ============================
+     MAP & SPONSOR PANELS
+     ============================ */
+    .map-info-panel {
       position: fixed;
-      top: 100px;
+      top: 18px;
+      left: 18px;
       display: flex;
       flex-direction: column;
-      gap: 3px;
+      gap: 2px;
+      font-size: 0.65rem;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      z-index: 90;
+      background: var(--bg-panel-dark);
+      padding: 6px 14px;
+      border-left: 2px solid var(--gold);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
     }
 
-    .players.team-0 { left: 20px; }
-    .players.team-1 { right: 20px; }
-
-    .player {
-      display: flex;
-      align-items: center;
-      background: var(--bg);
-      border-radius: 4px;
-      padding: 5px 8px;
-      width: 260px;
-      opacity: 0;
-      transition: opacity 0.3s, transform 0.2s;
+    .map-curr {
+      color: var(--text-primary);
     }
 
-    .player.visible { opacity: 1; }
-    .player.dead { opacity: 0.35; }
-    .player.observing { 
-      border: 1px solid #fbbf24;
-      transform: scale(1.02);
+    .map-curr span {
+      color: var(--gold-light);
     }
 
-    .players.team-1 .player { flex-direction: row-reverse; }
+    .map-decider {
+      color: var(--text-muted);
+      font-size: 0.55rem;
+    }
 
-    .player-agent {
-      width: 28px;
-      height: 28px;
-      border-radius: 4px;
-      background: rgba(255,255,255,0.1);
+    .sponsor-panel {
+      position: fixed;
+      top: 18px;
+      right: 18px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 0.5rem;
-      flex-shrink: 0;
+      z-index: 90;
+      background: var(--bg-panel-dark);
+      padding: 8px 16px;
+      height: 40px;
+      border-right: 2px solid var(--white);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
     }
 
-    .player-info {
+    .sponsor-text {
+      font-size: 1rem;
+      font-weight: 900;
+      color: var(--white);
+      letter-spacing: 2px;
+    }
+
+    /* ============================
+     PHASE BANNER
+     ============================ */
+    .phase-banner {
+      position: fixed;
+      top: 50px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.65rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      color: var(--gold);
+      background: var(--bg-panel-dark);
+      padding: 6px 32px;
+      border-bottom: 2px solid var(--gold);
+      border-radius: 0 0 8px 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+      opacity: 0;
+      transition: opacity 0.5s;
+      z-index: 85;
+      display: flex;
+      gap: 16px;
+      align-items: center;
+    }
+
+    .phase-banner.visible {
+      opacity: 1;
+    }
+
+    /* ============================
+     PLAYER COLUMNS
+     Docked to BOTTOM, stacking upward
+     ============================ */
+    .players-col {
+      position: fixed;
+      bottom: 12px;
+      display: flex;
+      flex-direction: column-reverse;
+      gap: 3px;
+      z-index: 50;
+    }
+
+    .players-col.left {
+      left: 10px;
+    }
+
+    .players-col.right {
+      right: 10px;
+    }
+
+    /* ============================
+     PLAYER CARD
+     ============================ */
+    .p-card {
+      display: flex;
+      align-items: stretch;
+      width: 300px;
+      height: 54px;
+      position: relative;
+      overflow: hidden;
+      opacity: 0;
+      transition: opacity 0.3s, transform 0.2s;
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-panel);
+      backdrop-filter: blur(12px);
+    }
+
+    .p-card.show {
+      opacity: 0.92;
+    }
+
+    .p-card.show:hover {
+      opacity: 1;
+    }
+
+    /* Dead */
+    .p-card.dead {
+      opacity: 0.4 !important;
+      filter: grayscale(0.7);
+    }
+
+    /* Spectating */
+    .p-card.spec {
+      opacity: 1 !important;
+      border: 1px solid var(--gold);
+      box-shadow: 0 0 14px rgba(201, 168, 76, 0.3);
+    }
+
+    /* Mirror right team */
+    .right .p-card {
+      flex-direction: row-reverse;
+    }
+
+    /* -- Agent Icon Area -- */
+    .p-agent {
+      width: 50px;
+      min-width: 50px;
+      height: 100%;
+      background: rgba(20, 20, 35, 0.9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .left .p-agent {
+      border-right: 1px solid var(--border-subtle);
+    }
+
+    .right .p-agent {
+      border-left: 1px solid var(--border-subtle);
+    }
+
+    .p-agent img {
+      width: 40px;
+      height: 40px;
+      object-fit: contain;
+      border-radius: 4px;
+    }
+
+    .p-agent .agent-fallback {
+      width: 36px;
+      height: 36px;
+    }
+
+    /* Dead X overlay */
+    .p-card.dead .p-agent::after {
+      content: '✕';
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, 0.5);
+      color: #fff;
+      font-size: 1.2rem;
+      font-weight: 700;
+    }
+
+    /* -- Player Info -- */
+    .p-info {
       flex: 1;
-      padding: 0 8px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 4px 8px;
       min-width: 0;
     }
 
-    .players.team-0 .player-info { text-align: left; }
-    .players.team-1 .player-info { text-align: right; }
+    .right .p-info {
+      text-align: right;
+    }
 
-    .player-name {
+    .p-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .right .p-row {
+      flex-direction: row-reverse;
+    }
+
+    .p-name {
       font-size: 0.75rem;
-      font-weight: 600;
+      font-weight: 700;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      max-width: 110px;
+      color: var(--white);
     }
 
-    .player-stats {
-      font-size: 0.6rem;
-      color: #888;
-    }
-
-    .player-weapon {
-      font-size: 0.5rem;
+    .p-card.dead .p-name {
+      text-decoration: line-through;
       color: #666;
     }
 
-    .player-ult {
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-      background: rgba(255,255,255,0.1);
+    .p-hp {
+      font-size: 0.7rem;
+      font-weight: 800;
+      color: var(--white);
+      min-width: 26px;
+      text-align: center;
+    }
+
+    .p-kda {
+      font-size: 0.6rem;
+      color: var(--text-secondary);
+    }
+
+    .p-kda b {
+      color: var(--white);
+    }
+
+    .p-money {
+      font-size: 0.6rem;
+      font-family: monospace;
+      color: var(--gold);
+    }
+
+    /* -- Weapon Image -- */
+    .p-weapon {
+      width: 52px;
+      min-width: 52px;
+      height: 100%;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 0.5rem;
-      font-weight: bold;
+      padding: 4px;
+      background: rgba(15, 15, 25, 0.6);
     }
 
-    .player-ult.ready { 
-      background: #e94560;
-      animation: pulse 1.5s infinite;
+    .left .p-weapon {
+      border-left: 1px solid var(--border-subtle);
     }
 
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.6; }
+    .right .p-weapon {
+      border-right: 1px solid var(--border-subtle);
     }
 
-    .players.team-1 .player-ult { margin-left: 0; margin-right: 6px; }
+    .p-weapon img {
+      max-width: 44px;
+      max-height: 28px;
+      object-fit: contain;
+      filter: brightness(0.9);
+    }
 
-    .spike-indicator {
-      color: #e94560;
+    .p-weapon .wep-fallback {
+      font-size: 0.45rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      text-align: center;
+      line-height: 1.2;
+      word-break: break-all;
+    }
+
+    /* -- Health Bar -- */
+    .p-health {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: #1a1a28;
+    }
+
+    .p-health-fill {
+      height: 100%;
+      position: absolute;
+      top: 0;
+      transition: width 0.4s ease, background 0.4s ease, box-shadow 0.4s ease;
+    }
+
+    .left .p-health-fill {
+      left: 0;
+    }
+
+    .right .p-health-fill {
+      right: 0;
+    }
+
+    .p-health-fill.high {
+      background: var(--health-high);
+      box-shadow: 0 0 6px rgba(74, 222, 128, 0.5);
+    }
+
+    .p-health-fill.mid {
+      background: var(--health-mid);
+      box-shadow: 0 0 6px rgba(251, 191, 36, 0.5);
+    }
+
+    .p-health-fill.low {
+      background: var(--health-low);
+      box-shadow: 0 0 6px rgba(239, 68, 68, 0.6);
+      animation: health-pulse 0.8s infinite;
+    }
+
+    /* -- Spike -- */
+    .spike {
+      color: #ef4444;
       font-size: 0.65rem;
-      margin-left: 4px;
+      margin: 0 3px;
+      animation: pulse-glow 1s infinite;
     }
 
+    /* -- Ult badge -- */
+    .ult-badge {
+      position: absolute;
+      top: 2px;
+      font-size: 0.4rem;
+      font-weight: 700;
+      padding: 1px 4px;
+      border-radius: 2px;
+      background: rgba(0, 0, 0, 0.7);
+      color: var(--text-muted);
+    }
+
+    .left .ult-badge {
+      right: 56px;
+    }
+
+    .right .ult-badge {
+      left: 56px;
+    }
+
+    .ult-badge.ready {
+      background: var(--gold);
+      color: #000;
+      animation: pulse-glow 1.5s infinite;
+    }
+
+    /* -- Spectating tag -- */
+    .spec-tag {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      background: var(--gold);
+      color: #000;
+      font-size: 0.45rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      padding: 2px 7px;
+      border-radius: 2px;
+      z-index: 10;
+      animation: pulse-glow 2s infinite;
+      white-space: nowrap;
+    }
+
+    .left .spec-tag {
+      left: -80px;
+    }
+
+    .right .spec-tag {
+      right: -80px;
+    }
+
+    /* ============================
+     DEBUG
+     ============================ */
     .debug {
       position: fixed;
       bottom: 10px;
-      left: 10px;
-      background: var(--bg);
-      padding: 10px 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--bg-panel-dark);
+      backdrop-filter: blur(8px);
+      padding: 8px 14px;
       border-radius: 6px;
-      font-size: 0.65rem;
-      color: #888;
-      max-width: 350px;
+      font-size: 0.55rem;
+      color: var(--text-muted);
       font-family: monospace;
+      border: 1px solid var(--border-subtle);
+      z-index: 200;
+      display: flex;
+      gap: 12px;
     }
 
-    .debug-row {
-      margin: 2px 0;
-    }
-
-    .debug-label {
-      color: #666;
-    }
-
-    .debug-value {
-      color: #4ade80;
+    .debug .dv {
+      color: var(--gold);
     }
   </style>
 </head>
+
 <body>
 
+  <!-- STATE BANNER -->
   <div class="state-banner" id="state-banner">MENU</div>
 
-  <div class="scoreboard" id="scoreboard">
-    <div class="team a">
-      <div class="team-info">
-        <div class="team-name">TEAM 0</div>
-        <div class="team-score" id="score-a">0</div>
-      </div>
+  <!-- MAP / SERIES INFO (Top Left) -->
+  <div class="map-info-panel" id="map-info">
+    <span class="map-curr">CURRENT: <span id="t-map">—</span></span>
+    <span class="map-decider">DECIDER: FRACTURE</span>
+  </div>
+
+  <!-- SPONSOR (Top Right) -->
+  <div class="sponsor-panel">
+    <span class="sponsor-text">SPONSOR</span>
+  </div>
+
+  <!-- TOP HUD BAR -->
+  <div class="top-bar" id="topbar">
+    <!-- Left Wing -->
+    <div class="wing wing-left">
+      <svg viewBox="0 0 80 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path
+          d="M78 30C70 12 55 4 38 2C28 1 18 4 10 10C6 14 3 18 1 24C3 20 8 14 14 10C20 7 28 5 36 6C50 8 62 16 70 28C72 31 74 34 76 38C77 35 78 32 78 30Z"
+          fill="#1A1A1A" stroke="#C9A84C" stroke-width="0.5" />
+        <path
+          d="M72 34C64 18 50 10 34 8C26 7 18 9 12 14C8 17 5 22 4 28C6 23 10 18 16 14C22 11 30 10 38 12C50 15 60 24 66 34C68 37 69 40 70 43C71 40 72 37 72 34Z"
+          fill="#2A2420" stroke="#C9A84C" stroke-width="0.3" />
+        <path
+          d="M66 38C60 24 48 16 34 14C28 13 22 15 18 18C14 22 12 26 11 32C13 27 17 22 22 19C28 16 34 16 40 18C50 22 58 30 62 38C63 40 64 42 64 44C65 42 66 40 66 38Z"
+          fill="#C9A84C" fill-opacity="0.4" />
+        <path d="M74 32L78 30M68 36L72 34M62 40L66 38" stroke="#C9A84C" stroke-width="0.3" stroke-opacity="0.5" />
+      </svg>
     </div>
-    <div class="divider">
-      <div class="round-label">ROUND</div>
-      <div class="round-number" id="round">0</div>
-      <div class="map-name" id="map">-</div>
-      <div class="round-phase" id="phase">-</div>
-    </div>
-    <div class="team b">
-      <div class="team-info">
-        <div class="team-name">TEAM 1</div>
-        <div class="team-score" id="score-b">0</div>
+
+    <!-- Team A -->
+    <div class="top-team top-team-a">
+      <div class="top-team-info">
+        <span class="top-team-name" id="t-name-a">TEAM A</span>
       </div>
+      <span class="top-team-score" id="t-score-a">0</span>
+    </div>
+
+    <!-- Transparent gap for native Valorant timer -->
+    <div class="timer-gap"></div>
+
+    <!-- Team B -->
+    <div class="top-team top-team-b">
+      <div class="top-team-info">
+        <span class="top-team-name" id="t-name-b">TEAM B</span>
+      </div>
+      <span class="top-team-score" id="t-score-b">0</span>
+    </div>
+
+    <!-- Right Wing -->
+    <div class="wing wing-right">
+      <svg viewBox="0 0 80 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path
+          d="M78 30C70 12 55 4 38 2C28 1 18 4 10 10C6 14 3 18 1 24C3 20 8 14 14 10C20 7 28 5 36 6C50 8 62 16 70 28C72 31 74 34 76 38C77 35 78 32 78 30Z"
+          fill="#1A1A1A" stroke="#C9A84C" stroke-width="0.5" />
+        <path
+          d="M72 34C64 18 50 10 34 8C26 7 18 9 12 14C8 17 5 22 4 28C6 23 10 18 16 14C22 11 30 10 38 12C50 15 60 24 66 34C68 37 69 40 70 43C71 40 72 37 72 34Z"
+          fill="#2A2420" stroke="#C9A84C" stroke-width="0.3" />
+        <path
+          d="M66 38C60 24 48 16 34 14C28 13 22 15 18 18C14 22 12 26 11 32C13 27 17 22 22 19C28 16 34 16 40 18C50 22 58 30 62 38C63 40 64 42 64 44C65 42 66 40 66 38Z"
+          fill="#C9A84C" fill-opacity="0.4" />
+        <path d="M74 32L78 30M68 36L72 34M62 40L66 38" stroke="#C9A84C" stroke-width="0.3" stroke-opacity="0.5" />
+      </svg>
     </div>
   </div>
 
-  <div class="players team-0" id="players-0"></div>
-  <div class="players team-1" id="players-1"></div>
+  <!-- PHASE BANNER -->
+  <div class="phase-banner" id="phase-banner">
+    <span id="phase-text"></span>
+    <span style="color:var(--text-secondary);font-size:0.55rem;font-weight:700;">ROUND <span id="t-round"
+        style="color:var(--white);font-size:0.65rem;">0</span></span>
+  </div>
 
+  <!-- PLAYER COLUMNS (bottom-anchored, stack upward) -->
+  <div class="players-col left" id="players-left"></div>
+  <div class="players-col right" id="players-right"></div>
+
+  <!-- DEBUG (centered bottom) -->
   <div class="debug" id="debug">
-    <div class="debug-row"><span class="debug-label">Status:</span> <span class="debug-value" id="d-status">Connecting...</span></div>
-    <div class="debug-row"><span class="debug-label">State:</span> <span class="debug-value" id="d-state">-</span></div>
-    <div class="debug-row"><span class="debug-label">Map:</span> <span class="debug-value" id="d-map">-</span></div>
-    <div class="debug-row"><span class="debug-label">Round:</span> <span class="debug-value" id="d-round">-</span></div>
-    <div class="debug-row"><span class="debug-label">Players:</span> <span class="debug-value" id="d-players">0</span></div>
+    <span><span class="dl">WS:</span> <span class="dv" id="d-status">Connecting...</span></span>
+    <span><span class="dl">State:</span> <span class="dv" id="d-state">—</span></span>
+    <span><span class="dl">Map:</span> <span class="dv" id="d-map">—</span></span>
+    <span><span class="dl">Rnd:</span> <span class="dv" id="d-round">—</span></span>
+    <span><span class="dl">P:</span> <span class="dv" id="d-players">0</span></span>
   </div>
 
   <script>
-    const CONFIG = {
-      wsUrl: 'ws://localhost:8765',
-      showDebug: true
+    // ========================================
+    // CONFIG
+    // ========================================
+    const CONFIG = { wsUrl: 'ws://localhost:8765', showDebug: true };
+
+    // ========================================
+    // AGENT IMAGE MAP
+    // Maps agent name → image path in assets/agents/
+    // Place your character icon PNGs here.
+    // Example: assets/agents/jett.png
+    // ========================================
+    const AGENT_IMAGES = {
+      jett: 'assets/agents/jett.png',
+      phoenix: 'assets/agents/phoenix.png',
+      sage: 'assets/agents/sage.png',
+      sova: 'assets/agents/sova.png',
+      brimstone: 'assets/agents/brimstone.png',
+      viper: 'assets/agents/viper.png',
+      omen: 'assets/agents/omen.png',
+      killjoy: 'assets/agents/killjoy.png',
+      cypher: 'assets/agents/cypher.png',
+      reyna: 'assets/agents/reyna.png',
+      raze: 'assets/agents/raze.png',
+      breach: 'assets/agents/breach.png',
+      skye: 'assets/agents/skye.png',
+      yoru: 'assets/agents/yoru.png',
+      astra: 'assets/agents/astra.png',
+      kayo: 'assets/agents/kayo.png',
+      chamber: 'assets/agents/chamber.png',
+      neon: 'assets/agents/neon.png',
+      fade: 'assets/agents/fade.png',
+      harbor: 'assets/agents/harbor.png',
+      gekko: 'assets/agents/gekko.png',
+      deadlock: 'assets/agents/deadlock.png',
+      iso: 'assets/agents/iso.png',
+      clove: 'assets/agents/clove.png',
+      vyse: 'assets/agents/vyse.png',
+      tejo: 'assets/agents/tejo.png',
+      waylay: 'assets/agents/waylay.png',
     };
 
-    let gameData = null;
+    // Fallback SVG for agents without an image file
+    const AGENT_FALLBACK_SVG = `<svg class="agent-fallback" viewBox="0 0 36 36" fill="none"><circle cx="18" cy="18" r="14" stroke="#C9A84C" stroke-width="1.5" stroke-opacity="0.5"/><text x="18" y="22" text-anchor="middle" fill="#C9A84C" font-size="11" font-weight="bold" opacity="0.6">?</text></svg>`;
 
+    function agentHTML(name) {
+      if (!name) return AGENT_FALLBACK_SVG;
+      const key = name.toLowerCase().replace(/[^a-z]/g, '').replace('kayo', 'kayo');
+      const src = AGENT_IMAGES[key];
+      if (src) return `<img src="${src}" alt="${name}" onerror="this.outerHTML=AGENT_FALLBACK_SVG_ESCAPED">`;
+      return AGENT_FALLBACK_SVG;
+    }
+
+    // Escaped version for onerror inline handler
+    const AGENT_FALLBACK_SVG_ESCAPED = AGENT_FALLBACK_SVG.replace(/"/g, "'");
+
+    // ========================================
+    // WEAPON IMAGE MAP
+    // Maps weapon name → image path in assets/weapons/
+    // Place your weapon PNGs here.
+    // Example: assets/weapons/vandal.png
+    // ========================================
+    const WEAPON_IMAGES = {
+      vandal: 'assets/weapons/vandal.png',
+      phantom: 'assets/weapons/phantom.png',
+      operator: 'assets/weapons/operator.png',
+      sheriff: 'assets/weapons/sheriff.png',
+      ghost: 'assets/weapons/ghost.png',
+      classic: 'assets/weapons/classic.png',
+      spectre: 'assets/weapons/spectre.png',
+      marshal: 'assets/weapons/marshal.png',
+      guardian: 'assets/weapons/guardian.png',
+      bulldog: 'assets/weapons/bulldog.png',
+      judge: 'assets/weapons/judge.png',
+      bucky: 'assets/weapons/bucky.png',
+      stinger: 'assets/weapons/stinger.png',
+      frenzy: 'assets/weapons/frenzy.png',
+      shorty: 'assets/weapons/shorty.png',
+      odin: 'assets/weapons/odin.png',
+      ares: 'assets/weapons/ares.png',
+      outlaw: 'assets/weapons/outlaw.png',
+      knife: 'assets/weapons/knife.png',
+      melee: 'assets/weapons/knife.png',
+    };
+
+    function weaponHTML(name) {
+      if (!name || name === '-') return `<span class="wep-fallback">—</span>`;
+      const key = name.toLowerCase().replace(/[^a-z]/g, '');
+      const src = WEAPON_IMAGES[key];
+      if (src) return `<img src="${src}" alt="${name}" onerror="this.outerHTML='<span class=\\'wep-fallback\\'>${name}</span>'">`;
+      return `<span class="wep-fallback">${name}</span>`;
+    }
+
+    // ========================================
+    // DOM
+    // ========================================
     const el = {
       stateBanner: document.getElementById('state-banner'),
-      scoreboard: document.getElementById('scoreboard'),
-      scoreA: document.getElementById('score-a'),
-      scoreB: document.getElementById('score-b'),
-      round: document.getElementById('round'),
-      map: document.getElementById('map'),
-      phase: document.getElementById('phase'),
-      players0: document.getElementById('players-0'),
-      players1: document.getElementById('players-1'),
+      topbar: document.getElementById('topbar'),
+      scoreA: document.getElementById('t-score-a'),
+      scoreB: document.getElementById('t-score-b'),
+      nameA: document.getElementById('t-name-a'),
+      nameB: document.getElementById('t-name-b'),
+      round: document.getElementById('t-round'),
+      map: document.getElementById('t-map'),
+      phase: document.getElementById('phase-banner'),
+      phaseText: document.getElementById('phase-text'),
+      pLeft: document.getElementById('players-left'),
+      pRight: document.getElementById('players-right'),
       debug: document.getElementById('debug'),
       dStatus: document.getElementById('d-status'),
       dState: document.getElementById('d-state'),
       dMap: document.getElementById('d-map'),
       dRound: document.getElementById('d-round'),
-      dPlayers: document.getElementById('d-players')
+      dPlayers: document.getElementById('d-players'),
     };
 
     if (!CONFIG.showDebug) el.debug.style.display = 'none';
 
-    let ws = null;
+    // ========================================
+    // WEBSOCKET
+    // ========================================
+    let ws = null, gameData = null;
 
     function connect() {
       el.dStatus.textContent = 'Connecting...';
       ws = new WebSocket(CONFIG.wsUrl);
-
-      ws.onopen = () => {
-        el.dStatus.textContent = 'Connected';
-      };
-
+      ws.onopen = () => { el.dStatus.textContent = 'Connected'; };
       ws.onmessage = (e) => {
         try {
           const msg = JSON.parse(e.data);
-          if (msg.type === 'game-data') {
-            gameData = msg.data;
-            updateOverlay();
-          }
-        } catch (err) {
-          console.error('Parse error:', err);
-        }
+          if (msg.type === 'game-data') { gameData = msg.data; render(); }
+        } catch (err) { console.error(err); }
       };
-
-      ws.onclose = () => {
-        el.dStatus.textContent = 'Disconnected';
-        setTimeout(connect, 3000);
-      };
+      ws.onclose = () => { el.dStatus.textContent = 'Disconnected'; setTimeout(connect, 3000); };
+      ws.onerror = () => { el.dStatus.textContent = 'Error'; };
     }
 
-    function updateOverlay() {
+    // ========================================
+    // RENDER
+    // ========================================
+    function render() {
       if (!gameData) return;
-
       const state = gameData.gameState || 'unknown';
 
-      // Update debug
+      // Debug
       el.dState.textContent = state;
-      el.dMap.textContent = gameData.map || '-';
-      el.dRound.textContent = `${gameData.roundNumber} (${gameData.roundPhase || '-'})`;
+      el.dMap.textContent = gameData.map || '—';
+      el.dRound.textContent = gameData.roundNumber || 0;
       el.dPlayers.textContent = gameData.players?.length || 0;
 
       // State banner
       el.stateBanner.className = 'state-banner visible ' + state;
-      el.stateBanner.textContent = formatState(state);
+      el.stateBanner.textContent = fmtState(state);
 
-      // Only show scoreboard in game
       if (state === 'in_game') {
-        el.scoreboard.classList.add('visible');
-        
-        el.scoreA.textContent = gameData.score?.team0 || 0;
-        el.scoreB.textContent = gameData.score?.team1 || 0;
+        el.topbar.classList.add('visible');
+
+        // Scores
+        el.scoreA.textContent = gameData.score?.team0 ?? 0;
+        el.scoreB.textContent = gameData.score?.team1 ?? 0;
         el.round.textContent = gameData.roundNumber || 0;
-        el.map.textContent = gameData.map || '-';
-        el.phase.textContent = gameData.roundPhase || '';
+        el.map.textContent = gameData.map || '—';
 
-        updatePlayers();
+        // Phase
+        const ph = gameData.roundPhase || '';
+        if (ph) { el.phaseText.textContent = fmtPhase(ph); el.phase.classList.add('visible'); }
+        else { el.phase.classList.remove('visible'); }
+
+        renderPlayers();
       } else {
-        el.scoreboard.classList.remove('visible');
-        el.players0.innerHTML = '';
-        el.players1.innerHTML = '';
+        el.topbar.classList.remove('visible');
+        el.phase.classList.remove('visible');
+        el.pLeft.innerHTML = '';
+        el.pRight.innerHTML = '';
       }
     }
 
-    function formatState(state) {
-      switch (state) {
-        case 'menu': return 'Main Menu';
-        case 'agent_select': return 'Agent Select';
-        case 'loading': return 'Loading...';
-        case 'in_game': return '';
-        case 'closed': return 'Game Closed';
-        default: return state;
-      }
+    function fmtState(s) {
+      const m = { menu: 'Main Menu', agent_select: 'Agent Select', loading: 'Loading…', in_game: '', closed: 'Game Closed' };
+      return m[s] ?? s.replace(/_/g, ' ').toUpperCase();
+    }
+    function fmtPhase(p) {
+      const m = { buy: '💰 BUY PHASE', shopping: '💰 BUY PHASE', combat: '⚔ COMBAT', playing: '⚔ COMBAT', end: 'ROUND END', over: 'ROUND END', freeze: 'FREEZE TIME' };
+      return m[p.toLowerCase()] ?? p.toUpperCase();
     }
 
-    function updatePlayers() {
+    // ========================================
+    // PLAYER CARDS
+    // ========================================
+    function renderPlayers() {
       if (!gameData.players) return;
+      const t0 = gameData.players.filter(p => p.team === 0);
+      const t1 = gameData.players.filter(p => p.team === 1);
+      const obs = gameData.observing || '';
 
-      const team0 = gameData.players.filter(p => p.team === 0);
-      const team1 = gameData.players.filter(p => p.team === 1);
-      const observing = gameData.observing || '';
+      el.pLeft.innerHTML = t0.map(p => card(p, obs, 'left')).join('');
+      el.pRight.innerHTML = t1.map(p => card(p, obs, 'right')).join('');
 
-      el.players0.innerHTML = team0.map(p => playerHTML(p, observing)).join('');
-      el.players1.innerHTML = team1.map(p => playerHTML(p, observing)).join('');
-
-      document.querySelectorAll('.player').forEach((p, i) => {
-        setTimeout(() => p.classList.add('visible'), i * 30);
-      });
+      document.querySelectorAll('.p-card').forEach((c, i) => setTimeout(() => c.classList.add('show'), i * 40));
     }
 
-    function playerHTML(p, observing) {
+    function card(p, obs, side) {
       const dead = !p.isAlive;
+      const hp = dead ? 0 : (p.health ?? 100);
+      const pct = Math.min(100, (hp / 150) * 100);
+      const hClass = pct >= 67 ? 'high' : pct >= 34 ? 'mid' : 'low';
       const ultReady = p.ultPoints >= p.ultMax && p.ultMax > 0;
-      const isObserving = p.name && observing && p.name.includes(observing.split('#')[0]);
+      const isSpec = p.name && obs && p.name.includes(obs.split('#')[0]);
 
-      return `
-        <div class="player ${dead ? 'dead' : ''} ${isObserving ? 'observing' : ''}">
-          <div class="player-agent">${p.agent || '?'}</div>
-          <div class="player-info">
-            <div class="player-name">
-              ${p.name || 'Unknown'}
-              ${p.hasSpike ? '<span class="spike-indicator">💣</span>' : ''}
-            </div>
-            <div class="player-stats">${p.kills}/${p.deaths}/${p.assists} • $${p.money}</div>
-            <div class="player-weapon">${p.weapon || '-'}</div>
-          </div>
-          <div class="player-ult ${ultReady ? 'ready' : ''}">${ultReady ? '✓' : p.ultPoints + '/' + p.ultMax}</div>
-        </div>
-      `;
+      const ultBadge = ultReady
+        ? '<span class="ult-badge ready">✦ ULT</span>'
+        : `<span class="ult-badge">${p.ultPoints ?? 0}/${p.ultMax ?? 0}</span>`;
+
+      const specTag = isSpec ? '<div class="spec-tag">SPECTATING</div>' : '';
+
+      return `<div class="p-card ${dead ? 'dead' : ''} ${isSpec ? 'spec' : ''}">
+    ${specTag}
+    <div class="p-agent">${agentHTML(p.agent)}</div>
+    <div class="p-info">
+      <div class="p-row">
+        <span class="p-name">${p.name || 'Unknown'}${p.hasSpike ? '<span class="spike">💣</span>' : ''}</span>
+        <span class="p-hp">${dead ? '☠' : hp}</span>
+      </div>
+      <div class="p-row">
+        <span class="p-kda"><b>${p.kills ?? 0}</b>/${p.deaths ?? 0}/${p.assists ?? 0}</span>
+        <span class="p-money">$${p.money ?? 0}</span>
+      </div>
+    </div>
+    <div class="p-weapon">${weaponHTML(p.weapon)}</div>
+    ${ultBadge}
+    <div class="p-health"><div class="p-health-fill ${hClass}" style="width:${pct}%"></div></div>
+  </div>`;
     }
 
+    // ========================================
+    // BOOT
+    // ========================================
     connect();
   </script>
 </body>
+
 </html>

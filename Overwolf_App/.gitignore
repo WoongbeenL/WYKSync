@@ -138,3 +138,11 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+# AntiGravity & Agent Files
+.agents/
+.agent/
+_agents/
+_agent/
+.gemini/
+antigravity/
