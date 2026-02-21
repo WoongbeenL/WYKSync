@@ -13,6 +13,7 @@ function App() {
   
 const [user, setUser] = useState(null);
   const [path, setPath] = useState(window.location.pathname);
+  const resolvedPath = path === "/login" && user ? "/tournaments" : path;
 
   useEffect(() => {
     const handleRouteChange = () => setPath(window.location.pathname);
@@ -43,6 +44,13 @@ const [user, setUser] = useState(null);
     };
   }, []);
 
+  useEffect(() => {
+    if (path === "/login" && user) {
+      window.history.replaceState({}, "", "/tournaments");
+      setPath("/tournaments");
+    }
+  }, [path, user]);
+
   const handleLogout = async () => {
     if (!supabase) {
       setUser(null);
@@ -54,7 +62,7 @@ const [user, setUser] = useState(null);
   };
 
   let page;
-  switch (path) {
+  switch (resolvedPath) {
     case "/tournaments":
       page = <Tournaments user={user} />;
       break;
@@ -91,7 +99,7 @@ const [user, setUser] = useState(null);
         <a href="/login">Login</a>
       )}
     </div>
-      <div className={path === "/" || path === "/home" ? "" : "container"}>
+      <div className={resolvedPath === "/" || resolvedPath === "/home" ? "" : "container"}>
         {page}
       </div>
       <Footer/>
