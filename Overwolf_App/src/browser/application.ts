@@ -1,6 +1,7 @@
 import { GepService } from './services/gep.service';
 import { WebSocketService } from './services/websocket.service';
 import { MainWindowController } from './controllers/main-window.controller';
+import { ipcMain } from 'electron';
 
 const VALORANT_GAME_ID = 21640;
 
@@ -17,6 +18,16 @@ export class Application {
     this.mainWindowController.createAndShow();
     this.webSocketService.start();
     this.gepService.registerGames([VALORANT_GAME_ID]);
+
+    // IPC: renderer sends team config → broadcast to overlay via WS
+    ipcMain.handle('send-team-config', (_event, config) => {
+      this.webSocketService.broadcast({
+        type: 'team-config',
+        timestamp: Date.now(),
+        config
+      });
+      return true;
+    });
   }
 
   public shutdown(): void {

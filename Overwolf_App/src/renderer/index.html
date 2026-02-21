@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,7 +14,7 @@
 
     body {
       font-family: 'Segoe UI', Tahoma, sans-serif;
-      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      background: linear-gradient(135deg, #0a0f1a 0%, #111827 100%);
       color: #fff;
       padding: 20px;
       min-height: 100vh;
@@ -21,132 +22,277 @@
 
     .header {
       text-align: center;
-      margin-bottom: 20px;
+      margin-bottom: 18px;
     }
 
     .logo {
       font-size: 1.8rem;
       font-weight: bold;
-      color: #e94560;
+      color: #C9A84C;
+      letter-spacing: 2px;
     }
 
     .subtitle {
       color: #888;
-      font-size: 0.85rem;
+      font-size: 0.75rem;
       margin-top: 4px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
     }
 
-    .status-card {
-      background: rgba(0, 0, 0, 0.3);
+    .card {
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.06);
       border-radius: 8px;
-      padding: 16px 20px;
-      margin-bottom: 16px;
+      padding: 12px 14px;
+      margin-bottom: 10px;
+    }
+
+    .card-gold {
+      border-color: rgba(201, 168, 76, 0.3);
+    }
+
+    .card-title {
+      font-size: 0.6rem;
+      font-weight: 700;
+      color: #C9A84C;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid rgba(201, 168, 76, 0.2);
     }
 
     .status-label {
-      font-size: 0.7rem;
-      color: #888;
+      font-size: 0.6rem;
+      color: #666;
       text-transform: uppercase;
       letter-spacing: 1px;
-      margin-bottom: 6px;
+      margin-bottom: 4px;
     }
 
     .status-value {
-      font-size: 1.1rem;
+      font-size: 0.95rem;
       font-weight: 600;
     }
 
-    .status-value.connected { color: #4ade80; }
-    .status-value.waiting { color: #fbbf24; }
-    .status-value.error { color: #ef4444; }
+    .status-value.connected {
+      color: #4ade80;
+    }
+
+    .status-value.waiting {
+      color: #fbbf24;
+    }
+
+    .status-value.error {
+      color: #ef4444;
+    }
 
     .websocket-url {
-      background: rgba(233, 69, 96, 0.15);
-      border: 1px solid rgba(233, 69, 96, 0.3);
+      background: rgba(201, 168, 76, 0.08);
+      border: 1px solid rgba(201, 168, 76, 0.25);
       border-radius: 6px;
-      padding: 10px 14px;
+      padding: 8px 12px;
       font-family: monospace;
-      font-size: 0.95rem;
-      color: #e94560;
+      font-size: 0.8rem;
+      color: #C9A84C;
       text-align: center;
     }
 
-    .section-title {
-      font-size: 0.75rem;
-      color: #888;
+    /* Settings form */
+    .teams-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .team-block-title {
+      font-size: 0.55rem;
+      font-weight: 700;
+      color: #C9A84C;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-bottom: 8px;
+    }
+
+    .field {
+      margin-bottom: 7px;
+    }
+
+    .field label {
+      display: block;
+      font-size: 0.5rem;
+      color: #666;
       text-transform: uppercase;
       letter-spacing: 1px;
-      margin: 16px 0 8px 0;
+      margin-bottom: 3px;
+    }
+
+    .field input {
+      width: 100%;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+      color: #fff;
+      font-size: 0.72rem;
+      padding: 5px 8px;
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      outline: none;
+    }
+
+    .field input:focus {
+      border-color: #C9A84C;
+    }
+
+    .field input::placeholder {
+      color: #444;
+    }
+
+    .apply-btn {
+      width: 100%;
+      margin-top: 6px;
+      background: #C9A84C;
+      color: #000;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 9px 12px;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .apply-btn:hover {
+      background: #E2CA7A;
+    }
+
+    .reset-btn {
+      width: 100%;
+      margin-top: 6px;
+      background: transparent;
+      color: #555;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 6px;
+      font-size: 0.65rem;
+      padding: 6px;
+      cursor: pointer;
+    }
+
+    .reset-btn:hover {
+      color: #aaa;
+    }
+
+    .confirm-msg {
+      font-size: 0.6rem;
+      color: #4ade80;
+      text-align: center;
+      margin-top: 8px;
+      min-height: 16px;
+    }
+
+    .section-title {
+      font-size: 0.6rem;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin: 10px 0 6px;
     }
 
     .log-area {
       background: rgba(0, 0, 0, 0.4);
       border-radius: 6px;
-      padding: 10px;
-      height: 150px;
+      padding: 8px;
+      height: 90px;
       overflow-y: auto;
       font-family: monospace;
-      font-size: 0.75rem;
+      font-size: 0.65rem;
       color: #aaa;
     }
 
     .log-entry {
-      margin-bottom: 4px;
+      margin-bottom: 3px;
       word-break: break-all;
     }
 
     .log-entry .time {
-      color: #666;
-      margin-right: 8px;
+      color: #555;
+      margin-right: 6px;
     }
 
     .buttons {
       display: flex;
-      gap: 10px;
-      margin-top: 16px;
+      gap: 8px;
+      margin-top: 8px;
     }
 
     .btn {
       flex: 1;
-      background: rgba(255, 255, 255, 0.1);
-      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.1);
       color: #fff;
-      padding: 8px 12px;
+      padding: 7px 10px;
       border-radius: 6px;
       cursor: pointer;
-      font-size: 0.8rem;
-      transition: background 0.2s;
+      font-size: 0.72rem;
     }
 
     .btn:hover {
-      background: rgba(255, 255, 255, 0.2);
-    }
-
-    .hint {
-      margin-top: 16px;
-      text-align: center;
-      font-size: 0.7rem;
-      color: #666;
-      line-height: 1.5;
+      background: rgba(255, 255, 255, 0.12);
     }
   </style>
 </head>
+
 <body>
   <div class="header">
     <div class="logo">WYKSync</div>
-    <div class="subtitle">Valorant Game Data Provider</div>
+    <div class="subtitle">Valorant Spectator HUD</div>
   </div>
 
-  <div class="status-card">
+  <!-- Status -->
+  <div class="card">
     <div class="status-label">Status</div>
     <div class="status-value waiting" id="status">Initializing...</div>
   </div>
 
-  <div class="status-card">
-    <div class="status-label">Overlay WebSocket URL</div>
+  <div class="card">
+    <div class="status-label">Overlay WebSocket</div>
     <div class="websocket-url">ws://localhost:8765</div>
   </div>
 
+  <!-- Match Setup -->
+  <div class="card card-gold">
+    <div class="card-title">⚙ Match Setup — Team Logos &amp; Names</div>
+    <div class="teams-grid">
+      <div class="team-block">
+        <div class="team-block-title">Team A (Left)</div>
+        <div class="field">
+          <label>Team Name</label>
+          <input type="text" id="name-a" placeholder="e.g. CONDORS">
+        </div>
+        <div class="field">
+          <label>Logo URL / Path</label>
+          <input type="text" id="logo-a" placeholder="assets/logos/condors.png">
+        </div>
+      </div>
+      <div class="team-block">
+        <div class="team-block-title">Team B (Right)</div>
+        <div class="field">
+          <label>Team Name</label>
+          <input type="text" id="name-b" placeholder="e.g. RIVALS">
+        </div>
+        <div class="field">
+          <label>Logo URL / Path</label>
+          <input type="text" id="logo-b" placeholder="assets/logos/rivals.png">
+        </div>
+      </div>
+    </div>
+    <button class="apply-btn" id="btn-apply">▶ Apply to Overlay</button>
+    <button class="reset-btn" id="btn-reset">Reset</button>
+    <div class="confirm-msg" id="confirm-msg"></div>
+  </div>
+
+  <!-- Debug log -->
   <div class="section-title">Debug Log</div>
   <div class="log-area" id="log"></div>
 
@@ -156,11 +302,7 @@
     <button class="btn" id="btn-clear">Clear Log</button>
   </div>
 
-  <div class="hint">
-    Connect your OBS browser source to the WebSocket URL above.<br>
-    Team names, logos, and tournament info come from your website API.
-  </div>
-
   <script src="renderer.js"></script>
 </body>
+
 </html>

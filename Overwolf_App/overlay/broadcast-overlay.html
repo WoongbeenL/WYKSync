@@ -194,7 +194,6 @@
 
     .top-team-b {
       border-radius: 0 0 4px 0;
-      flex-direction: row-reverse;
       border-right: 2px solid var(--gold);
     }
 
@@ -220,6 +219,15 @@
       color: var(--text-muted);
       text-transform: uppercase;
       letter-spacing: 1px;
+    }
+
+    .top-team-map {
+      font-size: 0.52rem;
+      font-weight: 700;
+      color: var(--gold);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      opacity: 0.85;
     }
 
     .top-team-score {
@@ -299,7 +307,7 @@
      ============================ */
     .phase-banner {
       position: fixed;
-      top: 50px;
+      top: 85px;
       left: 50%;
       transform: translateX(-50%);
       font-size: 0.65rem;
@@ -390,8 +398,8 @@
 
     /* -- Agent Icon Area -- */
     .p-agent {
-      width: 50px;
-      min-width: 50px;
+      width: 62px;
+      min-width: 62px;
       height: 100%;
       background: rgba(20, 20, 35, 0.9);
       display: flex;
@@ -410,15 +418,15 @@
     }
 
     .p-agent img {
-      width: 40px;
-      height: 40px;
+      width: 52px;
+      height: 52px;
       object-fit: contain;
       border-radius: 4px;
     }
 
     .p-agent .agent-fallback {
-      width: 36px;
-      height: 36px;
+      width: 46px;
+      height: 46px;
     }
 
     /* Dead X overlay */
@@ -460,12 +468,12 @@
     }
 
     .p-name {
-      font-size: 0.75rem;
+      font-size: 1rem;
       font-weight: 700;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      max-width: 110px;
+      max-width: 130px;
       color: var(--white);
     }
 
@@ -475,15 +483,15 @@
     }
 
     .p-hp {
-      font-size: 0.7rem;
+      font-size: 0.95rem;
       font-weight: 800;
       color: var(--white);
-      min-width: 26px;
+      min-width: 32px;
       text-align: center;
     }
 
     .p-kda {
-      font-size: 0.6rem;
+      font-size: 0.78rem;
       color: var(--text-secondary);
     }
 
@@ -492,20 +500,20 @@
     }
 
     .p-money {
-      font-size: 0.6rem;
+      font-size: 0.72rem;
       font-family: monospace;
       color: var(--gold);
     }
 
     /* -- Weapon Image -- */
     .p-weapon {
-      width: 52px;
-      min-width: 52px;
+      width: 64px;
+      min-width: 64px;
       height: 100%;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 4px;
+      padding: 6px;
       background: rgba(15, 15, 25, 0.6);
     }
 
@@ -518,14 +526,14 @@
     }
 
     .p-weapon img {
-      max-width: 44px;
-      max-height: 28px;
+      max-width: 56px;
+      max-height: 34px;
       object-fit: contain;
       filter: brightness(0.9);
     }
 
     .p-weapon .wep-fallback {
-      font-size: 0.45rem;
+      font-size: 0.5rem;
       color: var(--text-muted);
       text-transform: uppercase;
       text-align: center;
@@ -582,30 +590,41 @@
       animation: pulse-glow 1s infinite;
     }
 
-    /* -- Ult badge -- */
+    /* -- Ult badge (circle) -- */
     .ult-badge {
       position: absolute;
-      top: 2px;
-      font-size: 0.4rem;
-      font-weight: 700;
-      padding: 1px 4px;
-      border-radius: 2px;
-      background: rgba(0, 0, 0, 0.7);
-      color: var(--text-muted);
+      top: 4px;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.55rem;
+      font-weight: 800;
+      line-height: 1.1;
+      background: rgba(0, 0, 0, 0.75);
+      border: 1.5px solid rgba(255, 255, 255, 0.15);
+      color: var(--text-secondary);
+      z-index: 5;
     }
 
     .left .ult-badge {
-      right: 56px;
+      right: 68px;
     }
 
     .right .ult-badge {
-      left: 56px;
+      left: 68px;
     }
 
     .ult-badge.ready {
       background: var(--gold);
+      border-color: var(--gold-light);
       color: #000;
-      animation: pulse-glow 1.5s infinite;
+      box-shadow: 0 0 12px rgba(201, 168, 76, 0.8), 0 0 24px rgba(201, 168, 76, 0.4);
+      animation: pulse-glow 1.2s infinite;
+      font-size: 0.7rem;
     }
 
     /* -- Spectating tag -- */
@@ -632,6 +651,34 @@
 
     .right .spec-tag {
       right: -80px;
+    }
+
+    /* ============================
+     DEBUG
+     ============================ */
+    /* -- Team logo slot -- */
+    .team-logo-slot {
+      width: 42px;
+      height: 42px;
+      min-width: 42px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--border-gold);
+      border-radius: 4px;
+      background: rgba(0, 0, 0, 0.3);
+      overflow: hidden;
+    }
+
+    .team-logo-slot img {
+      width: 38px;
+      height: 38px;
+      object-fit: contain;
+    }
+
+    .logo-placeholder {
+      font-size: 1.3rem;
+      opacity: 0.4;
     }
 
     /* ============================
@@ -695,10 +742,15 @@
       </svg>
     </div>
 
-    <!-- Team A -->
+    <!-- Team A: [logo] [name+map] [score] — score closest to timer gap -->
     <div class="top-team top-team-a">
+      <div class="team-logo-slot" id="logo-a">
+        <img id="logo-img-a" src="" alt="" style="display:none;width:36px;height:36px;object-fit:contain;">
+        <span class="logo-placeholder" id="logo-ph-a">🏳</span>
+      </div>
       <div class="top-team-info">
         <span class="top-team-name" id="t-name-a">TEAM A</span>
+        <span class="top-team-map" id="t-map">—</span>
       </div>
       <span class="top-team-score" id="t-score-a">0</span>
     </div>
@@ -706,12 +758,16 @@
     <!-- Transparent gap for native Valorant timer -->
     <div class="timer-gap"></div>
 
-    <!-- Team B -->
+    <!-- Team B: [score] [name] [logo] — score closest to timer gap -->
     <div class="top-team top-team-b">
-      <div class="top-team-info">
+      <span class="top-team-score" id="t-score-b">0</span>
+      <div class="top-team-info" style="text-align:right">
         <span class="top-team-name" id="t-name-b">TEAM B</span>
       </div>
-      <span class="top-team-score" id="t-score-b">0</span>
+      <div class="team-logo-slot" id="logo-b">
+        <img id="logo-img-b" src="" alt="" style="display:none;width:36px;height:36px;object-fit:contain;">
+        <span class="logo-placeholder" id="logo-ph-b">🏳</span>
+      </div>
     </div>
 
     <!-- Right Wing -->
@@ -796,16 +852,14 @@
     // Fallback SVG for agents without an image file
     const AGENT_FALLBACK_SVG = `<svg class="agent-fallback" viewBox="0 0 36 36" fill="none"><circle cx="18" cy="18" r="14" stroke="#C9A84C" stroke-width="1.5" stroke-opacity="0.5"/><text x="18" y="22" text-anchor="middle" fill="#C9A84C" font-size="11" font-weight="bold" opacity="0.6">?</text></svg>`;
 
+    // Try multiple extensions: .png then .jpg then .webp
     function agentHTML(name) {
       if (!name) return AGENT_FALLBACK_SVG;
       const key = name.toLowerCase().replace(/[^a-z]/g, '').replace('kayo', 'kayo');
-      const src = AGENT_IMAGES[key];
-      if (src) return `<img src="${src}" alt="${name}" onerror="this.outerHTML=AGENT_FALLBACK_SVG_ESCAPED">`;
-      return AGENT_FALLBACK_SVG;
+      const base = 'assets/agents/' + key;
+      return `<img src="${base}.png" alt="${name}"
+        onerror="this.onerror=function(){this.onerror=function(){this.outerHTML='${AGENT_FALLBACK_SVG.replace(/'/g, "\\'").replace(/"/g, "'")}'};this.src='${base}.webp'};this.src='${base}.jpg'">`;
     }
-
-    // Escaped version for onerror inline handler
-    const AGENT_FALLBACK_SVG_ESCAPED = AGENT_FALLBACK_SVG.replace(/"/g, "'");
 
     // ========================================
     // WEAPON IMAGE MAP
@@ -813,35 +867,55 @@
     // Place your weapon PNGs here.
     // Example: assets/weapons/vandal.png
     // ========================================
+    // Official Valorant weapon names → file names (place PNGs in assets/weapons/ with these names)
     const WEAPON_IMAGES = {
-      vandal: 'assets/weapons/vandal.png',
-      phantom: 'assets/weapons/phantom.png',
-      operator: 'assets/weapons/operator.png',
-      sheriff: 'assets/weapons/sheriff.png',
-      ghost: 'assets/weapons/ghost.png',
-      classic: 'assets/weapons/classic.png',
-      spectre: 'assets/weapons/spectre.png',
-      marshal: 'assets/weapons/marshal.png',
-      guardian: 'assets/weapons/guardian.png',
-      bulldog: 'assets/weapons/bulldog.png',
-      judge: 'assets/weapons/judge.png',
-      bucky: 'assets/weapons/bucky.png',
-      stinger: 'assets/weapons/stinger.png',
-      frenzy: 'assets/weapons/frenzy.png',
-      shorty: 'assets/weapons/shorty.png',
-      odin: 'assets/weapons/odin.png',
-      ares: 'assets/weapons/ares.png',
-      outlaw: 'assets/weapons/outlaw.png',
-      knife: 'assets/weapons/knife.png',
-      melee: 'assets/weapons/knife.png',
+      // Sidearms
+      classic: 'assets/weapons/Classic.png',
+      shorty: 'assets/weapons/Shorty.png',
+      frenzy: 'assets/weapons/Frenzy.png',
+      ghost: 'assets/weapons/Ghost.png',
+      sheriff: 'assets/weapons/Sheriff.png',
+      // SMGs
+      stinger: 'assets/weapons/Stinger.png',
+      spectre: 'assets/weapons/Spectre.png',
+      // Shotguns
+      bucky: 'assets/weapons/Bucky.png',
+      judge: 'assets/weapons/Judge.png',
+      // Rifles
+      bulldog: 'assets/weapons/Bulldog.png',
+      guardian: 'assets/weapons/Guardian.png',
+      phantom: 'assets/weapons/Phantom.png',
+      vandal: 'assets/weapons/Vandal.png',
+      outlaw: 'assets/weapons/Outlaw.png',
+      // Snipers
+      marshal: 'assets/weapons/Marshal.png',
+      operator: 'assets/weapons/Operator.png',
+      // LMGs
+      ares: 'assets/weapons/Ares.png',
+      odin: 'assets/weapons/Odin.png',
+      // Melee
+      knife: 'assets/weapons/Melee.png',
+      melee: 'assets/weapons/Melee.png',
     };
 
+    // Look up weapon image — try .png then .jpg then .webp
     function weaponHTML(name) {
       if (!name || name === '-') return `<span class="wep-fallback">—</span>`;
       const key = name.toLowerCase().replace(/[^a-z]/g, '');
-      const src = WEAPON_IMAGES[key];
-      if (src) return `<img src="${src}" alt="${name}" onerror="this.outerHTML='<span class=\\'wep-fallback\\'>${name}</span>'">`;
+      const entry = WEAPON_IMAGES[key];
+      if (entry) {
+        // entry is like 'assets/weapons/Vandal.png' — derive base and try extensions
+        const base = entry.replace(/\.[^.]+$/, '');
+        return `<img src="${base}.png" alt="${name}"
+          onerror="this.onerror=function(){this.onerror=function(){this.style.display='none';this.nextSibling&&(this.nextSibling.style.display='')};this.src='${base}.webp'};this.src='${base}.jpg'"><span class="wep-fallback" style="display:none">${name}</span>`;
+      }
       return `<span class="wep-fallback">${name}</span>`;
+    }
+
+    // Strip Riot ID tag (everything from # onward)
+    function cleanName(raw) {
+      if (!raw) return 'Unknown';
+      return raw.split('#')[0];
     }
 
     // ========================================
@@ -883,11 +957,48 @@
         try {
           const msg = JSON.parse(e.data);
           if (msg.type === 'game-data') { gameData = msg.data; render(); }
+          else if (msg.type === 'team-config') { applyTeamConfig(msg.config); }
         } catch (err) { console.error(err); }
       };
       ws.onclose = () => { el.dStatus.textContent = 'Disconnected'; setTimeout(connect, 3000); };
       ws.onerror = () => { el.dStatus.textContent = 'Error'; };
     }
+
+    // Apply team config pushed from the Overwolf app renderer
+    function applyTeamConfig(cfg) {
+      if (!cfg) return;
+      if (cfg.teamA) {
+        if (cfg.teamA.name !== undefined && cfg.teamA.name !== '') {
+          el.nameA.textContent = cfg.teamA.name;
+        }
+        if (cfg.teamA.logo !== undefined) {
+          setLogo('a', cfg.teamA.logo);
+        }
+      }
+      if (cfg.teamB) {
+        if (cfg.teamB.name !== undefined && cfg.teamB.name !== '') {
+          el.nameB.textContent = cfg.teamB.name;
+        }
+        if (cfg.teamB.logo !== undefined) {
+          setLogo('b', cfg.teamB.logo);
+        }
+      }
+    }
+
+    function setLogo(team, url) {
+      const img = document.getElementById('logo-img-' + team);
+      const ph = document.getElementById('logo-ph-' + team);
+      if (url) {
+        img.src = url;
+        img.style.display = 'block';
+        ph.style.display = 'none';
+        img.onerror = () => { img.style.display = 'none'; ph.style.display = ''; };
+      } else {
+        img.style.display = 'none';
+        ph.style.display = '';
+      }
+    }
+
 
     // ========================================
     // RENDER
@@ -913,7 +1024,7 @@
         el.scoreA.textContent = gameData.score?.team0 ?? 0;
         el.scoreB.textContent = gameData.score?.team1 ?? 0;
         el.round.textContent = gameData.roundNumber || 0;
-        el.map.textContent = gameData.map || '—';
+        el.map.textContent = fmtMap(gameData.map);
 
         // Phase
         const ph = gameData.roundPhase || '';
@@ -936,6 +1047,16 @@
     function fmtPhase(p) {
       const m = { buy: '💰 BUY PHASE', shopping: '💰 BUY PHASE', combat: '⚔ COMBAT', playing: '⚔ COMBAT', end: 'ROUND END', over: 'ROUND END', freeze: 'FREEZE TIME' };
       return m[p.toLowerCase()] ?? p.toUpperCase();
+    }
+    // Capitalise Valorant map names properly
+    function fmtMap(raw) {
+      if (!raw) return '—';
+      const names = {
+        ascent: 'Ascent', bind: 'Bind', breeze: 'Breeze', fracture: 'Fracture',
+        haven: 'Haven', icebox: 'Icebox', lotus: 'Lotus', pearl: 'Pearl',
+        split: 'Split', sunset: 'Sunset', abyss: 'Abyss', range: 'Range'
+      };
+      return names[raw.toLowerCase()] || raw.charAt(0).toUpperCase() + raw.slice(1);
     }
 
     // ========================================
@@ -972,7 +1093,7 @@
     <div class="p-agent">${agentHTML(p.agent)}</div>
     <div class="p-info">
       <div class="p-row">
-        <span class="p-name">${p.name || 'Unknown'}${p.hasSpike ? '<span class="spike">💣</span>' : ''}</span>
+        <span class="p-name">${cleanName(p.name)}${p.hasSpike ? '<span class="spike">💣</span>' : ''}</span>
         <span class="p-hp">${dead ? '☠' : hp}</span>
       </div>
       <div class="p-row">
@@ -981,7 +1102,6 @@
       </div>
     </div>
     <div class="p-weapon">${weaponHTML(p.weapon)}</div>
-    ${ultBadge}
     <div class="p-health"><div class="p-health-fill ${hClass}" style="width:${pct}%"></div></div>
   </div>`;
     }
