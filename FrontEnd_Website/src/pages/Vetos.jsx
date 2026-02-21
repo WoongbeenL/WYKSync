@@ -3,7 +3,21 @@ import "./vetos.css";
 import { useEffect, useMemo, useState } from "react";
 
 //TODO: Add a link for each team to do map vetos along with spectators or find a different way to differentiate it.
-const ALL_MAPS = ["Ascent", "Bind", "Haven", "Split", "Lotus", "Sunset", "Icebox"];
+const ALL_MAPS = [
+  "Corrode",
+  "Abyss",
+  "Sunset",
+  "Lotus",
+  "Pearl",
+  "Fracture",
+  "Breeze",
+  "Icebox",
+  "Ascent",
+  "Haven",
+  "Bind",
+  "Split",
+];
+const COMPETITIVE_MAPS = ["Ascent", "Bind", "Haven", "Split", "Lotus", "Sunset", "Icebox"];
 const SIDE_OPTIONS = ["Attack", "Defense"];
 
 const getInitialMapStates = () =>
@@ -18,11 +32,35 @@ const getInitialMapStates = () =>
     return acc;
   }, {});
 
-const getActionPlan = (format, firstTeam, secondTeam) => {
+const getActiveMapPool = (poolKey) => {
+  if (poolKey === "all") return ALL_MAPS;
+  if (poolKey === "comp") return COMPETITIVE_MAPS;
+  // TODO: Replace with selected custom map set when custom pool is implemented.
+  return COMPETITIVE_MAPS;
+};
+
+const getActionPlan = (format, firstTeam, secondTeam, mapCount, poolKey) => {
   if (!firstTeam || !secondTeam) return [];
+  const appendBansUntilDecider = (baseActions) => {
+    if (poolKey !== "all") return baseActions;
+
+    const removedByBase = baseActions.filter(
+      (action) => action.type === "ban" || action.type === "pick"
+    ).length;
+    const remainingAfterBase = mapCount - removedByBase;
+    const extraBansNeeded = Math.max(0, remainingAfterBase - 1);
+    const baseBanCount = baseActions.filter((action) => action.type === "ban").length;
+
+    const extraBans = Array.from({ length: extraBansNeeded }, (_, index) => {
+      const team = (baseBanCount + index) % 2 === 0 ? firstTeam : secondTeam;
+      return { type: "ban", team, label: `${team} bans one map.` };
+    });
+
+    return [...baseActions, ...extraBans];
+  };
 
   if (format === "bo3") {
-    return [
+    return appendBansUntilDecider([
       { type: "ban", team: firstTeam, label: `${firstTeam} bans one map.` },
       { type: "ban", team: secondTeam, label: `${secondTeam} bans one map.` },
       { type: "pick", team: firstTeam, mapNumber: 1, label: `${firstTeam} picks Map 1.` },
@@ -31,11 +69,11 @@ const getActionPlan = (format, firstTeam, secondTeam) => {
       { type: "side", team: firstTeam, mapNumber: 2, label: `${firstTeam} picks side for Map 2.` },
       { type: "ban", team: firstTeam, label: `${firstTeam} bans one map.` },
       { type: "ban", team: secondTeam, label: `${secondTeam} bans one map.` },
-    ];
+    ]);
   }
 
   if (format === "bo5") {
-    return [
+    return appendBansUntilDecider([
       { type: "ban", team: firstTeam, label: `${firstTeam} bans one map.` },
       { type: "ban", team: secondTeam, label: `${secondTeam} bans one map.` },
       { type: "pick", team: firstTeam, mapNumber: 1, label: `${firstTeam} picks Map 1.` },
@@ -46,11 +84,11 @@ const getActionPlan = (format, firstTeam, secondTeam) => {
       { type: "side", team: secondTeam, mapNumber: 3, label: `${secondTeam} picks side for Map 3.` },
       { type: "pick", team: secondTeam, mapNumber: 4, label: `${secondTeam} picks Map 4.` },
       { type: "side", team: firstTeam, mapNumber: 4, label: `${firstTeam} picks side for Map 4.` },
-    ];
+    ]);
   }
 
   // BO1 and custom default to alternating bans until one map remains.
-  return Array.from({ length: ALL_MAPS.length - 1 }, (_, index) => {
+  return Array.from({ length: Math.max(0, mapCount - 1) }, (_, index) => {
     const team = index % 2 === 0 ? firstTeam : secondTeam;
     return { type: "ban", team, label: `${team} bans one map.` };
   });
@@ -77,13 +115,17 @@ export default function Vetos() {
   const [pickedMaps, setPickedMaps] = useState([]);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [deciderMap, setDeciderMap] = useState(null);
+  const activeMaps = useMemo(
+    () => getActiveMapPool(selectedMapPool),
+    [selectedMapPool]
+  );
 
   const actionPlan = useMemo(
-    () => getActionPlan(selectedVeto, team1, team2),
-    [selectedVeto, team1, team2]
+    () => getActionPlan(selectedVeto, team1, team2, activeMaps.length, selectedMapPool),
+    [selectedVeto, team1, team2, activeMaps.length, selectedMapPool]
   );
   const currentAction = actionPlan[currentStepIndex] || null;
-  const availableMaps = ALL_MAPS.filter(
+  const availableMaps = activeMaps.filter(
     (map) => (mapStates[map]?.status || "available") === "available"
   );
   const vetoComplete = team1 && team2 && !currentAction;
@@ -138,12 +180,12 @@ export default function Vetos() {
       resetVetoProgress();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedVeto]);
+  }, [selectedVeto, selectedMapPool]);
 
   const finishIfNeeded = (nextMapStates, nextStepIndex) => {
     if (nextStepIndex < actionPlan.length) return;
 
-    const remainingMaps = ALL_MAPS.filter(
+    const remainingMaps = activeMaps.filter(
       (map) => (nextMapStates[map]?.status || "available") === "available"
     );
     if (remainingMaps.length === 1) {
@@ -357,7 +399,7 @@ export default function Vetos() {
           )}
           </>
           <>
-          {ALL_MAPS.map((map) => {
+          {activeMaps.map((map) => {
             const mapState = mapStates[map] || {
               status: "available",
               by: null,
@@ -443,11 +485,13 @@ export default function Vetos() {
           {actionHistory.length > 0 && (
             <div className="ban-history">
               <h4>Veto Log</h4>
-              {actionHistory.map((entry, index) => (
-                <p key={`${entry.team}-${entry.action}-${entry.detail}-${index}`}>
-                  {index + 1}. {entry.team} {entry.action} {entry.detail}
-                </p>
-              ))}
+              <div className="veto-log-chat">
+                {actionHistory.map((entry, index) => (
+                  <p className="veto-log-message" key={`${entry.team}-${entry.action}-${entry.detail}-${index}`}>
+                    {index + 1}. {entry.team} {entry.action} {entry.detail}
+                  </p>
+                ))}
+              </div>
             </div>
           )}
         </div>
