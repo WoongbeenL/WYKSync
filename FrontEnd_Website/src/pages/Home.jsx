@@ -40,7 +40,6 @@ export default function Home() {
         <li>Manage Teams</li>
         <li>Manage Matches</li>
         <li>Manage Statistics</li>
-        <li>Manage Leaderboards</li>
         <li>Manage Vetoes</li>
         <li>Manage Overlay</li>
         <li>Pull live Match data</li>

@@ -15,9 +15,6 @@ const Footer=()=>{
                         <a href="/overlay">
                             <p>Live Overlay</p>
                         </a>
-                        <a href="/leaderboard">
-                            <p>Leaderboards</p>
-                        </a>
                         <a href="/vetos">
                             <p>Vetos</p>
                         </a>

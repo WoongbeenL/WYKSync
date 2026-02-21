@@ -1,5 +1,4 @@
 import Navbar from "./components/Navbar";
-import Leaderboard from "./pages/Leaderboard";
 import Overlay from "./pages/Overlay";
 import Tournaments from "./pages/Tournaments";
 import Vetos from "./pages/Vetos";
@@ -65,9 +64,6 @@ const [user, setUser] = useState(null);
   switch (resolvedPath) {
     case "/tournaments":
       page = <Tournaments user={user} />;
-      break;
-    case "/leaderboard":
-      page = <Leaderboard />;
       break;
     case "/vetos":
       page = <Vetos />;
