@@ -1,6 +1,24 @@
 import "./home.css";
 
 export default function Home() {
+  const teamMembers = [
+    {
+      role: "Frontend Developer",
+      name: "Kristin Theoret",
+      linkedin: "https://www.linkedin.com/in/kristin-theoret/",
+    },
+    {
+      role: "Backend Developer",
+      name: "Will Lee",
+      linkedin: "https://www.linkedin.com/in/insert-will-linkedin/",
+    },
+    {
+      role: "Team Lead Developer",
+      name: "Ygnacio Maza Sanchez",
+      linkedin: "https://www.linkedin.com/in/insert-ygnacio-linkedin/",
+    },
+  ];
+
   return (
     <div className="home">
       <section className="hero">
@@ -10,7 +28,7 @@ export default function Home() {
           WYKSync is an esports broadcast management system developed for the PROG3321 Systems Project course.
         </p>
         <div className="hero-buttons">
-            <button>Launch Overlay</button>
+            <button onClick={() => (window.location.href = "/overlay")}>Launch Overlay</button>
             <button>Observer Login</button>
         </div>  
       </section>
@@ -48,22 +66,30 @@ export default function Home() {
 
     <section className="meet">
       <h2>Meet the Team</h2>
-      <p>
-        Built by a student team of three developers with hands on experiences within the esports production world.
-        <h2>Frontend Developer</h2>
-        <p>Kristin Theoret</p>
-        <p>LinkedIn Link</p>
-        <h2>Backend Developer</h2>
-        <p>Will Lee</p>
-        <p>LinkedIn Link</p>
-        <h2>Team Lead Developer</h2>
-        <p>Ygnacio Maza Sanchez</p>
-        <p>LinkedIn Link</p>
+      <p className="meet-subtitle">
+        Built by a student team of three developers with hands-on experience in esports production.
       </p>
+
+      <div className="team-grid">
+        {teamMembers.map((member) => (
+          <article key={member.name} className="team-card">
+            <p className="team-role">{member.role}</p>
+            <h3>{member.name}</h3>
+            <a
+              href={member.linkedin}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="team-link"
+            >
+              LinkedIn Profile
+            </a>
+          </article>
+        ))}
+      </div>
 
       <h2>Ready to start broadcasting smarter?</h2>
       <div className="hero-buttons">
-        <button>Open Overlay Demo</button>
+        <button onClick={() => (window.location.href = "/overlay")}>Open Overlay Demo</button>
         <button>Contact Us</button>
       </div>
     </section>
