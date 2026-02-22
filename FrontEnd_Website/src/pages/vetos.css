@@ -22,6 +22,27 @@
   color: #aaa;
 }
 
+.team-inputs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.8rem;
+  margin: 1rem 0 0.6rem;
+}
+
+.team-input-group input {
+  width: 100%;
+  background: #1c1c1c;
+  border: 1px solid #333;
+  color: #fff;
+  padding: 0.7rem;
+  border-radius: 6px;
+}
+
+.team-input-group input:focus {
+  outline: none;
+  border-color: #ff4655;
+}
+
 .final {
   margin-top: 1.5rem;
 }
@@ -110,4 +131,14 @@
 
 .picked-maps {
   margin-top: 1rem;
+}
+
+.field-error {
+  border-color: #ff6b78 !important;
+}
+
+.input-error-text {
+  margin: 0.35rem 0 0;
+  font-size: 0.82rem;
+  color: #ff9da7;
 }

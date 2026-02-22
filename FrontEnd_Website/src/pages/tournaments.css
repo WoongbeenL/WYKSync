@@ -63,6 +63,26 @@
   background: #ff2a3f;
 }
 
+.input-group {
+  flex: 1;
+  min-width: 180px;
+}
+
+.input-group input,
+.input-group select {
+  width: 100%;
+}
+
+.field-error {
+  border-color: #ff6b78 !important;
+}
+
+.input-error-text {
+  margin: 0.35rem 0 0;
+  font-size: 0.82rem;
+  color: #ff9da7;
+}
+
 .tournament-auth-cta {
   background: #111;
   padding: 1.2rem 1.5rem;

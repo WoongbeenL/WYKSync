@@ -105,6 +105,7 @@ export default function Vetos() {
   const [coinWinner, setCoinWinner] = useState(null);
   const [team1, setTeam1] = useState(null);
   const [team2, setTeam2] = useState(null);
+  const [teamInputErrors, setTeamInputErrors] = useState({});
 
   //initiallized state for selected value
   const [selectedMapPool, setSelectedMapPool] = useState("all");
@@ -132,6 +133,7 @@ export default function Vetos() {
 
   // Runs when the Coin Flip button is pressed
   const runCoinFlip = () => {
+    if (!validateTeamInputs()) return;
     const winner = Math.random() < 0.5 ? teamA : teamB;
     setCoinWinner(winner);
   };
@@ -155,6 +157,34 @@ export default function Vetos() {
     setMapStates(getInitialMapStates());
   };
 
+  const validateTeamInputs = () => {
+    const errors = {};
+    const trimmedTeamA = teamA.trim();
+    const trimmedTeamB = teamB.trim();
+
+    if (!trimmedTeamA) {
+      errors.teamA = "Team A name is required.";
+    }
+    if (!trimmedTeamB) {
+      errors.teamB = "Team B name is required.";
+    }
+    if (trimmedTeamA && trimmedTeamB && trimmedTeamA.toLowerCase() === trimmedTeamB.toLowerCase()) {
+      errors.general = "Team names must be different.";
+    }
+
+    setTeamInputErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const clearTeamInputError = (field) => {
+    setTeamInputErrors((prev) => {
+      const next = { ...prev };
+      delete next[field];
+      delete next.general;
+      return next;
+    });
+  };
+
   // Winner chooses which team number they want
   const chooseTeam = (choice) => {
     if (choice === "team1") {
@@ -168,6 +198,7 @@ export default function Vetos() {
   };
 
   const startManualOrder = (firstTeam) => {
+    if (!validateTeamInputs()) return;
     const secondTeam = firstTeam === teamA ? teamB : teamA;
     setTeam1(firstTeam);
     setTeam2(secondTeam);
@@ -329,25 +360,54 @@ export default function Vetos() {
     {/*TODO: Replace with login needed to continue. */}
       {/* Team Inputs */}
       <div className="team-inputs">
-        <input
-          type="text"
-          placeholder="Team A Name"
-          value={teamA}
-          onChange={(e) => setTeamA(e.target.value)}
-        />
-        <input
-          type="text"
-          placeholder="Team B Name"
-          value={teamB}
-          onChange={(e) => setTeamB(e.target.value)}
-        />
+        <div className="team-input-group">
+          <input
+            className={teamInputErrors.teamA ? "field-error" : ""}
+            type="text"
+            placeholder="Team A Name"
+            value={teamA}
+            onChange={(e) => {
+              setTeamA(e.target.value);
+              clearTeamInputError("teamA");
+            }}
+          />
+          {teamInputErrors.teamA && <p className="input-error-text">{teamInputErrors.teamA}</p>}
+        </div>
+        <div className="team-input-group">
+          <input
+            className={teamInputErrors.teamB ? "field-error" : ""}
+            type="text"
+            placeholder="Team B Name"
+            value={teamB}
+            onChange={(e) => {
+              setTeamB(e.target.value);
+              clearTeamInputError("teamB");
+            }}
+          />
+          {teamInputErrors.teamB && <p className="input-error-text">{teamInputErrors.teamB}</p>}
+        </div>
       </div>
+      {teamInputErrors.general && <p className="input-error-text">{teamInputErrors.general}</p>}
 
-      {/* Only show buttons once both teams exist */}
-      {teamA && teamB && !mode && (
+      {/* Team order method selection */}
+      {!mode && (
         <div className="decider-buttons">
-          <button onClick={() => setMode("coin")}>Coin Flip</button>
-          <button onClick={() => setMode("manual")}>Manual Team Order</button>
+          <button
+            onClick={() => {
+              if (!validateTeamInputs()) return;
+              setMode("coin");
+            }}
+          >
+            Coin Flip
+          </button>
+          <button
+            onClick={() => {
+              if (!validateTeamInputs()) return;
+              setMode("manual");
+            }}
+          >
+            Manual Team Order
+          </button>
         </div>
       )}
 
@@ -392,9 +452,14 @@ export default function Vetos() {
               Current action: <strong>{currentAction.label}</strong>
             </p>
           )}
+          {selectedVeto === "bo3" && !vetoComplete && (
+            <p>Map 3 (Decider): TBD</p>
+          )}
           {vetoComplete && (
             <p>
-              Veto complete. Final map: {deciderMap || availableMaps.join(", ")}
+              {selectedVeto === "bo3"
+                ? `Veto complete. Map 3 (Decider): ${deciderMap || "TBD"}`
+                : `Veto complete. Final map: ${deciderMap || availableMaps.join(", ")}`}
             </p>
           )}
           </>
@@ -479,6 +544,9 @@ export default function Vetos() {
                     {entry.side ? `, side by ${entry.sideBy}: ${entry.side}` : ""}
                   </p>
                 ))}
+              {selectedVeto === "bo3" && (
+                <p>Map 3 (Decider): {deciderMap || "TBD"}</p>
+              )}
             </div>
           )}
 

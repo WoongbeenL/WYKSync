@@ -22,6 +22,7 @@ export default function Tournaments({ user }) {
   const [dateFilter, setDateFilter] = useState("");
   const [sortBy, setSortBy] = useState("date-desc");
   const [currentPage, setCurrentPage] = useState(1);
+  const [formErrors, setFormErrors] = useState({});
 
   const pageSize = 6;
 
@@ -30,23 +31,66 @@ export default function Tournaments({ user }) {
     return new Date(value).toLocaleString();
   };
 
+  const validateTournamentForm = () => {
+    const errors = {};
+    const trimmedName = name.trim();
+    const trimmedRules = rules.trim();
+    const teamCount = Number(teams);
+    const prize = Number(prizePool);
+
+    if (!trimmedName) {
+      errors.name = "Tournament name is required.";
+    }
+    if (!teams) {
+      errors.teams = "Number of teams is required.";
+    } else if (!Number.isInteger(teamCount) || teamCount < 2) {
+      errors.teams = "Team count must be a whole number of at least 2.";
+    }
+    if (!prizePool) {
+      errors.prizePool = "Prize pool is required.";
+    } else if (!Number.isFinite(prize) || prize < 0) {
+      errors.prizePool = "Prize pool must be a valid number 0 or greater.";
+    }
+    if (!startDateTime) {
+      errors.startDateTime = "Start date and time is required.";
+    }
+    if (!trimmedRules) {
+      errors.rules = "Rules summary is required.";
+    }
+
+    return errors;
+  };
+
+  const clearFieldError = (fieldName) => {
+    if (!formErrors[fieldName]) return;
+    setFormErrors((prev) => {
+      const next = { ...prev };
+      delete next[fieldName];
+      return next;
+    });
+  };
+
   const addTournament = () => {
-    if (!name || !teams || !prizePool || !organizer || !startDateTime) return;
+    const errors = validateTournamentForm();
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      return;
+    }
 
     const participants = [];
     const standings = [];
 
     const newTournament = {
       id: Date.now(),
-      name,
-      teams,
-      prizePool,
-      organizer,
+      name: name.trim(),
+      teams: String(Number(teams)),
+      prizePool: String(Number(prizePool)),
+      organizer: organizer.trim() || "TBD",
       startDateTime,
       game,
       status,
       format,
-      rules,
+      rules: rules.trim(),
       participants,
       standings,
     };
@@ -62,6 +106,7 @@ export default function Tournaments({ user }) {
     setStatus("upcoming");
     setFormat("Single Elimination");
     setRules("Standard competitive rules apply. All matches are Best of 3.");
+    setFormErrors({});
   };
 
   const deleteTournament = (id) => {
@@ -312,65 +357,114 @@ export default function Tournaments({ user }) {
         <>
           {user ? (
             <div className="tournament-input">
-              <input
-                type="text"
-                placeholder="Tournament Name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
+              <div className="input-group">
+                <input
+                  className={formErrors.name ? "field-error" : ""}
+                  type="text"
+                  placeholder="Tournament Name"
+                  value={name}
+                  onChange={(e) => {
+                    setName(e.target.value);
+                    clearFieldError("name");
+                  }}
+                />
+                {formErrors.name && <p className="input-error-text">{formErrors.name}</p>}
+              </div>
 
-              <input
-                type="number"
-                placeholder="Number of Teams"
-                value={teams}
-                onChange={(e) => setTeams(e.target.value)}
-              />
+              <div className="input-group">
+                <input
+                  className={formErrors.teams ? "field-error" : ""}
+                  type="number"
+                  placeholder="Number of Teams"
+                  value={teams}
+                  onChange={(e) => {
+                    setTeams(e.target.value);
+                    clearFieldError("teams");
+                  }}
+                />
+                {formErrors.teams && <p className="input-error-text">{formErrors.teams}</p>}
+              </div>
 
-              <input
-                type="number"
-                placeholder="Prize Pool ($)"
-                value={prizePool}
-                onChange={(e) => setPrizePool(e.target.value)}
-              />
+              <div className="input-group">
+                <input
+                  className={formErrors.prizePool ? "field-error" : ""}
+                  type="number"
+                  placeholder="Prize Pool ($)"
+                  value={prizePool}
+                  onChange={(e) => {
+                    setPrizePool(e.target.value);
+                    clearFieldError("prizePool");
+                  }}
+                />
+                {formErrors.prizePool && (
+                  <p className="input-error-text">{formErrors.prizePool}</p>
+                )}
+              </div>
 
-              <input
-                type="text"
-                placeholder="Organizer"
-                value={organizer}
-                onChange={(e) => setOrganizer(e.target.value)}
-              />
+              <div className="input-group">
+                <input
+                  type="text"
+                  placeholder="Organizer"
+                  value={organizer}
+                  onChange={(e) => {
+                    setOrganizer(e.target.value);
+                  }}
+                />
+              </div>
 
-              <input
-                type="datetime-local"
-                value={startDateTime}
-                onChange={(e) => setStartDateTime(e.target.value)}
-              />
+              <div className="input-group">
+                <input
+                  className={formErrors.startDateTime ? "field-error" : ""}
+                  type="datetime-local"
+                  value={startDateTime}
+                  onChange={(e) => {
+                    setStartDateTime(e.target.value);
+                    clearFieldError("startDateTime");
+                  }}
+                />
+                {formErrors.startDateTime && (
+                  <p className="input-error-text">{formErrors.startDateTime}</p>
+                )}
+              </div>
 
-              <select value={game} onChange={(e) => setGame(e.target.value)}>
-                <option value="Valorant">Valorant</option>
-                <option value="League of Legends">League of Legends</option>
-                <option value="CS2">CS2</option>
-                <option value="Rocket League">Rocket League</option>
-              </select>
+              <div className="input-group">
+                <select value={game} onChange={(e) => setGame(e.target.value)}>
+                  <option value="Valorant">Valorant</option>
+                  <option value="League of Legends">League of Legends</option>
+                  <option value="CS2">CS2</option>
+                  <option value="Rocket League">Rocket League</option>
+                </select>
+              </div>
 
-              <select value={status} onChange={(e) => setStatus(e.target.value)}>
-                <option value="upcoming">Upcoming</option>
-                <option value="live">Live</option>
-                <option value="completed">Completed</option>
-              </select>
+              <div className="input-group">
+                <select value={status} onChange={(e) => setStatus(e.target.value)}>
+                  <option value="upcoming">Upcoming</option>
+                  <option value="live">Live</option>
+                  <option value="completed">Completed</option>
+                </select>
+              </div>
 
-              <select value={format} onChange={(e) => setFormat(e.target.value)}>
-                <option value="Single Elimination">Single Elimination</option>
-                <option value="Double Elimination">Double Elimination</option>
-                <option value="Round Robin">Round Robin</option>
-              </select>
+              <div className="input-group">
+                <select value={format} onChange={(e) => setFormat(e.target.value)}>
+                  <option value="Single Elimination">Single Elimination</option>
+                  <option value="Double Elimination">Double Elimination</option>
+                  <option value="Round Robin">Round Robin</option>
+                </select>
+              </div>
 
-              <input
-                type="text"
-                placeholder="Rules summary"
-                value={rules}
-                onChange={(e) => setRules(e.target.value)}
-              />
+              <div className="input-group">
+                <input
+                  className={formErrors.rules ? "field-error" : ""}
+                  type="text"
+                  placeholder="Rules summary"
+                  value={rules}
+                  onChange={(e) => {
+                    setRules(e.target.value);
+                    clearFieldError("rules");
+                  }}
+                />
+                {formErrors.rules && <p className="input-error-text">{formErrors.rules}</p>}
+              </div>
 
               <button onClick={addTournament}>
                 Add Tournament
