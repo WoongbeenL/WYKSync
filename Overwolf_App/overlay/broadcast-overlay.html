@@ -153,7 +153,7 @@
       opacity: 1;
     }
 
-    /* -- Wing decorations (PNG images) -- */
+    /* -- Wing decorations -- */
     .wing {
       width: 80px;
       height: 62px;
@@ -242,15 +242,13 @@
       text-align: center;
     }
 
-    /* -- Timer gap (transparent space for native Valorant timer) -- */
+    /* -- Timer gap -- */
     .timer-gap {
       width: 110px;
       height: 62px;
       flex-shrink: 0;
-      /* Fully transparent — the native Valorant timer shows through */
     }
 
-    /* -- White angular decorative line under scoreboard -- */
     .top-bar-line {
       position: fixed;
       top: 74px;
@@ -360,7 +358,6 @@
 
     /* ============================
      PLAYER COLUMNS
-     Docked to BOTTOM, stacking upward
      ============================ */
     .players-col {
       position: fixed;
@@ -531,7 +528,7 @@
       color: var(--gold);
     }
 
-    /* -- Weapon Image (centered in card between rows) -- */
+    /* -- Weapon Image -- */
     .p-weapon {
       display: flex;
       align-items: center;
@@ -606,7 +603,7 @@
       animation: pulse-glow 1s infinite;
     }
 
-    /* -- Ult badge (circle) -- */
+    /* -- Ult badge -- */
     .ult-badge {
       position: absolute;
       top: 4px;
@@ -669,9 +666,7 @@
       right: -80px;
     }
 
-    /* ============================
-     DEBUG
-     ============================ */
+
     /* -- Team logo slot -- */
     .team-logo-slot {
       width: 42px;
@@ -729,13 +724,13 @@
   <!-- STATE BANNER -->
   <div class="state-banner" id="state-banner">MENU</div>
 
-  <!-- MAP / SERIES INFO (Top Left) -->
+  <!-- MAP / SERIES INFO  -->
   <div class="map-info-panel" id="map-info">
     <span class="map-curr">CURRENT: <span id="t-map">—</span></span>
     <span class="map-decider">DECIDER: FRACTURE</span>
   </div>
 
-  <!-- SPONSOR (Top Right) -->
+  <!-- SPONSOR  -->
   <div class="sponsor-panel">
     <span class="sponsor-text">SPONSOR</span>
   </div>
@@ -749,7 +744,7 @@
         alt="Left Wing">
     </div>
 
-    <!-- Team A: [logo] [name+map] [score] — score closest to timer gap -->
+    <!-- Team A -->
     <div class="top-team top-team-a">
       <div class="team-logo-slot" id="logo-a">
         <img id="logo-img-a" src="" alt="" style="display:none;width:36px;height:36px;object-fit:contain;">
@@ -761,10 +756,9 @@
       <span class="top-team-score" id="t-score-a">0</span>
     </div>
 
-    <!-- Transparent gap for native Valorant timer -->
     <div class="timer-gap"></div>
 
-    <!-- Team B: [score] [name] [logo] — score closest to timer gap -->
+    <!-- Team B -->
     <div class="top-team top-team-b">
       <span class="top-team-score" id="t-score-b">0</span>
       <div class="top-team-info" style="text-align:right">
@@ -784,13 +778,10 @@
     </div>
   </div>
 
-  <!-- WHITE ANGULAR LINE UNDER SCOREBOARD -->
   <div class="top-bar-line" id="top-bar-line">
     <svg viewBox="0 0 620 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <!-- Left horizontal line, angling down 45° to center dip, back up 45°, then right horizontal -->
       <path d="M0 2 L230 2 L260 22 L290 2 L310 2 L330 2 L360 22 L390 2 L620 2" stroke="#FFFFFF" stroke-width="3"
         fill="none" stroke-opacity="0.85" />
-      <!-- Subtle glow -->
       <path d="M0 2 L230 2 L260 22 L290 2 L310 2 L330 2 L360 22 L390 2 L620 2" stroke="#FFFFFF" stroke-width="1.5"
         fill="none" stroke-opacity="0.4" filter="url(#line-glow)" />
       <defs>
@@ -812,11 +803,11 @@
         style="color:var(--white);font-size:0.65rem;">0</span></span>
   </div>
 
-  <!-- PLAYER COLUMNS (bottom-anchored, stack upward) -->
+  <!-- PLAYER COLUMNS -->
   <div class="players-col left" id="players-left"></div>
   <div class="players-col right" id="players-right"></div>
 
-  <!-- DEBUG (centered bottom) -->
+  <!-- DEBUG  -->
   <div class="debug" id="debug">
     <span><span class="dl">WS:</span> <span class="dv" id="d-status">Connecting...</span></span>
     <span><span class="dl">State:</span> <span class="dv" id="d-state">—</span></span>
@@ -833,9 +824,6 @@
 
     // ========================================
     // AGENT IMAGE MAP
-    // Maps agent name → image path in assets/agents/
-    // Place your character icon PNGs here.
-    // Example: assets/agents/jett.png
     // ========================================
     const AGENT_IMAGES = {
       jett: 'assets/agents/jett.png',
@@ -867,10 +855,8 @@
       waylay: 'assets/agents/waylay.png',
     };
 
-    // Fallback SVG for agents without an image file
     const AGENT_FALLBACK_SVG = `<svg class="agent-fallback" viewBox="0 0 36 36" fill="none"><circle cx="18" cy="18" r="14" stroke="#C9A84C" stroke-width="1.5" stroke-opacity="0.5"/><text x="18" y="22" text-anchor="middle" fill="#C9A84C" font-size="11" font-weight="bold" opacity="0.6">?</text></svg>`;
 
-    // Try multiple extensions: .png then .jpg then .webp
     function agentHTML(name) {
       if (!name) return AGENT_FALLBACK_SVG;
       const key = name.toLowerCase().replace(/[^a-z]/g, '').replace('kayo', 'kayo');
@@ -881,11 +867,7 @@
 
     // ========================================
     // WEAPON IMAGE MAP
-    // Maps weapon name → image path in assets/weapons/
-    // Place your weapon PNGs here.
-    // Example: assets/weapons/vandal.png
     // ========================================
-    // Official Valorant weapon names → file names (place PNGs in assets/weapons/ with these names)
     const WEAPON_IMAGES = {
       // Sidearms
       classic: 'assets/weapons/Classic.png',
@@ -916,13 +898,12 @@
       melee: 'assets/weapons/Melee.png',
     };
 
-    // Look up weapon image — try .png then .jpg then .webp
+    // Look up weapon image
     function weaponHTML(name) {
       if (!name || name === '-') return `<span class="wep-fallback">—</span>`;
       const key = name.toLowerCase().replace(/[^a-z]/g, '');
       const entry = WEAPON_IMAGES[key];
       if (entry) {
-        // entry is like 'assets/weapons/Vandal.png' — derive base and try extensions
         const base = entry.replace(/\.[^.]+$/, '');
         return `<img src="${base}.png" alt="${name}"
           onerror="this.onerror=function(){this.onerror=function(){this.style.display='none';this.nextSibling&&(this.nextSibling.style.display='')};this.src='${base}.webp'};this.src='${base}.jpg'"><span class="wep-fallback" style="display:none">${name}</span>`;
@@ -930,7 +911,7 @@
       return `<span class="wep-fallback">${name}</span>`;
     }
 
-    // Strip Riot ID tag (everything from # onward)
+    // Strip Riot ID tag 
     function cleanName(raw) {
       if (!raw) return 'Unknown';
       return raw.split('#')[0];
@@ -1069,7 +1050,7 @@
       const m = { buy: '💰 BUY PHASE', shopping: '💰 BUY PHASE', combat: '⚔ COMBAT', playing: '⚔ COMBAT', end: 'ROUND END', over: 'ROUND END', freeze: 'FREEZE TIME' };
       return m[p.toLowerCase()] ?? p.toUpperCase();
     }
-    // Capitalise Valorant map names properly
+
     function fmtMap(raw) {
       if (!raw) return '—';
       const names = {
