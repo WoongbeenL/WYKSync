@@ -68,7 +68,7 @@ export class WebSocketService {
 
   private handleHttpRequest(req: IncomingMessage, res: ServerResponse): void {
     const url = req.url || '/';
-    
+
     // Try multiple overlay locations
     const overlayPaths = [
       join(__dirname, '../overlay/broadcast-overlay.html'),
@@ -90,10 +90,50 @@ export class WebSocketService {
           }
         }
       }
-      
+
       // Fallback if file not found
       res.writeHead(404, { 'Content-Type': 'text/html' });
       res.end('<h1>Overlay not found</h1><p>Looking for: broadcast-overlay.html</p>');
+      return;
+    }
+
+    // Serve static assets (images, etc.) from the overlay directory
+    if (url.startsWith('/assets/')) {
+      const assetPaths = [
+        join(__dirname, '../overlay', url),
+        join(__dirname, '../../overlay', url),
+        join(process.cwd(), 'overlay', url),
+        join(process.cwd(), 'dist/overlay', url),
+      ];
+
+      const extMap: Record<string, string> = {
+        '.png': 'image/png',
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.webp': 'image/webp',
+        '.svg': 'image/svg+xml',
+        '.gif': 'image/gif',
+        '.ico': 'image/x-icon',
+      };
+
+      const ext = url.substring(url.lastIndexOf('.')).toLowerCase();
+      const contentType = extMap[ext] || 'application/octet-stream';
+
+      for (const assetPath of assetPaths) {
+        if (existsSync(assetPath)) {
+          try {
+            const data = readFileSync(assetPath);
+            res.writeHead(200, { 'Content-Type': contentType });
+            res.end(data);
+            return;
+          } catch (e) {
+            console.error('[HTTP] Error reading asset:', e);
+          }
+        }
+      }
+
+      res.writeHead(404);
+      res.end('Asset not found');
       return;
     }
 

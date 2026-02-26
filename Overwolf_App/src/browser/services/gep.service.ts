@@ -109,7 +109,7 @@ export class GepService extends EventEmitter {
       tries++;
       try {
         this.log(`Setting features... attempt ${tries}/${MAX_RETRIES}`);
-        
+
         await this.gepApi.setRequiredFeatures(
           this.activeGameId,
           REQUIRED_FEATURES
@@ -121,7 +121,7 @@ export class GepService extends EventEmitter {
         this.gameData.connected = true;
         this.log('Features set successfully!');
         this.emit('status', 'Connected');
-        
+
         // Start polling
         this.startPolling();
         return true;
@@ -164,7 +164,7 @@ export class GepService extends EventEmitter {
     }
 
     this.log('Starting data polling...');
-    
+
     // Poll immediately
     this.pollGameInfo();
 
@@ -212,9 +212,9 @@ export class GepService extends EventEmitter {
     if (info.game_info) {
       const scene = info.game_info.scene || '';
       const state = info.game_info.state || '';
-      
+
       this.gameData.gameState = this.detectGameState(scene, state);
-      
+
       // Map name (only if it's actually a map)
       if (this.isMapName(scene)) {
         this.gameData.map = scene;
@@ -242,8 +242,8 @@ export class GepService extends EventEmitter {
       return 'menu';
     }
 
-    if (sceneLower.includes('characterselect') || sceneLower.includes('agentselect') || 
-        sceneLower.includes('pregame') || stateLower.includes('character')) {
+    if (sceneLower.includes('characterselect') || sceneLower.includes('agentselect') ||
+      sceneLower.includes('pregame') || stateLower.includes('character')) {
       return 'agent_select';
     }
 
@@ -415,6 +415,7 @@ export class GepService extends EventEmitter {
       'Sarge': 'Brimstone',
       'Sprinter': 'Neon',
       'Stealth': 'Viper',
+      'Pandemic': 'Viper',
       'Thorne': 'Sage',
       'Vampire': 'Reyna',
       'Wushu': 'Jett',
@@ -425,21 +426,50 @@ export class GepService extends EventEmitter {
       'Cable': 'Deadlock',
       'Sequoia': 'Clove',
       'Smonk': 'Iso',
-      'Tether': 'Vyse'
+      'Tether': 'Vyse',
+      'Breach': 'Breach',
+      'Phoenix': 'Phoenix',
+      'Clay': 'Raze',
+      'Gumshoe': 'Cypher',
+      'Killjoy': 'Killjoy',
+      'Yoru': 'Yoru',
+      'Cashew': 'Tejo',
+      'Waylay': 'Waylay'
     };
     return agentMap[character] || character;
   }
 
   private formatWeapon(weapon: string): string {
-    return weapon
-      .replace('TX_Hud_', '')
-      .replace('Pistol_', '')
-      .replace('Rifle_', '')
-      .replace('SMG_', '')
-      .replace('Shotgun_', '')
-      .replace('Sniper_', '')
-      .replace('Heavy_', '')
-      .replace('Melee_', '');
+    // Scoreboard weapon codes → display names
+    const weaponMap: Record<string, string> = {
+      // Sidearms
+      'TX_Hud_Pistol_Classic': 'Classic',
+      'TX_Hud_Pistol_Slim': 'Shorty',
+      'TX_Hud_Pistol_AutoPistol': 'Frenzy',
+      'TX_Hud_Pistol_Luger': 'Ghost',
+      'TX_Hud_Pistol_Sheriff': 'Sheriff',
+      // SMGs
+      'TX_Hud_SMGs_Vector': 'Stinger',
+      'TX_Hud_SMGs_Ninja': 'Spectre',
+      // Shotguns
+      'TX_Hud_Shotguns_Pump': 'Bucky',
+      'TX_Hud_Shotguns_Persuader': 'Judge',
+      // Rifles
+      'TX_Hud_Rifles_Burst': 'Bulldog',
+      'TX_Hud_Rifles_DMR': 'Guardian',
+      'TX_Hud_Rifles_Ghost': 'Phantom',
+      'TX_Hud_Rifles_Volcano': 'Vandal',
+      // Snipers
+      'TX_Hud_Sniper_Bolt': 'Marshal',
+      'TX_Hud_Sniper_Operater': 'Operator',
+      'TX_Hud_Sniper_DoubleSniper': 'Outlaw',
+      // Machine Guns
+      'TX_Hud_LMG': 'Ares',
+      'TX_Hud_HMG': 'Odin',
+      // Melee
+      'knife': 'Melee',
+    };
+    return weaponMap[weapon] || weapon;
   }
 
   private parseJson(str: string): any {
@@ -465,12 +495,12 @@ export class GepService extends EventEmitter {
       this.log('GEP API not available');
       return;
     }
-    
+
     this.gepApi.removeAllListeners();
 
     this.gepApi.on('game-detected', (e, gameId, name, gameInfo) => {
       this.log(`Game detected: ${name} (ID: ${gameId}, PID: ${gameInfo?.pid})`);
-      
+
       if (!this.registeredGameIds.includes(gameId)) {
         this.log('Not a registered game, ignoring');
         return;
@@ -505,7 +535,7 @@ export class GepService extends EventEmitter {
     // Game events (kills, etc)
     this.gepApi.on('new-game-event', (e, gameId, ...args) => {
       if (gameId !== this.activeGameId) return;
-      
+
       if (args.length >= 1) {
         const eventData = args[0];
         if (Array.isArray(eventData)) {
