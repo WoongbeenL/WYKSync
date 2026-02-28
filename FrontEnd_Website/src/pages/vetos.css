@@ -49,10 +49,58 @@
 
 .map-btn {
   margin: 0.4rem;
-  padding: 0.6rem 1rem;
+  padding: 0;
   border: none;
-  border-radius: 6px;
+  border-radius: 10px;
   cursor: pointer;
+  overflow: hidden;
+  text-align: left;
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  min-height: 220px;
+  width: 100%;
+}
+
+.map-grid {
+  margin-top: 1rem;
+  display: grid;
+  gap: 0.65rem;
+}
+
+.map-grid-vertical {
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+
+.map-grid-square {
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+}
+
+.map-grid-square .map-btn {
+  aspect-ratio: 1 / 1;
+  min-height: 120px;
+}
+
+.map-grid-vertical .map-btn {
+  aspect-ratio: 3 / 4;
+}
+
+.map-btn-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.map-btn-label {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  padding: 0.6rem 0.7rem;
+  font-weight: 700;
+  font-size: 0.9rem;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.05) 0%, rgba(0, 0, 0, 0.8) 100%);
 }
 
 .map-btn.available {

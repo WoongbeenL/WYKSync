@@ -19,6 +19,15 @@ const ALL_MAPS = [
 ];
 const COMPETITIVE_MAPS = ["Ascent", "Bind", "Haven", "Split", "Lotus", "Sunset", "Icebox"];
 const SIDE_OPTIONS = ["Attack", "Defense"];
+const MAP_IMAGE_FILENAMES = ALL_MAPS.reduce((acc, map) => {
+  acc[map] = `/maps/${map.toLowerCase()}.jpg`;
+  return acc;
+}, {});
+
+const getFallbackMapImage = (mapName) =>
+  `data:image/svg+xml;utf8,${encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1200"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#231f20"/><stop offset="100%" stop-color="#111"/></linearGradient></defs><rect width="100%" height="100%" fill="url(#g)"/><text x="50%" y="50%" fill="#ff4655" font-size="92" text-anchor="middle" dominant-baseline="middle" font-family="Arial, Helvetica, sans-serif">${mapName}</text></svg>`
+  )}`;
 
 const getInitialMapStates = () =>
   ALL_MAPS.reduce((acc, map) => {
@@ -108,7 +117,7 @@ export default function Vetos() {
   const [teamInputErrors, setTeamInputErrors] = useState({});
 
   //initiallized state for selected value
-  const [selectedMapPool, setSelectedMapPool] = useState("all");
+  const [selectedMapPool, setSelectedMapPool] = useState("comp");
   const [selectedVeto, setSelectedVeto] = useState("bo1");
   const [actingAs, setActingAs] = useState("spectator");
   const [mapStates, setMapStates] = useState(getInitialMapStates);
@@ -464,6 +473,7 @@ export default function Vetos() {
           )}
           </>
           <>
+          <div className={`map-grid ${selectedMapPool === "all" ? "map-grid-square" : "map-grid-vertical"}`}>
           {activeMaps.map((map) => {
             const mapState = mapStates[map] || {
               status: "available",
@@ -510,12 +520,25 @@ export default function Vetos() {
                             : `Ban ${map}`
                 }
               >
-                {map}
-                {isPicked && ` (Map ${mapState.mapNumber})`}
-                {isDecider && " (Decider)"}
+                <img
+                  className="map-btn-image"
+                  src={MAP_IMAGE_FILENAMES[map]}
+                  alt={`${map} map`}
+                  loading="lazy"
+                  onError={(event) => {
+                    event.currentTarget.onerror = null;
+                    event.currentTarget.src = getFallbackMapImage(map);
+                  }}
+                />
+                <span className="map-btn-label">
+                  {map}
+                  {isPicked && ` (Map ${mapState.mapNumber})`}
+                  {isDecider && " (Decider)"}
+                </span>
               </button>
             );
           })}
+          </div>
           </>
           {currentAction?.type === "side" && (
             <div className="side-picker">
