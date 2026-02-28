@@ -95,7 +95,15 @@ const [user, setUser] = useState(null);
         <a href="/login">Login</a>
       )}
     </div>
-      <div className={resolvedPath === "/" || resolvedPath === "/home" ? "" : "container"}>
+      <div
+        className={
+          resolvedPath === "/" || resolvedPath === "/home"
+            ? ""
+            : resolvedPath === "/vetos"
+              ? "container container-vetos"
+              : "container"
+        }
+      >
         {page}
       </div>
       <Footer/>

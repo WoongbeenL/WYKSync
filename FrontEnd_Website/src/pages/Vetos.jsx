@@ -118,7 +118,7 @@ export default function Vetos() {
 
   //initiallized state for selected value
   const [selectedMapPool, setSelectedMapPool] = useState("comp");
-  const [selectedVeto, setSelectedVeto] = useState("bo1");
+  const [selectedVeto, setSelectedVeto] = useState("bo3");
   const [actingAs, setActingAs] = useState("spectator");
   const [mapStates, setMapStates] = useState(getInitialMapStates);
   const [actionHistory, setActionHistory] = useState([]);
@@ -402,6 +402,7 @@ export default function Vetos() {
       {!mode && (
         <div className="decider-buttons">
           <button
+            className="flow-btn"
             onClick={() => {
               if (!validateTeamInputs()) return;
               setMode("coin");
@@ -410,6 +411,7 @@ export default function Vetos() {
             Coin Flip
           </button>
           <button
+            className="flow-btn"
             onClick={() => {
               if (!validateTeamInputs()) return;
               setMode("manual");
@@ -422,7 +424,7 @@ export default function Vetos() {
 
       {/* if coin was chosen*/}
       {mode === "coin" && !coinWinner && (
-        <button onClick={runCoinFlip}>Flip Coin</button>
+        <button className="flow-btn" onClick={runCoinFlip}>Flip Coin</button>
         )}
 
       {/* Show winner */}
@@ -431,11 +433,11 @@ export default function Vetos() {
           <p>{coinWinner} won the coin flip!</p>
           <p>Choose your team:</p>
 
-          <button onClick={() => chooseTeam("team1")}>
+          <button className="flow-btn" onClick={() => chooseTeam("team1")}>
             Be Team 1
           </button>
 
-          <button onClick={() => chooseTeam("team2")}>
+          <button className="flow-btn" onClick={() => chooseTeam("team2")}>
             Be Team 2
           </button>
         </>
@@ -446,10 +448,9 @@ export default function Vetos() {
         <div className='final'>
           <>
           <h3>Final Teams</h3>
-          <p>Team 1: {team1}</p>
-          <p>Team 2: {team2}</p>
-          <label>
-            You are:
+          <p>Team 1: {team1} | Team 2: {team2}</p>
+          <label className="acting-role">
+            <span>You are:</span>
             <select value={actingAs} onChange={(e) => setActingAs(e.target.value)}>
               <option value="spectator">Spectator</option>
               <option value="team1">{team1}</option>
@@ -530,6 +531,16 @@ export default function Vetos() {
                     event.currentTarget.src = getFallbackMapImage(map);
                   }}
                 />
+                {isPicked && (
+                  <span className="map-btn-status map-btn-status-picked">
+                    Map {mapState.mapNumber}
+                  </span>
+                )}
+                {isDecider && (
+                  <span className="map-btn-status map-btn-status-decider">
+                    Decider
+                  </span>
+                )}
                 <span className="map-btn-label">
                   {map}
                   {isPicked && ` (Map ${mapState.mapNumber})`}
@@ -592,8 +603,8 @@ export default function Vetos() {
       {mode === "manual" && (
         <div className="manual-order">
           <p>Manually choose which team goes first.</p>
-          <button onClick={() => startManualOrder(teamA)}>{teamA} goes first</button>
-          <button onClick={() => startManualOrder(teamB)}>{teamB} goes first</button>
+          <button className="flow-btn" onClick={() => startManualOrder(teamA)}>{teamA} goes first</button>
+          <button className="flow-btn" onClick={() => startManualOrder(teamB)}>{teamB} goes first</button>
         </div>
       )}
     </div>
