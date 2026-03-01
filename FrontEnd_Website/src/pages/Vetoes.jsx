@@ -1,8 +1,8 @@
-import "./vetos.css";
+import "./vetoes.css";
 // useState allows page to remember values like team names
 import { useEffect, useMemo, useState } from "react";
 
-//TODO: Add a link for each team to do map vetos along with spectators or find a different way to differentiate it.
+//TODO: Add a link for each team to do map vetoes along with spectators or find a different way to differentiate it.
 const ALL_MAPS = [
   "Corrode",
   "Abyss",
@@ -103,7 +103,7 @@ const getActionPlan = (format, firstTeam, secondTeam, mapCount, poolKey) => {
   });
 };
 
-export default function Vetos() {
+export default function Vetoes() {
 // these store what the user types for team names
   const [teamA, setTeamA] = useState("");
   const [teamB, setTeamB] = useState("");
@@ -336,7 +336,7 @@ export default function Vetos() {
   };
 
   return (
-    <div className="vetos">
+    <div className="vetoes">
       <div className="dropdown_menus">
          <label>
         Pick a Map Pool:
@@ -350,7 +350,7 @@ export default function Vetos() {
        <label>
         Pick a Map Veto:
         <select value={selectedVeto} onChange={vetoPick}>
-          {/*TODO: Add functionality to modify the way vetos go depending on this choice.*/}
+          {/*TODO: Add functionality to modify the way vetoes go depending on this choice.*/}
           <option value="bo1">Best of 1</option>
           <option value="bo3">Best of 3</option>
           <option value="bo5">Best of 5</option>
@@ -360,7 +360,7 @@ export default function Vetos() {
       </div>
 
       <div className="title_n_paragraph">
-        <h1>Map Vetos</h1>
+        <h1>Map Vetoes</h1>
         <p>
           Enter both team names to begin the veto process.
         </p>
@@ -443,7 +443,7 @@ export default function Vetos() {
         </>
       )}
       {/* Final result */}
-      {/* TODO: Add Logic to Map Bans Need to Add Map Pool Feature ability to pick what maps are in rotation (7 maps). Then what Type of Vetos BO1, BO3, BO5.*/}
+      {/* TODO: Add Logic to Map Bans Need to Add Map Pool Feature ability to pick what maps are in rotation (7 maps). Then what Type of Vetoes BO1, BO3, BO5.*/}
       {team1 && team2 && (
         <div className='final'>
           <>

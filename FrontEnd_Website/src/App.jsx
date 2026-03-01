@@ -1,7 +1,7 @@
 import Navbar from "./components/Navbar";
 import Overlay from "./pages/Overlay";
 import Tournaments from "./pages/Tournaments";
-import Vetos from "./pages/Vetos";
+import Vetoes from "./pages/Vetoes";
 import Home from "./pages/Home";
 import Footer from "./components/Footer";
 import Login from "./pages/Login";
@@ -65,8 +65,8 @@ const [user, setUser] = useState(null);
     case "/tournaments":
       page = <Tournaments user={user} />;
       break;
-    case "/vetos":
-      page = <Vetos />;
+    case "/vetoes":
+      page = <Vetoes />;
       break;
     case "/overlay":
       page = <Overlay />;
@@ -99,8 +99,8 @@ const [user, setUser] = useState(null);
         className={
           resolvedPath === "/" || resolvedPath === "/home"
             ? ""
-            : resolvedPath === "/vetos"
-              ? "container container-vetos"
+            : resolvedPath === "/vetoes"
+              ? "container container-vetoes"
               : "container"
         }
       >
