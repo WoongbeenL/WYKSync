@@ -247,7 +247,7 @@ export default function Tournaments({ user }) {
       setTeamProfileLoading(true);
       setTeamProfileError("");
       const { teamProfile: loadedTeamProfile, error } =
-        await fetchCurrentUserTeamProfile();
+        await fetchCurrentUserTeamProfile(user);
       if (!active) return;
 
       setTeamProfile(loadedTeamProfile);

@@ -24,6 +24,12 @@
   gap: 0.75rem;
 }
 
+.team-profile-note {
+  margin: 0;
+  color: #b6b6b6;
+  font-size: 0.9rem;
+}
+
 .team-profile-form input {
   background: #1c1c1c;
   border: 1px solid #333;
@@ -50,6 +56,26 @@
 
 .team-profile-form button:disabled {
   background: #555;
+  cursor: not-allowed;
+}
+
+.team-profile-disband-btn {
+  margin-top: 0.75rem;
+  border: 1px solid #7d1f28;
+  border-radius: 8px;
+  padding: 0.55rem 0.9rem;
+  background: #2c1215;
+  color: #ffc5cb;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.team-profile-disband-btn:hover {
+  background: #3a171b;
+}
+
+.team-profile-disband-btn:disabled {
+  opacity: 0.7;
   cursor: not-allowed;
 }
 

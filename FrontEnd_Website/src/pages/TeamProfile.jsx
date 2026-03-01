@@ -1,5 +1,9 @@
 import { useEffect, useState } from "react";
-import { createTeamForCurrentUser, fetchCurrentUserTeamProfile } from "../lib/teamProfile";
+import {
+  createTeamForCurrentUser,
+  disbandTeamForCurrentUser,
+  fetchCurrentUserTeamProfile,
+} from "../lib/teamProfile";
 import "./team-profile.css";
 
 export default function TeamProfile({ user }) {
@@ -24,7 +28,7 @@ export default function TeamProfile({ user }) {
       setIsLoading(true);
       setError("");
       const { teamProfile: loadedProfile, error: loadError } =
-        await fetchCurrentUserTeamProfile();
+        await fetchCurrentUserTeamProfile(user);
       if (!active) return;
 
       if (loadError) {
@@ -55,6 +59,7 @@ export default function TeamProfile({ user }) {
     const { teamProfile: createdTeam, error: createError } = await createTeamForCurrentUser({
       teamName,
       joinCode,
+      userIdentifier: user,
     });
     setIsSaving(false);
 
@@ -68,6 +73,27 @@ export default function TeamProfile({ user }) {
     setSuccess("Team profile created. You can now register for tournaments.");
     setTeamName("");
     setJoinCode("");
+  };
+
+  const handleDisbandTeam = async () => {
+    if (!user || !teamProfile) return;
+
+    const confirmed = window.confirm(`Disband "${teamProfile.teamName}"?`);
+    if (!confirmed) return;
+
+    setError("");
+    setSuccess("");
+    setIsSaving(true);
+    const { error: disbandError } = await disbandTeamForCurrentUser(user);
+    setIsSaving(false);
+
+    if (disbandError) {
+      setError(disbandError);
+      return;
+    }
+
+    setTeamProfile(null);
+    setSuccess("Team disbanded.");
   };
 
   return (
@@ -99,12 +125,25 @@ export default function TeamProfile({ user }) {
           <p className="team-profile-ready">
             Team profile complete. Tournament registration is enabled.
           </p>
+          <button
+            type="button"
+            className="team-profile-disband-btn"
+            onClick={handleDisbandTeam}
+            disabled={isSaving}
+          >
+            {isSaving ? "Disbanding..." : "Disband Team"}
+          </button>
+          {error && <p className="team-profile-error">{error}</p>}
+          {success && <p className="team-profile-success">{success}</p>}
         </div>
       )}
 
       {user && !isLoading && !teamProfile && (
         <form className="team-profile-card team-profile-form" onSubmit={handleCreateTeam}>
           <h2>Create Team</h2>
+          <p className="team-profile-note">
+            Temporary frontend-only team profile until backend team endpoints are available.
+          </p>
           <input
             type="text"
             placeholder="Team Name"
