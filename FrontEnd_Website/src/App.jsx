@@ -2,6 +2,7 @@ import Navbar from "./components/Navbar";
 import Overlay from "./pages/Overlay";
 import Tournaments from "./pages/Tournaments";
 import Vetoes from "./pages/Vetoes";
+import TeamProfile from "./pages/TeamProfile";
 import Home from "./pages/Home";
 import Footer from "./components/Footer";
 import Login from "./pages/Login";
@@ -70,6 +71,9 @@ const [user, setUser] = useState(null);
       break;
     case "/overlay":
       page = <Overlay />;
+      break;
+    case "/team-profile":
+      page = <TeamProfile user={user} />;
       break;
     case "/login":
       page = <Login onLogin={setUser} />;

@@ -317,6 +317,33 @@
   color: #ff6b78;
 }
 
+.team-required-cta {
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 0.75rem;
+  margin-bottom: 0.9rem;
+}
+
+.team-required-cta p {
+  margin: 0 0 0.55rem;
+}
+
+.team-required-cta a {
+  display: inline-block;
+  background: #ff4655;
+  color: #fff;
+  text-decoration: none;
+  border-radius: 6px;
+  padding: 0.45rem 0.75rem;
+  font-weight: 700;
+}
+
+.team-required-error {
+  margin-top: 0.55rem;
+  color: #ff9da7;
+}
+
 .participants-list {
   margin: 0;
   padding-left: 1.1rem;

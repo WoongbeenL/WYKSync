@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import "./tournaments.css";
+import { fetchCurrentUserTeamProfile } from "../lib/teamProfile";
 
 export default function Tournaments({ user }) {
   const [tournaments, setTournaments] = useState([]);
@@ -23,6 +24,9 @@ export default function Tournaments({ user }) {
   const [sortBy, setSortBy] = useState("date-desc");
   const [currentPage, setCurrentPage] = useState(1);
   const [formErrors, setFormErrors] = useState({});
+  const [teamProfile, setTeamProfile] = useState(null);
+  const [teamProfileLoading, setTeamProfileLoading] = useState(false);
+  const [teamProfileError, setTeamProfileError] = useState("");
 
   const pageSize = 6;
 
@@ -122,15 +126,21 @@ export default function Tournaments({ user }) {
     );
   };
 
+  const getRegistrationIdentity = () => teamProfile?.teamName || user;
+
   const joinTournament = () => {
     if (!selectedTournament || !user) return;
+    if (!teamProfile) return;
 
     const capacity = Number(selectedTournament.teams);
     const participants = selectedTournament.participants || [];
+    const registrationIdentity = getRegistrationIdentity();
+    const alreadyRegistered =
+      participants.includes(registrationIdentity) || participants.includes(user);
 
-    if (participants.includes(user) || participants.length >= capacity) return;
+    if (alreadyRegistered || participants.length >= capacity) return;
 
-    const updatedParticipants = [...participants, user];
+    const updatedParticipants = [...participants, registrationIdentity];
     const updatedTournament = {
       ...selectedTournament,
       participants: updatedParticipants,
@@ -148,11 +158,14 @@ export default function Tournaments({ user }) {
 
   const leaveTournament = () => {
     if (!selectedTournament || !user) return;
+    const registrationIdentity = getRegistrationIdentity();
 
     const participants = selectedTournament.participants || [];
-    if (!participants.includes(user)) return;
+    if (!participants.includes(registrationIdentity) && !participants.includes(user)) return;
 
-    const updatedParticipants = participants.filter((participant) => participant !== user);
+    const updatedParticipants = participants.filter(
+      (participant) => participant !== registrationIdentity && participant !== user
+    );
     const updatedTournament = {
       ...selectedTournament,
       participants: updatedParticipants,
@@ -219,6 +232,35 @@ export default function Tournaments({ user }) {
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, statusFilter, gameFilter, dateFilter, sortBy]);
+
+  useEffect(() => {
+    let active = true;
+
+    const loadTeamProfile = async () => {
+      if (!user) {
+        setTeamProfile(null);
+        setTeamProfileError("");
+        setTeamProfileLoading(false);
+        return;
+      }
+
+      setTeamProfileLoading(true);
+      setTeamProfileError("");
+      const { teamProfile: loadedTeamProfile, error } =
+        await fetchCurrentUserTeamProfile();
+      if (!active) return;
+
+      setTeamProfile(loadedTeamProfile);
+      setTeamProfileError(error || "");
+      setTeamProfileLoading(false);
+    };
+
+    loadTeamProfile();
+
+    return () => {
+      active = false;
+    };
+  }, [user]);
 
   return (
     <div className="tournaments">
@@ -292,10 +334,19 @@ export default function Tournaments({ user }) {
                   Registered: {selectedTournament.participants.length}/{selectedTournament.teams}
                 </p>
                 {user ? (
+                  selectedTournament.participants.includes(getRegistrationIdentity()) ||
                   selectedTournament.participants.includes(user) ? (
                     <button className="leave-btn" onClick={leaveTournament}>
                       Leave Tournament
                     </button>
+                  ) : teamProfileLoading ? (
+                    <p>Checking team profile...</p>
+                  ) : !teamProfile ? (
+                    <div className="team-required-cta">
+                      <p>You need a team profile before registering.</p>
+                      <a href="/team-profile">Create Team Profile</a>
+                      {teamProfileError && <p className="team-required-error">{teamProfileError}</p>}
+                    </div>
                   ) : (
                     <button
                       className="join-btn"
