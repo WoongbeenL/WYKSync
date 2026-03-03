@@ -9,11 +9,49 @@ import Login from "./pages/Login";
 import { useEffect, useState } from "react";
 import { isSupabaseConfigured, supabase } from "./lib/supabaseClient";
 
+const backendUrl = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, "");
+
 function App() {
-  
-const [user, setUser] = useState(null);
+  const [user, setUser] = useState(null);
+  const [displayIdentity, setDisplayIdentity] = useState("");
   const [path, setPath] = useState(window.location.pathname);
   const resolvedPath = path === "/login" && user ? "/tournaments" : path;
+
+  const fetchDisplayIdentity = async (token, fallbackEmail) => {
+    if (!backendUrl || !token) return fallbackEmail || "";
+
+    try {
+      const response = await fetch(`${backendUrl}/me`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) return fallbackEmail || "";
+
+      const meData = await response.json();
+      const displayName = String(meData?.display_name || "").trim();
+      return displayName || fallbackEmail || "";
+    } catch {
+      return fallbackEmail || "";
+    }
+  };
+
+  const syncUserFromSession = async (session) => {
+    const email = session?.user?.email || null;
+    setUser(email);
+
+    if (!email) {
+      setDisplayIdentity("");
+      return;
+    }
+
+    const resolvedDisplayIdentity = await fetchDisplayIdentity(
+      session?.access_token,
+      email
+    );
+    setDisplayIdentity(resolvedDisplayIdentity);
+  };
 
   useEffect(() => {
     const handleRouteChange = () => setPath(window.location.pathname);
@@ -28,14 +66,14 @@ const [user, setUser] = useState(null);
 
     const loadSession = async () => {
       const { data } = await supabase.auth.getSession();
-      setUser(data.session?.user?.email || null);
+      await syncUserFromSession(data.session || null);
     };
 
     loadSession();
 
     const { data: authListener } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setUser(session?.user?.email || null);
+      async (_event, session) => {
+        await syncUserFromSession(session || null);
       }
     );
 
@@ -54,11 +92,19 @@ const [user, setUser] = useState(null);
   const handleLogout = async () => {
     if (!supabase) {
       setUser(null);
+      setDisplayIdentity("");
       return;
     }
 
     await supabase.auth.signOut();
     setUser(null);
+    setDisplayIdentity("");
+  };
+
+  const handleLogin = async () => {
+    if (!supabase) return;
+    const { data } = await supabase.auth.getSession();
+    await syncUserFromSession(data.session || null);
   };
 
   let page;
@@ -76,7 +122,7 @@ const [user, setUser] = useState(null);
       page = <TeamProfile user={user} />;
       break;
     case "/login":
-      page = <Login onLogin={setUser} />;
+      page = <Login onLogin={handleLogin} />;
       break;
     case "/":
     case "/home":
@@ -92,7 +138,7 @@ const [user, setUser] = useState(null);
       <div className="auth-bar">
       {user ? (
         <>
-          <span>Logged in as {user}</span>
+          <span>Logged in as {displayIdentity || user}</span>
           <button onClick={handleLogout}>Logout</button>
         </>
       ) : (

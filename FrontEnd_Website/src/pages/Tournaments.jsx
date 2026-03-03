@@ -1,6 +1,21 @@
 import { useEffect, useMemo, useState } from "react";
 import "./tournaments.css";
 import { fetchCurrentUserTeamProfile } from "../lib/teamProfile";
+import { supabase } from "../lib/supabaseClient";
+
+const backendUrl = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, "");
+
+const parseBackendError = async (response, fallback) => {
+  const text = await response.text();
+  if (!text) return fallback;
+
+  try {
+    const parsed = JSON.parse(text);
+    return parsed.error || parsed.message || text;
+  } catch {
+    return text;
+  }
+};
 
 export default function Tournaments({ user }) {
   const [tournaments, setTournaments] = useState([]);
@@ -27,6 +42,8 @@ export default function Tournaments({ user }) {
   const [teamProfile, setTeamProfile] = useState(null);
   const [teamProfileLoading, setTeamProfileLoading] = useState(false);
   const [teamProfileError, setTeamProfileError] = useState("");
+  const [apiError, setApiError] = useState("");
+  const [isSavingTournament, setIsSavingTournament] = useState(false);
 
   const pageSize = 6;
 
@@ -74,32 +91,94 @@ export default function Tournaments({ user }) {
     });
   };
 
-  const addTournament = () => {
+  const fetchTournaments = async () => {
+    if (!backendUrl) {
+      setApiError("VITE_BACKEND_URL is missing.");
+      return;
+    }
+
+    try {
+      setApiError("");
+      const response = await fetch(`${backendUrl}/tournament`);
+      if (!response.ok) {
+        const message = await parseBackendError(
+          response,
+          `GET /tournament failed with status ${response.status}.`
+        );
+        setApiError(message);
+        return;
+      }
+
+      const payload = await response.json();
+      setTournaments(Array.isArray(payload.tournaments) ? payload.tournaments : []);
+    } catch (err) {
+      setApiError(`Could not load tournaments: ${err.message}`);
+    }
+  };
+
+  const addTournament = async () => {
     const errors = validateTournamentForm();
     if (Object.keys(errors).length > 0) {
       setFormErrors(errors);
       return;
     }
+    if (!backendUrl) {
+      setApiError("VITE_BACKEND_URL is missing.");
+      return;
+    }
+    if (!supabase) {
+      setApiError("Supabase auth is unavailable.");
+      return;
+    }
 
-    const participants = [];
-    const standings = [];
+    const { data } = await supabase.auth.getSession();
+    const token = data.session?.access_token;
+    if (!token) {
+      setApiError("Please log in again to create a tournament.");
+      return;
+    }
 
-    const newTournament = {
-      id: Date.now(),
-      name: name.trim(),
-      teams: String(Number(teams)),
-      prizePool: String(Number(prizePool)),
-      organizer: organizer.trim() || "TBD",
-      startDateTime,
-      game,
-      status,
-      format,
-      rules: rules.trim(),
-      participants,
-      standings,
-    };
+    try {
+      setIsSavingTournament(true);
+      setApiError("");
+      const response = await fetch(`${backendUrl}/tournament`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          name: name.trim(),
+          teams: Number(teams),
+          prizePool: Number(prizePool),
+          organizer: organizer.trim() || "TBD",
+          startDateTime,
+          game,
+          status,
+          format,
+          rules: rules.trim(),
+        }),
+      });
 
-    setTournaments([...tournaments, newTournament]);
+      if (!response.ok) {
+        const message = await parseBackendError(
+          response,
+          `POST /tournament failed with status ${response.status}.`
+        );
+        setApiError(message);
+        return;
+      }
+
+      const payload = await response.json();
+      if (payload?.tournament) {
+        setTournaments((prev) => [payload.tournament, ...prev]);
+      }
+    } catch (err) {
+      setApiError(`Could not create tournament: ${err.message}`);
+      return;
+    } finally {
+      setIsSavingTournament(false);
+    }
 
     setName("");
     setTeams("");
@@ -113,8 +192,45 @@ export default function Tournaments({ user }) {
     setFormErrors({});
   };
 
-  const deleteTournament = (id) => {
-    setTournaments(tournaments.filter((t) => t.id !== id));
+  const deleteTournament = async (id) => {
+    if (!backendUrl) {
+      setApiError("VITE_BACKEND_URL is missing.");
+      return;
+    }
+    if (!supabase) {
+      setApiError("Supabase auth is unavailable.");
+      return;
+    }
+
+    const { data } = await supabase.auth.getSession();
+    const token = data.session?.access_token;
+    if (!token) {
+      setApiError("Please log in again to delete a tournament.");
+      return;
+    }
+
+    try {
+      setApiError("");
+      const response = await fetch(`${backendUrl}/tournament/${id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const message = await parseBackendError(
+          response,
+          `DELETE /tournament/${id} failed with status ${response.status}.`
+        );
+        setApiError(message);
+        return;
+      }
+
+      setTournaments((prev) => prev.filter((t) => String(t.id) !== String(id)));
+    } catch (err) {
+      setApiError(`Could not delete tournament: ${err.message}`);
+    }
   };
 
   const updateSelectedTournament = (updatedTournament) => {
@@ -234,6 +350,10 @@ export default function Tournaments({ user }) {
   }, [searchTerm, statusFilter, gameFilter, dateFilter, sortBy]);
 
   useEffect(() => {
+    fetchTournaments();
+  }, []);
+
+  useEffect(() => {
     let active = true;
 
     const loadTeamProfile = async () => {
@@ -265,6 +385,7 @@ export default function Tournaments({ user }) {
   return (
     <div className="tournaments">
       <h1>Tournaments</h1>
+      {apiError && <p className="team-required-error">{apiError}</p>}
 
       {selectedTournament ? (
         <div className="tournament-details">
@@ -517,8 +638,8 @@ export default function Tournaments({ user }) {
                 {formErrors.rules && <p className="input-error-text">{formErrors.rules}</p>}
               </div>
 
-              <button onClick={addTournament}>
-                Add Tournament
+              <button onClick={addTournament} disabled={isSavingTournament}>
+                {isSavingTournament ? "Saving..." : "Add Tournament"}
               </button>
             </div>
           ) : (

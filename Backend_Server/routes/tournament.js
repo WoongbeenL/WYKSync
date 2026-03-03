@@ -11,3 +11,122 @@ const router = express.Router();
 
 const supabase = require("../lib/supabase");
 const requireUser = require("../middleware/requireUser");
+
+const normalizeTournament = (row = {}) => {
+  return {
+    id: row.tournamentId,
+    name: row.name || "Untitled Tournament",
+    teams: "0",
+    prizePool: "0",
+    organizer: "TBD",
+    startDateTime: row.start_date || null,
+    game: "Valorant",
+    status: row.status || "upcoming",
+    format: row.format || "Single Elimination",
+    rules:
+      row.description ||
+      "Standard competitive rules apply. All matches are Best of 3.",
+    participants: [],
+    standings: [],
+  };
+};
+
+router.get("/", async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from("tournaments")
+      .select("*")
+      .order("start_date", { ascending: true, nullsFirst: false });
+
+    if (error) throw error;
+
+    const tournaments = (data || []).map(normalizeTournament);
+    res.json({ tournaments });
+  } catch (err) {
+    console.error("GET /tournament error:", err);
+    res.status(500).json({ error: "Could not load tournaments." });
+  }
+});
+
+router.post("/", requireUser, async (req, res) => {
+  try {
+    const {
+      name,
+      teams,
+      prizePool,
+      organizer,
+      startDateTime,
+      game,
+      status,
+      format,
+      rules,
+    } = req.body || {};
+
+    const trimmedName = String(name || "").trim();
+    const parsedTeams = Number(teams);
+    const parsedPrizePool = Number(prizePool);
+
+    if (!trimmedName) {
+      return res.status(400).json({ error: "Tournament name is required." });
+    }
+    if (!Number.isInteger(parsedTeams) || parsedTeams < 2) {
+      return res.status(400).json({ error: "Team count must be at least 2." });
+    }
+    if (!Number.isFinite(parsedPrizePool) || parsedPrizePool < 0) {
+      return res.status(400).json({ error: "Prize pool must be 0 or greater." });
+    }
+
+    const parsedStartDate = startDateTime ? new Date(startDateTime) : null;
+    const startDate =
+      parsedStartDate && !Number.isNaN(parsedStartDate.getTime())
+        ? parsedStartDate.toISOString().slice(0, 10)
+        : null;
+
+    const rowToInsert = {
+      name: trimmedName,
+      description:
+        String(rules || "").trim() ||
+        "Standard competitive rules apply. All matches are Best of 3.",
+      start_date: startDate,
+      end_date: startDate,
+      format: String(format || "Single Elimination"),
+      status: String(status || "upcoming"),
+    };
+
+    const { data, error } = await supabase
+      .from("tournaments")
+      .insert([rowToInsert])
+      .select("*")
+      .single();
+
+    if (error) throw error;
+
+    res.status(201).json({ tournament: normalizeTournament(data) });
+  } catch (err) {
+    console.error("POST /tournament error:", err);
+    res.status(500).json({ error: "Could not create tournament." });
+  }
+});
+
+router.delete("/:id", requireUser, async (req, res) => {
+  try {
+    const id = req.params.id;
+    if (!id) {
+      return res.status(400).json({ error: "Tournament id is required." });
+    }
+
+    const { error: deleteError } = await supabase
+      .from("tournaments")
+      .delete()
+      .eq("tournamentId", id);
+
+    if (deleteError) throw deleteError;
+
+    res.status(204).send();
+  } catch (err) {
+    console.error("DELETE /tournament/:id error:", err);
+    res.status(500).json({ error: "Could not delete tournament." });
+  }
+});
+
+module.exports = router;
