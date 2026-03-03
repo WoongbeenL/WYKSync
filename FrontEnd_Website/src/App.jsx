@@ -119,7 +119,7 @@ function App() {
       page = <Overlay />;
       break;
     case "/team-profile":
-      page = <TeamProfile user={user} />;
+      page = <TeamProfile user={user} onProfileUpdated={handleLogin} />;
       break;
     case "/login":
       page = <Login onLogin={handleLogin} />;
