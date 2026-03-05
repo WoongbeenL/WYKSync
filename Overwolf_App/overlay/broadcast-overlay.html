@@ -675,21 +675,299 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      border: 1px solid var(--border-gold);
-      border-radius: 4px;
-      background: rgba(0, 0, 0, 0.3);
       overflow: hidden;
     }
 
     .team-logo-slot img {
-      width: 38px;
-      height: 38px;
+      max-width: 42px;
+      max-height: 42px;
       object-fit: contain;
     }
 
     .logo-placeholder {
-      font-size: 1.3rem;
-      opacity: 0.4;
+      display: none;
+    }
+
+    /* ============================
+     BUY PHASE OVERLAY
+     ============================ */
+    @keyframes slide-up-buy-left {
+      from {
+        opacity: 0;
+        transform: translateX(-40px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    @keyframes slide-up-buy-right {
+      from {
+        opacity: 0;
+        transform: translateX(40px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    /* Hide player cards when buy phase is active */
+    .players-col.buy-hidden {
+      opacity: 0 !important;
+      pointer-events: none !important;
+      transition: opacity 0.4s ease;
+    }
+
+    .buy-phase-overlay {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 50vh;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      padding: 0 16px 16px 16px;
+      gap: 20px;
+      z-index: 80;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.5s ease;
+    }
+
+    .buy-phase-overlay.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .buy-phase-overlay.fade-out {
+      opacity: 0;
+      transition: opacity 0.6s ease;
+    }
+
+    /* -- Buy Team Panel (each side) -- */
+    .buy-team-panel {
+      flex: 1;
+      max-width: 48%;
+      background: rgba(10, 10, 22, 0.72);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid var(--border-gold);
+      border-radius: 8px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 40px rgba(201, 168, 76, 0.06);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .buy-team-panel.buy-panel-left {
+      animation: slide-up-buy-left 0.5s ease both;
+    }
+
+    .buy-team-panel.buy-panel-right {
+      animation: slide-up-buy-right 0.5s ease both;
+    }
+
+    /* -- Buy Panel Header -- */
+    .buy-panel-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--border-subtle);
+      background: rgba(0, 0, 0, 0.3);
+    }
+
+    .buy-panel-right .buy-panel-header {
+      flex-direction: row-reverse;
+    }
+
+    .buy-panel-logo {
+      width: 36px;
+      height: 36px;
+      min-width: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .buy-panel-logo img {
+      max-width: 36px;
+      max-height: 36px;
+      object-fit: contain;
+    }
+
+    .buy-panel-team-info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      flex: 1;
+    }
+
+    .buy-panel-right .buy-panel-team-info {
+      text-align: right;
+      align-items: flex-end;
+    }
+
+    .buy-team-name {
+      font-size: 0.85rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: var(--gold-light);
+    }
+
+    .buy-loadout-value {
+      font-size: 0.6rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .buy-loadout-value span {
+      color: var(--gold);
+    }
+
+    .buy-panel-phase-tag {
+      font-size: 0.55rem;
+      font-weight: 800;
+      color: var(--gold);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      padding: 3px 10px;
+      border-radius: 3px;
+      background: rgba(201, 168, 76, 0.12);
+      border: 1px solid rgba(201, 168, 76, 0.25);
+      white-space: nowrap;
+    }
+
+    /* -- Buy Phase Players List -- */
+    .buy-team-players {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      padding: 8px 10px;
+      flex: 1;
+    }
+
+    /* -- Buy Player Row -- */
+    .buy-player-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 10px;
+      border-radius: 5px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid transparent;
+      transition: background 0.2s, border-color 0.2s;
+    }
+
+    .buy-player-row:hover {
+      background: rgba(255, 255, 255, 0.07);
+      border-color: var(--border-subtle);
+    }
+
+    .buy-panel-right .buy-player-row {
+      flex-direction: row-reverse;
+    }
+
+    .buy-panel-right .buy-player-row .buy-player-info {
+      text-align: right;
+      align-items: flex-end;
+    }
+
+    .buy-player-agent {
+      width: 36px;
+      height: 36px;
+      min-width: 36px;
+      border-radius: 4px;
+      overflow: hidden;
+      background: rgba(20, 20, 35, 0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .buy-player-agent img {
+      width: 32px;
+      height: 32px;
+      object-fit: contain;
+    }
+
+    .buy-player-info {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+    }
+
+    .buy-player-name {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--white);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .buy-player-kda {
+      font-size: 0.55rem;
+      color: var(--text-muted);
+    }
+
+    .buy-player-kda b {
+      color: var(--text-secondary);
+    }
+
+    .buy-player-credits {
+      font-size: 0.8rem;
+      font-weight: 800;
+      font-family: monospace;
+      color: var(--gold);
+      min-width: 56px;
+      text-align: center;
+    }
+
+    .buy-player-weapon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 70px;
+    }
+
+    .buy-player-weapon img {
+      max-width: 64px;
+      max-height: 24px;
+      object-fit: contain;
+      filter: brightness(0.85);
+    }
+
+    .buy-player-weapon .wep-fallback {
+      font-size: 0.5rem;
+      color: var(--text-muted);
+    }
+
+    .buy-player-shield {
+      font-size: 0.6rem;
+      font-weight: 700;
+      min-width: 32px;
+      text-align: center;
+      padding: 3px 5px;
+      border-radius: 3px;
+      background: rgba(96, 165, 250, 0.12);
+      color: #60a5fa;
+    }
+
+    .buy-player-shield.no-shield {
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--text-muted);
     }
 
     /* ============================
@@ -715,6 +993,64 @@
 
     .debug .dv {
       color: var(--gold);
+    }
+
+    /* ============================
+     DEBUG TEST PANEL (TEMPORARY)
+     ============================ */
+    .debug-test-panel {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      z-index: 9999;
+      background: rgba(10, 10, 20, 0.92);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(201, 168, 76, 0.4);
+      border-radius: 8px;
+      padding: 10px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-family: 'Inter', sans-serif;
+      max-width: 200px;
+    }
+
+    .debug-test-panel h4 {
+      margin: 0;
+      font-size: 0.6rem;
+      color: var(--gold);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      border-bottom: 1px solid rgba(201, 168, 76, 0.3);
+      padding-bottom: 4px;
+    }
+
+    .debug-test-panel button {
+      background: rgba(201, 168, 76, 0.15);
+      border: 1px solid rgba(201, 168, 76, 0.35);
+      color: #e0d6c0;
+      font-size: 0.6rem;
+      font-weight: 700;
+      font-family: 'Inter', sans-serif;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding: 5px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+    }
+
+    .debug-test-panel button:hover {
+      background: rgba(201, 168, 76, 0.35);
+      border-color: var(--gold);
+    }
+
+    .debug-test-panel .section-label {
+      font-size: 0.5rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-top: 4px;
     }
   </style>
 </head>
@@ -748,7 +1084,7 @@
     <div class="top-team top-team-a">
       <div class="team-logo-slot" id="logo-a">
         <img id="logo-img-a" src="" alt="" style="display:none;width:36px;height:36px;object-fit:contain;">
-        <span class="logo-placeholder" id="logo-ph-a">🏳</span>
+        <span class="logo-placeholder" id="logo-ph-a"></span>
       </div>
       <div class="top-team-info">
         <span class="top-team-name" id="t-name-a">TEAM A</span>
@@ -766,7 +1102,7 @@
       </div>
       <div class="team-logo-slot" id="logo-b">
         <img id="logo-img-b" src="" alt="" style="display:none;width:36px;height:36px;object-fit:contain;">
-        <span class="logo-placeholder" id="logo-ph-b">🏳</span>
+        <span class="logo-placeholder" id="logo-ph-b"></span>
       </div>
     </div>
 
@@ -807,6 +1143,34 @@
   <div class="players-col left" id="players-left"></div>
   <div class="players-col right" id="players-right"></div>
 
+  <!-- BUY PHASE OVERLAY -->
+  <div class="buy-phase-overlay" id="buy-phase-overlay">
+    <!-- Left team panel -->
+    <div class="buy-team-panel buy-panel-left">
+      <div class="buy-panel-header">
+        <div class="buy-panel-logo" id="buy-logo-a"></div>
+        <div class="buy-panel-team-info">
+          <span class="buy-team-name" id="buy-name-a">TEAM A</span>
+          <span class="buy-loadout-value" id="buy-loadout-a">LOADOUT: <span>$0</span></span>
+        </div>
+        <span class="buy-panel-phase-tag">BUY PHASE</span>
+      </div>
+      <div class="buy-team-players" id="buy-team-left"></div>
+    </div>
+    <!-- Right team panel -->
+    <div class="buy-team-panel buy-panel-right">
+      <div class="buy-panel-header">
+        <div class="buy-panel-logo" id="buy-logo-b"></div>
+        <div class="buy-panel-team-info">
+          <span class="buy-team-name" id="buy-name-b">TEAM B</span>
+          <span class="buy-loadout-value" id="buy-loadout-b">LOADOUT: <span>$0</span></span>
+        </div>
+        <span class="buy-panel-phase-tag">BUY PHASE</span>
+      </div>
+      <div class="buy-team-players" id="buy-team-right"></div>
+    </div>
+  </div>
+
   <!-- DEBUG  -->
   <div class="debug" id="debug">
     <span><span class="dl">WS:</span> <span class="dv" id="d-status">Connecting...</span></span>
@@ -814,6 +1178,24 @@
     <span><span class="dl">Map:</span> <span class="dv" id="d-map">—</span></span>
     <span><span class="dl">Rnd:</span> <span class="dv" id="d-round">—</span></span>
     <span><span class="dl">P:</span> <span class="dv" id="d-players">0</span></span>
+  </div>
+
+  <!-- DEBUG TEST PANEL (TEMPORARY — remove for production) -->
+  <div class="debug-test-panel" id="debug-test-panel">
+    <h4>⚙ Test Panel</h4>
+    <span class="section-label">Game States</span>
+    <button onclick="debugSetState('menu')">Menu</button>
+    <button onclick="debugSetState('agent_select')">Agent Select</button>
+    <button onclick="debugSetState('loading')">Loading</button>
+    <button onclick="debugSetState('in_game', 'buy')">In Game — Buy</button>
+    <button onclick="debugSetState('in_game', 'combat')">In Game — Combat</button>
+    <button onclick="debugSetState('in_game', 'end')">In Game — Round End</button>
+    <button onclick="debugSetState('closed')">Game Closed</button>
+    <span class="section-label">Round</span>
+    <button onclick="debugNextRound()">Next Round +1</button>
+    <span class="section-label">Team Logos</span>
+    <button onclick="debugSetLogos()">Set Sample Logos</button>
+    <button onclick="debugClearLogos()">Clear Logos</button>
   </div>
 
   <script>
@@ -934,6 +1316,17 @@
       topBarLine: document.getElementById('top-bar-line'),
       pLeft: document.getElementById('players-left'),
       pRight: document.getElementById('players-right'),
+      // Buy phase overlay
+      buyOverlay: document.getElementById('buy-phase-overlay'),
+      buyTeamLeft: document.getElementById('buy-team-left'),
+      buyTeamRight: document.getElementById('buy-team-right'),
+      buyNameA: document.getElementById('buy-name-a'),
+      buyNameB: document.getElementById('buy-name-b'),
+      buyLoadoutA: document.getElementById('buy-loadout-a'),
+      buyLoadoutB: document.getElementById('buy-loadout-b'),
+      buyLogoA: document.getElementById('buy-logo-a'),
+      buyLogoB: document.getElementById('buy-logo-b'),
+      // Debug
       debug: document.getElementById('debug'),
       dStatus: document.getElementById('d-status'),
       dState: document.getElementById('d-state'),
@@ -948,6 +1341,8 @@
     // WEBSOCKET
     // ========================================
     let ws = null, gameData = null;
+    let buyPhaseActive = false;
+    let buyFadeTimeout = null;
 
     function connect() {
       el.dStatus.textContent = 'Connecting...';
@@ -1032,6 +1427,16 @@
         if (ph) { el.phaseText.textContent = fmtPhase(ph); el.phase.classList.add('visible'); }
         else { el.phase.classList.remove('visible'); }
 
+        // Buy Phase Overlay
+        const phLower = ph.toLowerCase();
+        if (phLower === 'buy' || phLower === 'shopping') {
+          showBuyPhase();
+        } else if (buyPhaseActive && (phLower === 'combat' || phLower === 'playing')) {
+          hideBuyPhase(true); // fade out
+        } else if (buyPhaseActive) {
+          hideBuyPhase(false); // instant hide
+        }
+
         renderPlayers();
       } else {
         el.topbar.classList.remove('visible');
@@ -1039,6 +1444,7 @@
         el.phase.classList.remove('visible');
         el.pLeft.innerHTML = '';
         el.pRight.innerHTML = '';
+        if (buyPhaseActive) hideBuyPhase(false);
       }
     }
 
@@ -1047,7 +1453,7 @@
       return m[s] ?? s.replace(/_/g, ' ').toUpperCase();
     }
     function fmtPhase(p) {
-      const m = { buy: '💰 BUY PHASE', shopping: '💰 BUY PHASE', combat: '⚔ COMBAT', playing: '⚔ COMBAT', end: 'ROUND END', over: 'ROUND END', freeze: 'FREEZE TIME' };
+      const m = { buy: 'BUY PHASE', shopping: 'BUY PHASE', combat: 'COMBAT', playing: 'COMBAT', end: 'ROUND END', over: 'ROUND END', freeze: 'FREEZE TIME' };
       return m[p.toLowerCase()] ?? p.toUpperCase();
     }
 
@@ -1085,7 +1491,7 @@
       const isSpec = p.name && obs && p.name.includes(obs.split('#')[0]);
 
       const ultBadge = ultReady
-        ? '<span class="ult-badge ready">✦ ULT</span>'
+        ? '<span class="ult-badge ready">ULT</span>'
         : `<span class="ult-badge">${p.ultPoints ?? 0}/${p.ultMax ?? 0}</span>`;
 
       const specTag = isSpec ? '<div class="spec-tag">SPECTATING</div>' : '';
@@ -1095,8 +1501,8 @@
     <div class="p-agent">${agentHTML(p.agent)}</div>
     <div class="p-info">
       <div class="p-row">
-        <span class="p-name">${cleanName(p.name)}${p.hasSpike ? '<span class="spike">💣</span>' : ''}</span>
-        <span class="p-hp">${dead ? '☠' : hp}</span>
+        <span class="p-name">${cleanName(p.name)}${p.hasSpike ? '<span class="spike">SPIKE</span>' : ''}</span>
+        <span class="p-hp">${dead ? 'X' : hp}</span>
       </div>
       <div class="p-row" style="justify-content:center;">
         <div class="p-weapon">${weaponHTML(p.weapon)}</div>
@@ -1108,6 +1514,149 @@
     </div>
     <div class="p-health"><div class="p-health-fill ${hClass}" style="width:${pct}%"></div></div>
   </div>`;
+    }
+
+    // ========================================
+    // BUY PHASE OVERLAY
+    // ========================================
+    function showBuyPhase() {
+      if (buyFadeTimeout) { clearTimeout(buyFadeTimeout); buyFadeTimeout = null; }
+      buyPhaseActive = true;
+      el.buyOverlay.classList.remove('fade-out');
+      el.buyOverlay.classList.add('visible');
+      // Hide sideline player cards
+      el.pLeft.classList.add('buy-hidden');
+      el.pRight.classList.add('buy-hidden');
+      renderBuyPhase();
+    }
+
+    function hideBuyPhase(fade) {
+      if (buyFadeTimeout) { clearTimeout(buyFadeTimeout); buyFadeTimeout = null; }
+      if (fade) {
+        el.buyOverlay.classList.add('fade-out');
+        buyFadeTimeout = setTimeout(() => {
+          el.buyOverlay.classList.remove('visible', 'fade-out');
+          buyPhaseActive = false;
+          buyFadeTimeout = null;
+          // Show sideline player cards again
+          el.pLeft.classList.remove('buy-hidden');
+          el.pRight.classList.remove('buy-hidden');
+        }, 650);
+      } else {
+        el.buyOverlay.classList.remove('visible', 'fade-out');
+        buyPhaseActive = false;
+        // Show sideline player cards again
+        el.pLeft.classList.remove('buy-hidden');
+        el.pRight.classList.remove('buy-hidden');
+      }
+    }
+
+    function renderBuyPhase() {
+      if (!gameData || !gameData.players) return;
+
+      const t0 = gameData.players.filter(p => p.team === 0);
+      const t1 = gameData.players.filter(p => p.team === 1);
+
+      // Update header names
+      el.buyNameA.textContent = el.nameA.textContent || 'TEAM A';
+      el.buyNameB.textContent = el.nameB.textContent || 'TEAM B';
+
+      // Sync logos from top bar into buy phase panels
+      const topLogoA = document.getElementById('logo-img-a');
+      const topLogoB = document.getElementById('logo-img-b');
+      if (topLogoA && topLogoA.style.display !== 'none' && topLogoA.src) {
+        el.buyLogoA.innerHTML = `<img src="${topLogoA.src}" alt="">`;
+      } else {
+        el.buyLogoA.innerHTML = '';
+      }
+      if (topLogoB && topLogoB.style.display !== 'none' && topLogoB.src) {
+        el.buyLogoB.innerHTML = `<img src="${topLogoB.src}" alt="">`;
+      } else {
+        el.buyLogoB.innerHTML = '';
+      }
+
+      // Calculate loadout values (sum of money for each team)
+      const loadoutA = t0.reduce((sum, p) => sum + (p.money || 0), 0);
+      const loadoutB = t1.reduce((sum, p) => sum + (p.money || 0), 0);
+      el.buyLoadoutA.innerHTML = `LOADOUT: <span>$${loadoutA.toLocaleString()}</span>`;
+      el.buyLoadoutB.innerHTML = `LOADOUT: <span>$${loadoutB.toLocaleString()}</span>`;
+
+      // Render player rows
+      el.buyTeamLeft.innerHTML = t0.map(p => buyPlayerRow(p)).join('');
+      el.buyTeamRight.innerHTML = t1.map(p => buyPlayerRow(p)).join('');
+    }
+
+    function buyPlayerRow(p) {
+      const shield = p.shield || 0;
+      const shieldClass = shield > 0 ? '' : 'no-shield';
+      const shieldText = shield > 0 ? `${shield}` : '—';
+
+      return `<div class="buy-player-row">
+        <div class="buy-player-agent">${agentHTML(p.agent)}</div>
+        <div class="buy-player-info">
+          <span class="buy-player-name">${cleanName(p.name)}${p.hasSpike ? '<span class="spike">SPIKE</span>' : ''}</span>
+          <span class="buy-player-kda"><b>${p.kills ?? 0}</b>/${p.deaths ?? 0}/${p.assists ?? 0}</span>
+        </div>
+        <span class="buy-player-credits">$${(p.money ?? 0).toLocaleString()}</span>
+        <div class="buy-player-weapon">${weaponHTML(p.weapon)}</div>
+        <span class="buy-player-shield ${shieldClass}">${shieldText}</span>
+      </div>`;
+    }
+
+    // ========================================
+    // DEBUG TEST HELPERS (TEMPORARY — remove for production)
+    // ========================================
+    const MOCK_PLAYERS = [
+      // Team 0
+      { name: 'Faker#NA1', team: 0, agent: 'jett', isAlive: true, health: 150, kills: 12, deaths: 3, assists: 5, money: 4700, weapon: 'vandal', shield: 50, ultPoints: 7, ultMax: 7, hasSpike: false },
+      { name: 'Shroud#NA1', team: 0, agent: 'sage', isAlive: true, health: 100, kills: 8, deaths: 5, assists: 9, money: 3200, weapon: 'phantom', shield: 25, ultPoints: 5, ultMax: 8, hasSpike: false },
+      { name: 'TenZ#RIOT', team: 0, agent: 'reyna', isAlive: true, health: 80, kills: 15, deaths: 7, assists: 2, money: 800, weapon: 'sheriff', shield: 0, ultPoints: 4, ultMax: 6, hasSpike: true },
+      { name: 'Hiko#NA1', team: 0, agent: 'sova', isAlive: false, health: 0, kills: 5, deaths: 8, assists: 7, money: 2100, weapon: 'spectre', shield: 25, ultPoints: 3, ultMax: 7, hasSpike: false },
+      { name: 'Subroza#NA1', team: 0, agent: 'omen', isAlive: true, health: 45, kills: 6, deaths: 6, assists: 4, money: 5000, weapon: 'vandal', shield: 50, ultPoints: 6, ultMax: 7, hasSpike: false },
+      // Team 1
+      { name: 'Aspas#BR1', team: 1, agent: 'raze', isAlive: true, health: 130, kills: 18, deaths: 4, assists: 3, money: 3900, weapon: 'vandal', shield: 50, ultPoints: 7, ultMax: 7, hasSpike: false },
+      { name: 'Chronicle#EU', team: 1, agent: 'killjoy', isAlive: true, health: 100, kills: 7, deaths: 6, assists: 8, money: 2800, weapon: 'phantom', shield: 25, ultPoints: 5, ultMax: 8, hasSpike: false },
+      { name: 'Derke#RIOT', team: 1, agent: 'chamber', isAlive: true, health: 100, kills: 11, deaths: 5, assists: 4, money: 4200, weapon: 'operator', shield: 50, ultPoints: 6, ultMax: 7, hasSpike: false },
+      { name: 'Less#BR1', team: 1, agent: 'viper', isAlive: false, health: 0, kills: 4, deaths: 9, assists: 6, money: 1500, weapon: 'spectre', shield: 0, ultPoints: 2, ultMax: 7, hasSpike: false },
+      { name: 'Sacy#BR1', team: 1, agent: 'breach', isAlive: true, health: 60, kills: 9, deaths: 7, assists: 10, money: 3600, weapon: 'vandal', shield: 25, ultPoints: 4, ultMax: 7, hasSpike: false },
+    ];
+
+    let mockRound = 8;
+
+    function debugSetState(state, phase) {
+      gameData = {
+        gameState: state,
+        map: 'ascent',
+        roundNumber: mockRound,
+        roundPhase: phase || '',
+        score: { team0: 5, team1: 3 },
+        players: state === 'in_game' ? JSON.parse(JSON.stringify(MOCK_PLAYERS)) : [],
+        observing: 'TenZ',
+      };
+      render();
+    }
+
+    function debugNextRound() {
+      mockRound++;
+      if (gameData) {
+        gameData.roundNumber = mockRound;
+        render();
+      }
+    }
+
+    function debugSetLogos() {
+      // Sample logos (Valorant team logos from public URLs)
+      setLogo('a', 'https://upload.wikimedia.org/wikipedia/en/thumb/a/a2/Sentinels_logo.svg/220px-Sentinels_logo.svg.png');
+      setLogo('b', 'https://upload.wikimedia.org/wikipedia/en/thumb/5/50/Fnatic_logo.svg/220px-Fnatic_logo.svg.png');
+      el.nameA.textContent = 'SENTINELS';
+      el.nameB.textContent = 'FNATIC';
+    }
+
+    function debugClearLogos() {
+      setLogo('a', '');
+      setLogo('b', '');
+      el.nameA.textContent = 'TEAM A';
+      el.nameB.textContent = 'TEAM B';
     }
 
     // ========================================
