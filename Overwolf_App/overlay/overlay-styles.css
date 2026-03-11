@@ -350,10 +350,10 @@
      ============================ */
     .players-col {
       position: fixed;
-      bottom: 12px;
+      bottom: 30px;
       display: flex;
       flex-direction: column-reverse;
-      gap: 3px;
+      gap: 4px;
       z-index: 50;
     }
 
@@ -371,8 +371,8 @@
     .p-card {
       display: flex;
       align-items: stretch;
-      width: 340px;
-      height: 68px;
+      width: 420px;
+      height: 90px;
       position: relative;
       overflow: hidden;
       opacity: 0;
@@ -410,8 +410,8 @@
 
     /* -- Agent Icon Area -- */
     .p-agent {
-      width: 68px;
-      min-width: 68px;
+      width: 90px;
+      min-width: 90px;
       height: 100%;
       background: rgba(20, 20, 35, 0.9);
       display: flex;
@@ -430,15 +430,15 @@
     }
 
     .p-agent img {
-      width: 58px;
-      height: 58px;
+      width: 78px;
+      height: 78px;
       object-fit: contain;
       border-radius: 4px;
     }
 
     .p-agent .agent-fallback {
-      width: 50px;
-      height: 50px;
+      width: 60px;
+      height: 60px;
     }
 
     /* Dead X overlay */
@@ -461,7 +461,7 @@
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      padding: 5px 10px;
+      padding: 6px 12px;
       min-width: 0;
     }
 
@@ -485,7 +485,7 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      max-width: 130px;
+      max-width: 170px;
       color: var(--white);
     }
 
@@ -592,20 +592,20 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 0 4px;
+      padding: 2px 4px;
       flex-shrink: 0;
+      height: 38px;
     }
 
-
     .p-weapon img {
-      max-width: 80px;
-      max-height: 30px;
+      max-width: 120px;
+      max-height: 38px;
       object-fit: contain;
       filter: brightness(0.9);
     }
 
     .p-weapon .wep-fallback {
-      font-size: 0.5rem;
+      font-size: 0.55rem;
       color: var(--text-muted);
       text-transform: uppercase;
       text-align: center;
@@ -845,8 +845,8 @@
     .buy-team-players {
       display: flex;
       flex-direction: column;
-      gap: 4px;
-      padding: 10px 12px;
+      gap: 6px;
+      padding: 12px 14px;
       flex: 1;
     }
 
@@ -854,8 +854,8 @@
     .buy-player-row {
       display: flex;
       align-items: center;
-      gap: 10px;
-      padding: 10px 14px;
+      gap: 16px;
+      padding: 10px 18px;
       border-radius: 5px;
       background: rgba(255, 255, 255, 0.03);
       border: 1px solid transparent;
@@ -877,9 +877,9 @@
     }
 
     .buy-player-agent {
-      width: 56px;
-      height: 56px;
-      min-width: 56px;
+      width: 64px;
+      height: 64px;
+      min-width: 64px;
       border-radius: 5px;
       overflow: hidden;
       background: rgba(20, 20, 35, 0.8);
@@ -889,8 +889,8 @@
     }
 
     .buy-player-agent img {
-      width: 52px;
-      height: 52px;
+      width: 60px;
+      height: 60px;
       object-fit: contain;
     }
 
@@ -969,19 +969,20 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      min-width: 80px;
+      min-width: 140px;
+      height: 42px;
       flex-shrink: 0;
     }
 
     .buy-player-weapon img {
-      max-width: 72px;
-      max-height: 28px;
+      max-width: 130px;
+      max-height: 42px;
       object-fit: contain;
       filter: brightness(0.85);
     }
 
     .buy-player-weapon .wep-fallback {
-      font-size: 0.5rem;
+      font-size: 0.55rem;
       color: var(--text-muted);
     }
 
@@ -989,19 +990,19 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      min-width: 34px;
+      min-width: 44px;
       flex-shrink: 0;
     }
 
     .buy-player-shield img {
-      width: 30px;
-      height: 30px;
+      width: 40px;
+      height: 40px;
       object-fit: contain;
     }
 
     .buy-player-shield svg {
-      width: 30px;
-      height: 30px;
+      width: 40px;
+      height: 40px;
     }
 
     /* ============================

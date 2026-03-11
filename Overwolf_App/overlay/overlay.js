@@ -7,43 +7,46 @@ const CONFIG = { wsUrl: 'ws://localhost:8765', showDebug: true };
 // AGENT IMAGE MAP
 // ========================================
 const AGENT_IMAGES = {
-  jett: 'assets/agents/jett.png',
-  phoenix: 'assets/agents/phoenix.png',
-  sage: 'assets/agents/sage.png',
-  sova: 'assets/agents/sova.png',
-  brimstone: 'assets/agents/brimstone.png',
-  viper: 'assets/agents/viper.png',
-  omen: 'assets/agents/omen.png',
-  killjoy: 'assets/agents/killjoy.png',
-  cypher: 'assets/agents/cypher.png',
-  reyna: 'assets/agents/reyna.png',
-  raze: 'assets/agents/raze.png',
-  breach: 'assets/agents/breach.png',
-  skye: 'assets/agents/skye.png',
-  yoru: 'assets/agents/yoru.png',
-  astra: 'assets/agents/astra.png',
-  kayo: 'assets/agents/kayo.png',
-  chamber: 'assets/agents/chamber.png',
-  neon: 'assets/agents/neon.png',
-  fade: 'assets/agents/fade.png',
-  harbor: 'assets/agents/harbor.png',
-  gekko: 'assets/agents/gekko.png',
-  deadlock: 'assets/agents/deadlock.png',
-  iso: 'assets/agents/iso.png',
-  clove: 'assets/agents/clove.png',
-  vyse: 'assets/agents/vyse.png',
-  tejo: 'assets/agents/tejo.png',
-  waylay: 'assets/agents/waylay.png',
+  jett: 'assets/agents/Jett.png',
+  phoenix: 'assets/agents/Phoenix.png',
+  sage: 'assets/agents/Sage.png',
+  sova: 'assets/agents/Sova.png',
+  brimstone: 'assets/agents/Brimstone.png',
+  viper: 'assets/agents/Viper.png',
+  omen: 'assets/agents/Omen.png',
+  killjoy: 'assets/agents/Killjoy.png',
+  cypher: 'assets/agents/Cypher.png',
+  reyna: 'assets/agents/Reyna.png',
+  raze: 'assets/agents/Raze.png',
+  breach: 'assets/agents/Breach.png',
+  skye: 'assets/agents/Skye.png',
+  yoru: 'assets/agents/Yoru.png',
+  astra: 'assets/agents/Astra.png',
+  kayo: 'assets/agents/KAYO.png',
+  chamber: 'assets/agents/Chamber.png',
+  neon: 'assets/agents/Neon.png',
+  fade: 'assets/agents/Fade.png',
+  harbor: 'assets/agents/Harbor.png',
+  gekko: 'assets/agents/Gekko.png',
+  deadlock: 'assets/agents/Deadlock.png',
+  iso: 'assets/agents/Iso.png',
+  clove: 'assets/agents/Clove.png',
+  vyse: 'assets/agents/Vyse.png',
+  tejo: 'assets/agents/Tejo.png',
+  waylay: 'assets/agents/Waylay.png',
 };
 
 const AGENT_FALLBACK_SVG = `<svg class="agent-fallback" viewBox="0 0 36 36" fill="none"><circle cx="18" cy="18" r="14" stroke="#C9A84C" stroke-width="1.5" stroke-opacity="0.5"/><text x="18" y="22" text-anchor="middle" fill="#C9A84C" font-size="11" font-weight="bold" opacity="0.6">?</text></svg>`;
 
 function agentHTML(name) {
   if (!name) return AGENT_FALLBACK_SVG;
-  const key = name.toLowerCase().replace(/[^a-z]/g, '').replace('kayo', 'kayo');
-  const base = 'assets/agents/' + key;
-  return `<img src="${base}.png" alt="${name}"
-        onerror="this.onerror=function(){this.onerror=function(){this.outerHTML='${AGENT_FALLBACK_SVG.replace(/'/g, "\\'").replace(/"/g, "'")}'};this.src='${base}.webp'};this.src='${base}.jpg'">`;
+  const key = name.toLowerCase().replace(/[^a-z]/g, '');
+  const entry = AGENT_IMAGES[key];
+  if (entry) {
+    return `<img src="${entry}" alt="${name}" 
+          onerror="this.outerHTML='${AGENT_FALLBACK_SVG.replace(/'/g, "\\'").replace(/"/g, "'")}'">`;
+  }
+  return AGENT_FALLBACK_SVG;
 }
 
 // ========================================
@@ -109,17 +112,14 @@ const SHIELD_FALLBACKS = {
 };
 
 function shieldHTML(shield, shieldType) {
-  let tier;
-  if (shieldType === 'regen') {
-    tier = 'regen';
-  } else if (shield >= 50) {
-    tier = 'full';
-  } else if (shield >= 25) {
-    tier = 'light';
-  } else {
-    tier = 'none';
-  }
-  const imgPath = 'assets/shields/' + (tier === 'none' ? 'no-shield' : tier) + '.png';
+  // API shield codes: 0 = none, 1 = light, 2 = heavy, 4 = regen
+  const codeToTier = { 0: 'none', 1: 'light', 2: 'full', 4: 'regen' };
+  const tier = codeToTier[shield] || 'none';
+
+  const shieldFileMap = { none: null, light: 'Light_Armor', regen: 'Regen_Shield', full: 'Heavy_Armor' };
+  const shieldFile = shieldFileMap[tier];
+  if (!shieldFile) return SHIELD_FALLBACKS[tier];
+  const imgPath = 'assets/shields/' + shieldFile + '.png';
   const fallback = SHIELD_FALLBACKS[tier];
   return `<img src="${imgPath}" alt="${tier}" onerror="this.outerHTML='${fallback.replace(/'/g, "\\'").replace(/"/g, "'")}'">`;
 }

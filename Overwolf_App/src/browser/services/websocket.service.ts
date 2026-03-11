@@ -69,74 +69,6 @@ export class WebSocketService {
   private handleHttpRequest(req: IncomingMessage, res: ServerResponse): void {
     const url = req.url || '/';
 
-    // Try multiple overlay locations
-    const overlayPaths = [
-      join(__dirname, '../overlay/broadcast-overlay.html'),
-      join(__dirname, '../../overlay/broadcast-overlay.html'),
-      join(process.cwd(), 'overlay/broadcast-overlay.html'),
-      join(process.cwd(), 'dist/overlay/broadcast-overlay.html'),
-    ];
-
-    if (url === '/' || url === '/overlay' || url === '/overlay.html') {
-      for (const overlayPath of overlayPaths) {
-        if (existsSync(overlayPath)) {
-          try {
-            const html = readFileSync(overlayPath, 'utf-8');
-            res.writeHead(200, { 'Content-Type': 'text/html' });
-            res.end(html);
-            return;
-          } catch (e) {
-            console.error('[HTTP] Error reading overlay:', e);
-          }
-        }
-      }
-
-      // Fallback if file not found
-      res.writeHead(404, { 'Content-Type': 'text/html' });
-      res.end('<h1>Overlay not found</h1><p>Looking for: broadcast-overlay.html</p>');
-      return;
-    }
-
-    // Serve static assets (images, etc.) from the overlay directory
-    if (url.startsWith('/assets/')) {
-      const assetPaths = [
-        join(__dirname, '../overlay', url),
-        join(__dirname, '../../overlay', url),
-        join(process.cwd(), 'overlay', url),
-        join(process.cwd(), 'dist/overlay', url),
-      ];
-
-      const extMap: Record<string, string> = {
-        '.png': 'image/png',
-        '.jpg': 'image/jpeg',
-        '.jpeg': 'image/jpeg',
-        '.webp': 'image/webp',
-        '.svg': 'image/svg+xml',
-        '.gif': 'image/gif',
-        '.ico': 'image/x-icon',
-      };
-
-      const ext = url.substring(url.lastIndexOf('.')).toLowerCase();
-      const contentType = extMap[ext] || 'application/octet-stream';
-
-      for (const assetPath of assetPaths) {
-        if (existsSync(assetPath)) {
-          try {
-            const data = readFileSync(assetPath);
-            res.writeHead(200, { 'Content-Type': contentType });
-            res.end(data);
-            return;
-          } catch (e) {
-            console.error('[HTTP] Error reading asset:', e);
-          }
-        }
-      }
-
-      res.writeHead(404);
-      res.end('Asset not found');
-      return;
-    }
-
     // Status endpoint
     if (url === '/status') {
       res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -153,6 +85,54 @@ export class WebSocketService {
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify(this.lastGameData || { error: 'No game data' }));
       return;
+    }
+
+    // Determine which file to serve
+    const requestedFile = (url === '/' || url === '/overlay' || url === '/overlay.html')
+      ? 'broadcast-overlay.html'
+      : url.replace(/^\//, ''); // strip leading slash
+
+    // Content-type map for all overlay file types
+    const extMap: Record<string, string> = {
+      '.html': 'text/html',
+      '.css': 'text/css',
+      '.js': 'application/javascript',
+      '.png': 'image/png',
+      '.jpg': 'image/jpeg',
+      '.jpeg': 'image/jpeg',
+      '.webp': 'image/webp',
+      '.svg': 'image/svg+xml',
+      '.gif': 'image/gif',
+      '.ico': 'image/x-icon',
+      '.json': 'application/json',
+      '.woff': 'font/woff',
+      '.woff2': 'font/woff2',
+      '.ttf': 'font/ttf',
+    };
+
+    // Try multiple overlay base directories
+    const overlayBases = [
+      join(__dirname, '../overlay'),
+      join(__dirname, '../../overlay'),
+      join(process.cwd(), 'overlay'),
+      join(process.cwd(), 'dist/overlay'),
+    ];
+
+    const ext = requestedFile.substring(requestedFile.lastIndexOf('.')).toLowerCase();
+    const contentType = extMap[ext] || 'application/octet-stream';
+
+    for (const base of overlayBases) {
+      const filePath = join(base, requestedFile);
+      if (existsSync(filePath)) {
+        try {
+          const data = readFileSync(filePath);
+          res.writeHead(200, { 'Content-Type': contentType });
+          res.end(data);
+          return;
+        } catch (e) {
+          console.error('[HTTP] Error reading file:', filePath, e);
+        }
+      }
     }
 
     res.writeHead(404);

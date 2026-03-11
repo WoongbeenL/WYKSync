@@ -407,36 +407,36 @@ export class GepService extends EventEmitter {
 
   private formatAgent(character: string): string {
     const agentMap: Record<string, string> = {
-      'Deadeye': 'Chamber',
-      'Grenadier': 'KAY/O',
-      'Guide': 'Skye',
-      'Hunter': 'Sova',
-      'Rift': 'Astra',
-      'Sarge': 'Brimstone',
-      'Sprinter': 'Neon',
-      'Stealth': 'Viper',
+      'Clay': 'Raze',
       'Pandemic': 'Viper',
-      'Thorne': 'Sage',
-      'Vampire': 'Reyna',
-      'Wushu': 'Jett',
       'Wraith': 'Omen',
+      'Hunter': 'Sova',
+      'Thorne': 'Sage',
+      'Phoenix': 'Phoenix',
+      'Wushu': 'Jett',
+      'Gumshoe': 'Cypher',
+      'Sarge': 'Brimstone',
+      'Breach': 'Breach',
+      'Vampire': 'Reyna',
+      'Killjoy': 'Killjoy',
+      'Guide': 'Skye',
+      'Stealth': 'Yoru',
+      'Rift': 'Astra',
+      'Grenadier': 'KAY/O',
+      'Deadeye': 'Chamber',
+      'Sprinter': 'Neon',
       'BountyHunter': 'Fade',
       'Mage': 'Harbor',
       'AggroBot': 'Gekko',
       'Cable': 'Deadlock',
-      'Sequoia': 'Clove',
-      'Smonk': 'Iso',
-      'Tether': 'Vyse',
-      'Breach': 'Breach',
-      'Phoenix': 'Phoenix',
-      'Clay': 'Raze',
-      'Gumshoe': 'Cypher',
-      'Killjoy': 'Killjoy',
-      'Yoru': 'Yoru',
+      'Sequoia': 'Iso',
+      'Smonk': 'Clove',
+      'Nox': 'Vyse',
       'Cashew': 'Tejo',
-      'Waylay': 'Waylay'
+      'Terra': 'Waylay',
     };
-    return agentMap[character] || character;
+    const key = character.replace(/_PC_C$/i, '');
+    return agentMap[key] || character;
   }
 
   private formatWeapon(weapon: string): string {

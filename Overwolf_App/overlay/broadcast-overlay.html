@@ -8,7 +8,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
     rel="stylesheet" />
   <link rel="stylesheet" href="overlay-styles.css" />
-  <script src="overlay.js"></script>
+  <script src="overlay.js" defer></script>
 </head>
 
 <body>
@@ -70,53 +70,54 @@
         </defs>
       </svg>
     </div>
+  </div>
 
-    <!-- PHASE BANNER -->
-    <div class="phase-banner" id="phase-banner">
-      <span id="phase-text"></span>
-      <span class="phase-round-label">ROUND <span id="t-round" class="phase-round-number">0</span></span>
-    </div>
+  <!-- PHASE BANNER -->
+  <div class="phase-banner" id="phase-banner">
+    <span id="phase-text"></span>
+    <span class="phase-round-label">ROUND <span id="t-round" class="phase-round-number">0</span></span>
+  </div>
 
-    <!-- PLAYER COLUMNS -->
-    <div class="players-col left" id="players-left"></div>
-    <div class="players-col right" id="players-right"></div>
+  <!-- PLAYER COLUMNS -->
+  <div class="players-col left" id="players-left"></div>
+  <div class="players-col right" id="players-right"></div>
 
-    <!-- BUY PHASE OVERLAY -->
-    <div class="buy-phase-overlay" id="buy-phase-overlay">
-      <!-- Left team panel -->
-      <div class="buy-team-panel buy-panel-left">
-        <div class="buy-panel-header">
-          <div class="buy-panel-logo" id="buy-logo-a"></div>
-          <div class="buy-panel-team-info">
-            <span class="buy-team-name" id="buy-name-a">TEAM A</span>
-            <span class="buy-team-economy" id="buy-eco-a"></span>
-          </div>
-
+  <!-- BUY PHASE OVERLAY -->
+  <div class="buy-phase-overlay" id="buy-phase-overlay">
+    <!-- Left team panel -->
+    <div class="buy-team-panel buy-panel-left">
+      <div class="buy-panel-header">
+        <div class="buy-panel-logo" id="buy-logo-a"></div>
+        <div class="buy-panel-team-info">
+          <span class="buy-team-name" id="buy-name-a">TEAM A</span>
+          <span class="buy-team-economy" id="buy-eco-a"></span>
         </div>
-        <div class="buy-team-players" id="buy-team-left"></div>
-      </div>
-      <!-- Right team panel -->
-      <div class="buy-team-panel buy-panel-right">
-        <div class="buy-panel-header">
-          <div class="buy-panel-logo" id="buy-logo-b"></div>
-          <div class="buy-panel-team-info">
-            <span class="buy-team-name" id="buy-name-b">TEAM B</span>
-            <span class="buy-team-economy" id="buy-eco-b"></span>
-          </div>
 
+      </div>
+      <div class="buy-team-players" id="buy-team-left"></div>
+    </div>
+    <!-- Right team panel -->
+    <div class="buy-team-panel buy-panel-right">
+      <div class="buy-panel-header">
+        <div class="buy-panel-logo" id="buy-logo-b"></div>
+        <div class="buy-panel-team-info">
+          <span class="buy-team-name" id="buy-name-b">TEAM B</span>
+          <span class="buy-team-economy" id="buy-eco-b"></span>
         </div>
-        <div class="buy-team-players" id="buy-team-right"></div>
-      </div>
-    </div>
 
-    <!-- DEBUG  -->
-    <div class="debug" id="debug">
-      <span><span class="dl">WS:</span> <span class="dv" id="d-status">Connecting...</span></span>
-      <span><span class="dl">State:</span> <span class="dv" id="d-state">—</span></span>
-      <span><span class="dl">Map:</span> <span class="dv" id="d-map">—</span></span>
-      <span><span class="dl">Rnd:</span> <span class="dv" id="d-round">—</span></span>
-      <span><span class="dl">P:</span> <span class="dv" id="d-players">0</span></span>
+      </div>
+      <div class="buy-team-players" id="buy-team-right"></div>
     </div>
+  </div>
+
+  <!-- DEBUG  -->
+  <div class="debug" id="debug">
+    <span><span class="dl">WS:</span> <span class="dv" id="d-status">Connecting...</span></span>
+    <span><span class="dl">State:</span> <span class="dv" id="d-state">—</span></span>
+    <span><span class="dl">Map:</span> <span class="dv" id="d-map">—</span></span>
+    <span><span class="dl">Rnd:</span> <span class="dv" id="d-round">—</span></span>
+    <span><span class="dl">P:</span> <span class="dv" id="d-players">0</span></span>
+  </div>
 
 
 </body>
