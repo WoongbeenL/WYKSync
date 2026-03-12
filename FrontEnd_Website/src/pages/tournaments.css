@@ -68,6 +68,14 @@
   min-width: 180px;
 }
 
+.input-group label {
+  display: block;
+  margin-bottom: 0.35rem;
+  color: #d7d7d7;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
 .input-group input,
 .input-group select {
   width: 100%;

@@ -14,6 +14,7 @@ export default function Tournaments({ user }) {
   const [prizePool, setPrizePool] = useState("");
   const [organizer, setOrganizer] = useState("");
   const [startDateTime, setStartDateTime] = useState("");
+  const [endDateTime, setEndDateTime] = useState("");
   const [game, setGame] = useState("Valorant");
   const [status, setStatus] = useState("upcoming");
   const [format, setFormat] = useState("Single Elimination");
@@ -42,6 +43,29 @@ export default function Tournaments({ user }) {
     return new Date(value).toLocaleString();
   };
 
+  const formatPrizePoolLabel = (value) => {
+    if (value === "" || value === null || value === undefined) return "TBD";
+    const numericValue = Number(value);
+    if (!Number.isFinite(numericValue)) return "TBD";
+    return `$${numericValue}`;
+  };
+
+  const normalizeTournament = (tournament) => ({
+    ...tournament,
+    id: tournament.id ?? tournament.tournament_id,
+    teams: tournament.teams ?? tournament.team_limit ?? 0,
+    prizePool: tournament.prizePool ?? tournament.prize_pool ?? "",
+    organizer: tournament.organizer ?? "TBD",
+    startDateTime: tournament.startDateTime ?? tournament.start_date ?? "",
+    endDateTime: tournament.endDateTime ?? tournament.end_date ?? "",
+    game: tournament.game ?? "Unknown",
+    status: tournament.status ?? "upcoming",
+    format: tournament.format ?? "TBD",
+    rules: tournament.rules ?? tournament.description ?? "No rules provided.",
+    participants: Array.isArray(tournament.participants) ? tournament.participants : [],
+    standings: Array.isArray(tournament.standings) ? tournament.standings : [],
+  });
+
   const validateTournamentForm = () => {
     const errors = {};
     const trimmedName = name.trim();
@@ -57,13 +81,16 @@ export default function Tournaments({ user }) {
     } else if (!Number.isInteger(teamCount) || teamCount < 2) {
       errors.teams = "Team count must be a whole number of at least 2.";
     }
-    if (!prizePool) {
-      errors.prizePool = "Prize pool is required.";
-    } else if (!Number.isFinite(prize) || prize < 0) {
+    if (prizePool && (!Number.isFinite(prize) || prize < 0)) {
       errors.prizePool = "Prize pool must be a valid number 0 or greater.";
     }
     if (!startDateTime) {
       errors.startDateTime = "Start date and time is required.";
+    }
+    if (!endDateTime) {
+      errors.endDateTime = "End date and time is required.";
+    } else if (startDateTime && new Date(endDateTime) < new Date(startDateTime)) {
+      errors.endDateTime = "End date and time cannot be before the start date.";
     }
     if (!trimmedRules) {
       errors.rules = "Rules summary is required.";
@@ -101,7 +128,11 @@ export default function Tournaments({ user }) {
       return;
     }
 
-    setTournaments(Array.isArray(result.data?.tournaments) ? result.data.tournaments : []);
+    setTournaments(
+      Array.isArray(result.data?.tournaments)
+        ? result.data.tournaments.map(normalizeTournament)
+        : []
+    );
   };
 
   const addTournament = async () => {
@@ -129,15 +160,12 @@ export default function Tournaments({ user }) {
           requireAuth: true,
           fallbackError: "Could not create tournament.",
           body: {
-          name: name.trim(),
-          teams: Number(teams),
-          prizePool: Number(prizePool),
-          organizer: organizer.trim() || "TBD",
-          startDateTime,
-          game,
-          status,
-          format,
-          rules: rules.trim(),
+            name: name.trim(),
+            description: rules.trim(),
+            start_date: startDateTime,
+            end_date: endDateTime,
+            format,
+            ...(prizePool ? { prize_pool: Number(prizePool) } : {}),
           },
         }
       );
@@ -149,7 +177,7 @@ export default function Tournaments({ user }) {
 
       const payload = response.data;
       if (payload?.tournament) {
-        setTournaments((prev) => [payload.tournament, ...prev]);
+        setTournaments((prev) => [normalizeTournament(payload.tournament), ...prev]);
       }
     } catch (err) {
       setApiError(`Could not create tournament: ${err.message}`);
@@ -163,6 +191,7 @@ export default function Tournaments({ user }) {
     setPrizePool("");
     setOrganizer("");
     setStartDateTime("");
+    setEndDateTime("");
     setGame("Valorant");
     setStatus("upcoming");
     setFormat("Single Elimination");
@@ -401,9 +430,10 @@ export default function Tournaments({ user }) {
               <div className="detail-grid">
                 <p><strong>Organizer:</strong> {selectedTournament.organizer}</p>
                 <p><strong>Start:</strong> {formatDateTimeLabel(selectedTournament.startDateTime)}</p>
+                <p><strong>End:</strong> {formatDateTimeLabel(selectedTournament.endDateTime)}</p>
                 <p><strong>Teams:</strong> {selectedTournament.teams}</p>
                 <p><strong>Registered:</strong> {selectedTournament.participants.length}/{selectedTournament.teams}</p>
-                <p><strong>Prize Pool:</strong> ${selectedTournament.prizePool}</p>
+                <p><strong>Prize Pool:</strong> {formatPrizePoolLabel(selectedTournament.prizePool)}</p>
                 <p><strong>Game:</strong> {selectedTournament.game}</p>
                 <p><strong>Status:</strong> {selectedTournament.status}</p>
                 <p><strong>Format:</strong> {selectedTournament.format}</p>
@@ -554,7 +584,9 @@ export default function Tournaments({ user }) {
               </div>
 
               <div className="input-group">
+                <label htmlFor="tournament-start-date">Start Date</label>
                 <input
+                  id="tournament-start-date"
                   className={formErrors.startDateTime ? "field-error" : ""}
                   type="datetime-local"
                   value={startDateTime}
@@ -565,6 +597,23 @@ export default function Tournaments({ user }) {
                 />
                 {formErrors.startDateTime && (
                   <p className="input-error-text">{formErrors.startDateTime}</p>
+                )}
+              </div>
+
+              <div className="input-group">
+                <label htmlFor="tournament-end-date">End Date</label>
+                <input
+                  id="tournament-end-date"
+                  className={formErrors.endDateTime ? "field-error" : ""}
+                  type="datetime-local"
+                  value={endDateTime}
+                  onChange={(e) => {
+                    setEndDateTime(e.target.value);
+                    clearFieldError("endDateTime");
+                  }}
+                />
+                {formErrors.endDateTime && (
+                  <p className="input-error-text">{formErrors.endDateTime}</p>
                 )}
               </div>
 
@@ -678,8 +727,9 @@ export default function Tournaments({ user }) {
                 <div className="tournament-info">
                   <h3>{tournament.name}</h3>
                   <p>{tournament.teams} Teams</p>
-                  <p>${tournament.prizePool} Prize Pool</p>
+                  <p>{formatPrizePoolLabel(tournament.prizePool)} Prize Pool</p>
                   <p>{formatDateTimeLabel(tournament.startDateTime)}</p>
+                  <p>Ends {formatDateTimeLabel(tournament.endDateTime)}</p>
                   <p>{tournament.game}</p>
                   <p className={`status-pill status-${tournament.status}`}>
                     {tournament.status}
