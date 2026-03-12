@@ -12,7 +12,6 @@ import "./team-profile.css";
 
 export default function TeamProfile({ user, onProfileUpdated }) {
   const [teamName, setTeamName] = useState("");
-  const [joinCode, setJoinCode] = useState("");
   const [teamProfile, setTeamProfile] = useState(null);
   const [joinPreviewCode, setJoinPreviewCode] = useState("");
   const [joinPreview, setJoinPreview] = useState(null);
@@ -52,7 +51,6 @@ export default function TeamProfile({ user, onProfileUpdated }) {
       }
       setTeamProfile(loadedProfile);
       setTeamName(loadedProfile?.teamName || "");
-      setJoinCode(loadedProfile?.joinCode || "");
       setIsLoading(false);
     };
 
@@ -251,7 +249,6 @@ export default function TeamProfile({ user, onProfileUpdated }) {
     setIsSaving(true);
     const { teamProfile: createdTeam, error: createError } = await createTeamForCurrentUser({
       teamName,
-      joinCode,
       userIdentifier: user,
     });
     setIsSaving(false);
@@ -264,7 +261,6 @@ export default function TeamProfile({ user, onProfileUpdated }) {
 
     setTeamProfile(createdTeam);
     setTeamName(createdTeam?.teamName || "");
-    setJoinCode(createdTeam?.joinCode || "");
     setSuccess("Team profile created.");
   };
 
@@ -282,7 +278,6 @@ export default function TeamProfile({ user, onProfileUpdated }) {
     const { teamProfile: updatedTeam, error: updateError } =
       await updateTeamForCurrentUser({
         teamName,
-        joinCode,
         userIdentifier: user,
       });
     setIsSaving(false);
@@ -294,7 +289,6 @@ export default function TeamProfile({ user, onProfileUpdated }) {
 
     setTeamProfile(updatedTeam);
     setTeamName(updatedTeam?.teamName || "");
-    setJoinCode(updatedTeam?.joinCode || "");
     setSuccess("Team profile updated.");
   };
 
@@ -317,7 +311,6 @@ export default function TeamProfile({ user, onProfileUpdated }) {
 
     setTeamProfile(null);
     setTeamName("");
-    setJoinCode("");
     setSuccess("Team disbanded.");
   };
 
@@ -426,12 +419,6 @@ export default function TeamProfile({ user, onProfileUpdated }) {
               value={teamName}
               onChange={(event) => setTeamName(event.target.value)}
             />
-            <input
-              type="text"
-              placeholder="Join Code"
-              value={joinCode}
-              onChange={(event) => setJoinCode(event.target.value)}
-            />
             <button type="submit" disabled={isSaving}>
               {isSaving ? "Saving Team..." : "Update Team"}
             </button>
@@ -459,12 +446,6 @@ export default function TeamProfile({ user, onProfileUpdated }) {
               value={teamName}
               onChange={(event) => setTeamName(event.target.value)}
             />
-            <input
-              type="text"
-              placeholder="Join Code (optional)"
-              value={joinCode}
-              onChange={(event) => setJoinCode(event.target.value)}
-            />
             {error && <p className="team-profile-error">{error}</p>}
             {success && <p className="team-profile-success">{success}</p>}
             <button type="submit" disabled={isSaving}>
@@ -473,7 +454,7 @@ export default function TeamProfile({ user, onProfileUpdated }) {
           </form>
 
           <form className="team-profile-card team-profile-form" onSubmit={handlePreviewJoin}>
-            <h2>Preview Team Join</h2>
+            <h2>Join Team</h2>
             <input
               type="text"
               placeholder="Join Code"
@@ -481,7 +462,7 @@ export default function TeamProfile({ user, onProfileUpdated }) {
               onChange={(event) => setJoinPreviewCode(event.target.value)}
             />
             <button type="submit" disabled={isPreviewingJoin}>
-              {isPreviewingJoin ? "Previewing..." : "Preview Team"}
+              {isPreviewingJoin ? "Checking Team..." : "Find Team"}
             </button>
             {joinPreviewError && <p className="team-profile-error">{joinPreviewError}</p>}
             {joinPreview && (

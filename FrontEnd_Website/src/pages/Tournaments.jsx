@@ -8,6 +8,13 @@ import {
 } from "../lib/backendApi";
 
 export default function Tournaments({ user }) {
+  const formatOptions = [
+    { value: "single_elimination", label: "Single Elimination" },
+    { value: "double_elimination", label: "Double Elimination" },
+    { value: "round_robin", label: "Round Robin" },
+    { value: "swiss", label: "Swiss" },
+  ];
+
   const [tournaments, setTournaments] = useState([]);
   const [name, setName] = useState("");
   const [teams, setTeams] = useState("");
@@ -17,7 +24,7 @@ export default function Tournaments({ user }) {
   const [endDateTime, setEndDateTime] = useState("");
   const [game, setGame] = useState("Valorant");
   const [status, setStatus] = useState("upcoming");
-  const [format, setFormat] = useState("Single Elimination");
+  const [format, setFormat] = useState("single_elimination");
   const [rules, setRules] = useState(
     "Standard competitive rules apply. All matches are Best of 3."
   );
@@ -50,6 +57,11 @@ export default function Tournaments({ user }) {
     return `$${numericValue}`;
   };
 
+  const formatTournamentFormatLabel = (value) => {
+    const matchedFormat = formatOptions.find((option) => option.value === value);
+    return matchedFormat?.label || value || "TBD";
+  };
+
   const normalizeTournament = (tournament) => ({
     ...tournament,
     id: tournament.id ?? tournament.tournament_id,
@@ -60,7 +72,7 @@ export default function Tournaments({ user }) {
     endDateTime: tournament.endDateTime ?? tournament.end_date ?? "",
     game: tournament.game ?? "Unknown",
     status: tournament.status ?? "upcoming",
-    format: tournament.format ?? "TBD",
+    format: tournament.format ?? "single_elimination",
     rules: tournament.rules ?? tournament.description ?? "No rules provided.",
     participants: Array.isArray(tournament.participants) ? tournament.participants : [],
     standings: Array.isArray(tournament.standings) ? tournament.standings : [],
@@ -85,12 +97,12 @@ export default function Tournaments({ user }) {
       errors.prizePool = "Prize pool must be a valid number 0 or greater.";
     }
     if (!startDateTime) {
-      errors.startDateTime = "Start date and time is required.";
+      errors.startDateTime = "Start date is required.";
     }
     if (!endDateTime) {
-      errors.endDateTime = "End date and time is required.";
+      errors.endDateTime = "End date is required.";
     } else if (startDateTime && new Date(endDateTime) < new Date(startDateTime)) {
-      errors.endDateTime = "End date and time cannot be before the start date.";
+      errors.endDateTime = "End date cannot be before the start date.";
     }
     if (!trimmedRules) {
       errors.rules = "Rules summary is required.";
@@ -116,7 +128,7 @@ export default function Tournaments({ user }) {
 
     setApiError("");
     const result = await requestBackendWithFallback(
-      ["/tournaments", "/tournament"],
+      ["/tournament"],
       {
         fallbackError: "Could not load tournaments.",
         allowNotFound: true,
@@ -154,7 +166,7 @@ export default function Tournaments({ user }) {
       setIsSavingTournament(true);
       setApiError("");
       const response = await requestBackendWithFallback(
-        ["/tournaments", "/tournament"],
+        ["/tournament"],
         {
           method: "POST",
           requireAuth: true,
@@ -194,7 +206,7 @@ export default function Tournaments({ user }) {
     setEndDateTime("");
     setGame("Valorant");
     setStatus("upcoming");
-    setFormat("Single Elimination");
+    setFormat("single_elimination");
     setRules("Standard competitive rules apply. All matches are Best of 3.");
     setFormErrors({});
   };
@@ -212,7 +224,7 @@ export default function Tournaments({ user }) {
     try {
       setApiError("");
       const response = await requestBackendWithFallback(
-        [`/tournaments/${id}`, `/tournament/${id}`],
+        [`/tournament/${id}`],
         {
           method: "DELETE",
           requireAuth: true,
@@ -436,13 +448,13 @@ export default function Tournaments({ user }) {
                 <p><strong>Prize Pool:</strong> {formatPrizePoolLabel(selectedTournament.prizePool)}</p>
                 <p><strong>Game:</strong> {selectedTournament.game}</p>
                 <p><strong>Status:</strong> {selectedTournament.status}</p>
-                <p><strong>Format:</strong> {selectedTournament.format}</p>
+                <p><strong>Format:</strong> {formatTournamentFormatLabel(selectedTournament.format)}</p>
               </div>
             )}
 
             {activeTab === "rules" && (
               <div className="detail-section">
-                <p><strong>Format:</strong> {selectedTournament.format}</p>
+                <p><strong>Format:</strong> {formatTournamentFormatLabel(selectedTournament.format)}</p>
                 <p>{selectedTournament.rules}</p>
               </div>
             )}
@@ -588,7 +600,7 @@ export default function Tournaments({ user }) {
                 <input
                   id="tournament-start-date"
                   className={formErrors.startDateTime ? "field-error" : ""}
-                  type="datetime-local"
+                  type="date"
                   value={startDateTime}
                   onChange={(e) => {
                     setStartDateTime(e.target.value);
@@ -605,7 +617,7 @@ export default function Tournaments({ user }) {
                 <input
                   id="tournament-end-date"
                   className={formErrors.endDateTime ? "field-error" : ""}
-                  type="datetime-local"
+                  type="date"
                   value={endDateTime}
                   onChange={(e) => {
                     setEndDateTime(e.target.value);
@@ -618,27 +630,12 @@ export default function Tournaments({ user }) {
               </div>
 
               <div className="input-group">
-                <select value={game} onChange={(e) => setGame(e.target.value)}>
-                  <option value="Valorant">Valorant</option>
-                  <option value="League of Legends">League of Legends</option>
-                  <option value="CS2">CS2</option>
-                  <option value="Rocket League">Rocket League</option>
-                </select>
-              </div>
-
-              <div className="input-group">
-                <select value={status} onChange={(e) => setStatus(e.target.value)}>
-                  <option value="upcoming">Upcoming</option>
-                  <option value="live">Live</option>
-                  <option value="completed">Completed</option>
-                </select>
-              </div>
-
-              <div className="input-group">
                 <select value={format} onChange={(e) => setFormat(e.target.value)}>
-                  <option value="Single Elimination">Single Elimination</option>
-                  <option value="Double Elimination">Double Elimination</option>
-                  <option value="Round Robin">Round Robin</option>
+                  {formatOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
                 </select>
               </div>
 

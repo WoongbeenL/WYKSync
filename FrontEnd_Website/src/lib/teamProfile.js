@@ -45,7 +45,7 @@ export const fetchCurrentUserTeamProfile = async (userIdentifier) => {
   };
 };
 
-export const createTeamForCurrentUser = async ({ teamName, joinCode, userIdentifier }) => {
+export const createTeamForCurrentUser = async ({ teamName, userIdentifier }) => {
   if (!userIdentifier) {
     return { teamProfile: null, error: "You must be logged in." };
   }
@@ -61,7 +61,6 @@ export const createTeamForCurrentUser = async ({ teamName, joinCode, userIdentif
     fallbackError: "Could not create team.",
     body: {
       teamName: normalizedName,
-      joinCode: String(joinCode || "").trim(),
     },
   });
 
@@ -71,7 +70,7 @@ export const createTeamForCurrentUser = async ({ teamName, joinCode, userIdentif
   };
 };
 
-export const updateTeamForCurrentUser = async ({ teamName, joinCode, userIdentifier }) => {
+export const updateTeamForCurrentUser = async ({ teamName, userIdentifier }) => {
   if (!userIdentifier) {
     return { teamProfile: null, error: "You must be logged in." };
   }
@@ -87,7 +86,6 @@ export const updateTeamForCurrentUser = async ({ teamName, joinCode, userIdentif
     fallbackError: "Could not update team.",
     body: {
       teamName: normalizedName,
-      joinCode: String(joinCode || "").trim(),
     },
   });
 
