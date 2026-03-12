@@ -62,9 +62,6 @@ app.use("/team", teamRoutes);
 // /tournament Route of API
 app.use("/tournament", tournamentRoutes);
 
-// /tournament Route of API
-app.use("/tournament", tournamentRoutes);
-
 // Error handler
 app.use((err, req, res, next) => {
   console.error(err);
