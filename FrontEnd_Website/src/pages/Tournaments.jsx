@@ -2,20 +2,10 @@ import { useEffect, useMemo, useState } from "react";
 import "./tournaments.css";
 import { fetchCurrentUserTeamProfile } from "../lib/teamProfile";
 import { supabase } from "../lib/supabaseClient";
-
-const backendUrl = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, "");
-
-const parseBackendError = async (response, fallback) => {
-  const text = await response.text();
-  if (!text) return fallback;
-
-  try {
-    const parsed = JSON.parse(text);
-    return parsed.error || parsed.message || text;
-  } catch {
-    return text;
-  }
-};
+import {
+  backendUrl,
+  requestBackendWithFallback,
+} from "../lib/backendApi";
 
 export default function Tournaments({ user }) {
   const [tournaments, setTournaments] = useState([]);
@@ -97,23 +87,21 @@ export default function Tournaments({ user }) {
       return;
     }
 
-    try {
-      setApiError("");
-      const response = await fetch(`${backendUrl}/tournament`);
-      if (!response.ok) {
-        const message = await parseBackendError(
-          response,
-          `GET /tournament failed with status ${response.status}.`
-        );
-        setApiError(message);
-        return;
+    setApiError("");
+    const result = await requestBackendWithFallback(
+      ["/tournaments", "/tournament"],
+      {
+        fallbackError: "Could not load tournaments.",
+        allowNotFound: true,
       }
+    );
 
-      const payload = await response.json();
-      setTournaments(Array.isArray(payload.tournaments) ? payload.tournaments : []);
-    } catch (err) {
-      setApiError(`Could not load tournaments: ${err.message}`);
+    if (result.error) {
+      setApiError(result.error);
+      return;
     }
+
+    setTournaments(Array.isArray(result.data?.tournaments) ? result.data.tournaments : []);
   };
 
   const addTournament = async () => {
@@ -131,23 +119,16 @@ export default function Tournaments({ user }) {
       return;
     }
 
-    const { data } = await supabase.auth.getSession();
-    const token = data.session?.access_token;
-    if (!token) {
-      setApiError("Please log in again to create a tournament.");
-      return;
-    }
-
     try {
       setIsSavingTournament(true);
       setApiError("");
-      const response = await fetch(`${backendUrl}/tournament`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
+      const response = await requestBackendWithFallback(
+        ["/tournaments", "/tournament"],
+        {
+          method: "POST",
+          requireAuth: true,
+          fallbackError: "Could not create tournament.",
+          body: {
           name: name.trim(),
           teams: Number(teams),
           prizePool: Number(prizePool),
@@ -157,19 +138,16 @@ export default function Tournaments({ user }) {
           status,
           format,
           rules: rules.trim(),
-        }),
-      });
+          },
+        }
+      );
 
-      if (!response.ok) {
-        const message = await parseBackendError(
-          response,
-          `POST /tournament failed with status ${response.status}.`
-        );
-        setApiError(message);
+      if (response.error) {
+        setApiError(response.error);
         return;
       }
 
-      const payload = await response.json();
+      const payload = response.data;
       if (payload?.tournament) {
         setTournaments((prev) => [payload.tournament, ...prev]);
       }
@@ -202,28 +180,19 @@ export default function Tournaments({ user }) {
       return;
     }
 
-    const { data } = await supabase.auth.getSession();
-    const token = data.session?.access_token;
-    if (!token) {
-      setApiError("Please log in again to delete a tournament.");
-      return;
-    }
-
     try {
       setApiError("");
-      const response = await fetch(`${backendUrl}/tournament/${id}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await requestBackendWithFallback(
+        [`/tournaments/${id}`, `/tournament/${id}`],
+        {
+          method: "DELETE",
+          requireAuth: true,
+          fallbackError: `Could not delete tournament ${id}.`,
+        }
+      );
 
-      if (!response.ok) {
-        const message = await parseBackendError(
-          response,
-          `DELETE /tournament/${id} failed with status ${response.status}.`
-        );
-        setApiError(message);
+      if (response.error) {
+        setApiError(response.error);
         return;
       }
 

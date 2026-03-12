@@ -3,28 +3,21 @@ import {
   createTeamForCurrentUser,
   disbandTeamForCurrentUser,
   fetchCurrentUserTeamProfile,
+  previewTeamJoin,
+  updateTeamForCurrentUser,
 } from "../lib/teamProfile";
 import { supabase } from "../lib/supabaseClient";
+import { backendUrl, parseBackendError } from "../lib/backendApi";
 import "./team-profile.css";
-
-const backendUrl = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, "");
-
-const parseBackendError = async (response, fallback) => {
-  const text = await response.text();
-  if (!text) return fallback;
-
-  try {
-    const parsed = JSON.parse(text);
-    return parsed.error || parsed.message || text;
-  } catch {
-    return text;
-  }
-};
 
 export default function TeamProfile({ user, onProfileUpdated }) {
   const [teamName, setTeamName] = useState("");
   const [joinCode, setJoinCode] = useState("");
   const [teamProfile, setTeamProfile] = useState(null);
+  const [joinPreviewCode, setJoinPreviewCode] = useState("");
+  const [joinPreview, setJoinPreview] = useState(null);
+  const [joinPreviewError, setJoinPreviewError] = useState("");
+  const [isPreviewingJoin, setIsPreviewingJoin] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
@@ -58,6 +51,8 @@ export default function TeamProfile({ user, onProfileUpdated }) {
         setError(loadError);
       }
       setTeamProfile(loadedProfile);
+      setTeamName(loadedProfile?.teamName || "");
+      setJoinCode(loadedProfile?.joinCode || "");
       setIsLoading(false);
     };
 
@@ -268,9 +263,39 @@ export default function TeamProfile({ user, onProfileUpdated }) {
     }
 
     setTeamProfile(createdTeam);
-    setSuccess("Team profile created. You can now register for tournaments.");
-    setTeamName("");
-    setJoinCode("");
+    setTeamName(createdTeam?.teamName || "");
+    setJoinCode(createdTeam?.joinCode || "");
+    setSuccess("Team profile created.");
+  };
+
+  const handleUpdateTeam = async (event) => {
+    event.preventDefault();
+    setError("");
+    setSuccess("");
+
+    if (!teamName.trim()) {
+      setError("Team name is required.");
+      return;
+    }
+
+    setIsSaving(true);
+    const { teamProfile: updatedTeam, error: updateError } =
+      await updateTeamForCurrentUser({
+        teamName,
+        joinCode,
+        userIdentifier: user,
+      });
+    setIsSaving(false);
+
+    if (updateError) {
+      setError(updateError);
+      return;
+    }
+
+    setTeamProfile(updatedTeam);
+    setTeamName(updatedTeam?.teamName || "");
+    setJoinCode(updatedTeam?.joinCode || "");
+    setSuccess("Team profile updated.");
   };
 
   const handleDisbandTeam = async () => {
@@ -291,7 +316,39 @@ export default function TeamProfile({ user, onProfileUpdated }) {
     }
 
     setTeamProfile(null);
+    setTeamName("");
+    setJoinCode("");
     setSuccess("Team disbanded.");
+  };
+
+  const handlePreviewJoin = async (event) => {
+    event.preventDefault();
+    setJoinPreview(null);
+    setJoinPreviewError("");
+
+    if (!joinPreviewCode.trim()) {
+      setJoinPreviewError("Join code is required.");
+      return;
+    }
+
+    setIsPreviewingJoin(true);
+    const { preview, error: previewError } = await previewTeamJoin({
+      joinCode: joinPreviewCode,
+      userIdentifier: user,
+    });
+    setIsPreviewingJoin(false);
+
+    if (previewError) {
+      setJoinPreviewError(previewError);
+      return;
+    }
+
+    if (!preview) {
+      setJoinPreviewError("No team preview was returned by the backend.");
+      return;
+    }
+
+    setJoinPreview(preview);
   };
 
   return (
@@ -362,6 +419,23 @@ export default function TeamProfile({ user, onProfileUpdated }) {
           <p className="team-profile-ready">
             Team profile complete. Tournament registration is enabled.
           </p>
+          <form className="team-profile-form" onSubmit={handleUpdateTeam}>
+            <input
+              type="text"
+              placeholder="Team Name"
+              value={teamName}
+              onChange={(event) => setTeamName(event.target.value)}
+            />
+            <input
+              type="text"
+              placeholder="Join Code"
+              value={joinCode}
+              onChange={(event) => setJoinCode(event.target.value)}
+            />
+            <button type="submit" disabled={isSaving}>
+              {isSaving ? "Saving Team..." : "Update Team"}
+            </button>
+          </form>
           <button
             type="button"
             className="team-profile-disband-btn"
@@ -376,29 +450,52 @@ export default function TeamProfile({ user, onProfileUpdated }) {
       )}
 
       {user && !isLoading && !teamProfile && (
-        <form className="team-profile-card team-profile-form" onSubmit={handleCreateTeam}>
-          <h2>Create Team</h2>
-          <p className="team-profile-note">
-            Temporary frontend-only team profile until backend team endpoints are available.
-          </p>
-          <input
-            type="text"
-            placeholder="Team Name"
-            value={teamName}
-            onChange={(event) => setTeamName(event.target.value)}
-          />
-          <input
-            type="text"
-            placeholder="Join Code (optional)"
-            value={joinCode}
-            onChange={(event) => setJoinCode(event.target.value)}
-          />
-          {error && <p className="team-profile-error">{error}</p>}
-          {success && <p className="team-profile-success">{success}</p>}
-          <button type="submit" disabled={isSaving}>
-            {isSaving ? "Creating Team..." : "Create Team Profile"}
-          </button>
-        </form>
+        <>
+          <form className="team-profile-card team-profile-form" onSubmit={handleCreateTeam}>
+            <h2>Create Team</h2>
+            <input
+              type="text"
+              placeholder="Team Name"
+              value={teamName}
+              onChange={(event) => setTeamName(event.target.value)}
+            />
+            <input
+              type="text"
+              placeholder="Join Code (optional)"
+              value={joinCode}
+              onChange={(event) => setJoinCode(event.target.value)}
+            />
+            {error && <p className="team-profile-error">{error}</p>}
+            {success && <p className="team-profile-success">{success}</p>}
+            <button type="submit" disabled={isSaving}>
+              {isSaving ? "Creating Team..." : "Create Team"}
+            </button>
+          </form>
+
+          <form className="team-profile-card team-profile-form" onSubmit={handlePreviewJoin}>
+            <h2>Preview Team Join</h2>
+            <input
+              type="text"
+              placeholder="Join Code"
+              value={joinPreviewCode}
+              onChange={(event) => setJoinPreviewCode(event.target.value)}
+            />
+            <button type="submit" disabled={isPreviewingJoin}>
+              {isPreviewingJoin ? "Previewing..." : "Preview Team"}
+            </button>
+            {joinPreviewError && <p className="team-profile-error">{joinPreviewError}</p>}
+            {joinPreview && (
+              <div className="team-preview-card">
+                <p>
+                  <strong>Team:</strong> {joinPreview.teamName || "Unknown"}
+                </p>
+                <p>
+                  <strong>Members:</strong> {joinPreview.members.length}
+                </p>
+              </div>
+            )}
+          </form>
+        </>
       )}
 
       {user && !isLoading && teamProfile && error && <p className="team-profile-error">{error}</p>}

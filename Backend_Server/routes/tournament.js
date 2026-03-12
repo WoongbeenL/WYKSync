@@ -12,19 +12,30 @@ const router = express.Router();
 const supabase = require("../lib/supabase");
 const requireUser = require("../middleware/requireUser");
 
+const getFirstDefined = (...values) =>
+  values.find((value) => value !== undefined && value !== null);
+
 const normalizeTournament = (row = {}) => {
+  const teamsValue = getFirstDefined(row.teams, row.team_count, row.teamCount, 0);
+  const prizePoolValue = getFirstDefined(
+    row.prizePool,
+    row.prize_pool,
+    row.prize_pool_amount,
+    0,
+  );
+
   return {
-    id: row.tournamentId,
+    id: getFirstDefined(row.tournamentId, row.id),
     name: row.name || "Untitled Tournament",
-    teams: "0",
-    prizePool: "0",
-    organizer: "TBD",
-    startDateTime: row.start_date || null,
-    game: "Valorant",
+    teams: String(teamsValue),
+    prizePool: String(prizePoolValue),
+    organizer: getFirstDefined(row.organizer, row.organizer_name, "TBD"),
+    startDateTime: getFirstDefined(row.startDateTime, row.start_date, null),
+    game: getFirstDefined(row.game, row.game_title, "Valorant"),
     status: row.status || "upcoming",
     format: row.format || "Single Elimination",
     rules:
-      row.description ||
+      getFirstDefined(row.rules, row.description) ||
       "Standard competitive rules apply. All matches are Best of 3.",
     participants: [],
     standings: [],
@@ -84,6 +95,15 @@ router.post("/", requireUser, async (req, res) => {
 
     const rowToInsert = {
       name: trimmedName,
+      teams: parsedTeams,
+      team_count: parsedTeams,
+      prizePool: parsedPrizePool,
+      prize_pool: parsedPrizePool,
+      organizer: String(organizer || "").trim() || "TBD",
+      game: String(game || "Valorant"),
+      rules:
+        String(rules || "").trim() ||
+        "Standard competitive rules apply. All matches are Best of 3.",
       description:
         String(rules || "").trim() ||
         "Standard competitive rules apply. All matches are Best of 3.",
@@ -99,7 +119,39 @@ router.post("/", requireUser, async (req, res) => {
       .select("*")
       .single();
 
-    if (error) throw error;
+    if (error) {
+      const fallbackInsert = {
+        name: trimmedName,
+        description:
+          String(rules || "").trim() ||
+          "Standard competitive rules apply. All matches are Best of 3.",
+        start_date: startDate,
+        end_date: startDate,
+        format: String(format || "Single Elimination"),
+        status: String(status || "upcoming"),
+      };
+
+      const { data: fallbackData, error: fallbackError } = await supabase
+        .from("tournaments")
+        .insert([fallbackInsert])
+        .select("*")
+        .single();
+
+      if (fallbackError) throw fallbackError;
+
+      const mergedTournament = normalizeTournament({
+        ...fallbackData,
+        teams: parsedTeams,
+        prizePool: parsedPrizePool,
+        organizer: String(organizer || "").trim() || "TBD",
+        game: String(game || "Valorant"),
+        rules:
+          String(rules || "").trim() ||
+          "Standard competitive rules apply. All matches are Best of 3.",
+      });
+
+      return res.status(201).json({ tournament: mergedTournament });
+    }
 
     res.status(201).json({ tournament: normalizeTournament(data) });
   } catch (err) {
@@ -120,7 +172,14 @@ router.delete("/:id", requireUser, async (req, res) => {
       .delete()
       .eq("tournamentId", id);
 
-    if (deleteError) throw deleteError;
+    if (deleteError) {
+      const { error: fallbackDeleteError } = await supabase
+        .from("tournaments")
+        .delete()
+        .eq("id", id);
+
+      if (fallbackDeleteError) throw fallbackDeleteError;
+    }
 
     res.status(204).send();
   } catch (err) {
