@@ -1,143 +1,103 @@
-console.log('renderer script');
+declare const wyksync: {
+  onStatusUpdate: (callback: (status: string) => void) => void;
+  onLogMessage: (callback: (...args: any[]) => void) => void;
+  getInfo: () => Promise<any>;
+  setFeatures: () => Promise<boolean>;
+  sendTeamConfig: (config: {
+    teamA?: { name?: string; logo?: string };
+    teamB?: { name?: string; logo?: string };
+  }) => Promise<boolean>;
+};
 
-//@ts-ignore
-window.gep.onMessage(function(...args) {
-  console.info(...args);
+const statusEl = document.getElementById('status') as HTMLDivElement;
+const logEl = document.getElementById('log') as HTMLDivElement;
+const btnInfo = document.getElementById('btn-info') as HTMLButtonElement;
+const btnFeatures = document.getElementById('btn-features') as HTMLButtonElement;
+const btnClear = document.getElementById('btn-clear') as HTMLButtonElement;
+const btnApply = document.getElementById('btn-apply') as HTMLButtonElement;
+const btnReset = document.getElementById('btn-reset') as HTMLButtonElement;
+const confirmMsg = document.getElementById('confirm-msg') as HTMLDivElement;
 
-  let item = ''
-  args.forEach(arg => {
-    item = `${item}-${JSON.stringify(arg)}`;
-  })
-  addMessageToTerminal(item);
-
-});
-
-
-const btn = document.querySelector('#clearTerminalTextAreaBtn') as HTMLButtonElement;
-
-btn.addEventListener('click', function(e) {
-  var begin = new Date().getTime();
-  const terminal = document.querySelector('#TerminalTextArea');
-  terminal.innerHTML = '';
-});
-
-const setRequiredBtn = document.querySelector('#setRequiredFeaturesBtn') as HTMLButtonElement;
-setRequiredBtn.addEventListener('click', async function(e) {
-  try {
-    // @ts-ignore
-    await window.gep.setRequiredFeature();
-    addMessageToTerminal('setRequiredFeatures ok');
-  } catch (error) {
-    addMessageToTerminal('setRequiredFeatures error');
-    alert('setRequiredFeatures error' + error);
+function updateStatus(status: string): void {
+  statusEl.textContent = status;
+  statusEl.classList.remove('connected', 'waiting', 'error');
+  if (status.toLowerCase().includes('connected') || status.toLowerCase().includes('started')) {
+    statusEl.classList.add('connected');
+  } else if (status.toLowerCase().includes('error') || status.toLowerCase().includes('failed')) {
+    statusEl.classList.add('error');
+  } else {
+    statusEl.classList.add('waiting');
   }
-});
-
-const getInfoBtn = document.querySelector('#getInfoBtn') as HTMLButtonElement;
-getInfoBtn.addEventListener('click', async function(e) {
-  try {
-    // @ts-ignore
-    const info = await window.gep.getInfo();
-    addMessageToTerminal(JSON.stringify(info));
-  } catch (error) {
-    addMessageToTerminal('getInfo error');
-    alert('getInfo error' + error);
-  }
-});
-
-const createOSRBtn = document.querySelector('#createOSR') as HTMLButtonElement;
-createOSRBtn.addEventListener('click', async function(e) {
-  try {
-    // @ts-ignore
-    const info = await window.osr.openOSR();
-  } catch (error) {
-    addMessageToTerminal('createOSR error');
-  }
-});
-
-const visibilityOSRBtn = document.querySelector('#visibilityOSR') as HTMLButtonElement;
-visibilityOSRBtn.addEventListener('click', async function(e) {
-  try {
-    // @ts-ignore
-    const info = await window.osr.toggle();
-  } catch (error) {
-    console.log(error);
-    addMessageToTerminal('toggle osr error');
-  }
-});
-
-
-const updateHotkeyBtn = document.querySelector('#updateHotkey') as HTMLButtonElement;
-updateHotkeyBtn.addEventListener('click', async function(e) {
-  try {
-    // @ts-ignore
-    const info = await window.osr.updateHotkey();
-  } catch (error) {
-    console.log(error);
-    addMessageToTerminal('toggle osr error');
-  }
-});
-
-
-function addMessageToTerminal(message) {
-  const terminal = document.querySelector('#TerminalTextArea');
-  // $('#TerminalTextArea');
-  terminal.append(message + '\n');
-  terminal.scrollTop = terminal.scrollHeight;
 }
 
-export function sendExclusiveOptions() {
-  const color = (document.getElementById('colorPicker') as HTMLInputElement).value;
+function addLog(message: string, ...args: any[]): void {
+  const time = new Date().toLocaleTimeString();
+  const entry = document.createElement('div');
+  entry.className = 'log-entry';
+  let text = message;
+  if (args.length > 0) {
+    text += ' ' + args.map(a => {
+      if (typeof a === 'object') {
+        try { return JSON.stringify(a); } catch { return String(a); }
+      }
+      return String(a);
+    }).join(' ');
+  }
+  entry.innerHTML = `<span class="time">${time}</span>${text}`;
+  logEl.appendChild(entry);
+  logEl.scrollTop = logEl.scrollHeight;
+}
 
-  const r = parseInt(color.substr(1,2), 16);
-  const g = parseInt(color.substr(3,2), 16);
-  const b = parseInt(color.substr(5,2), 16);
-  const a = (document.getElementById('opacityRange') as HTMLInputElement).value;
+function clearLog(): void { logEl.innerHTML = ''; }
 
-  const options = {
-     color: `rgba(${r},${g},${b},${a})`,
-     animationDuration:
-      parseInt((document.getElementById('animationDurationRange') as HTMLInputElement).value)
+function showConfirm(msg: string): void {
+  confirmMsg.textContent = msg;
+  setTimeout(() => { confirmMsg.textContent = ''; }, 3000);
+}
+
+wyksync.onStatusUpdate(updateStatus);
+wyksync.onLogMessage(addLog);
+
+// Apply button — push team config to overlay via WS
+btnApply.addEventListener('click', async () => {
+  const nameA = (document.getElementById('name-a') as HTMLInputElement).value.trim();
+  const logoA = (document.getElementById('logo-a') as HTMLInputElement).value.trim();
+  const nameB = (document.getElementById('name-b') as HTMLInputElement).value.trim();
+  const logoB = (document.getElementById('logo-b') as HTMLInputElement).value.trim();
+
+  const config = {
+    teamA: { name: nameA || undefined, logo: logoA || undefined },
+    teamB: { name: nameB || undefined, logo: logoB || undefined },
   };
 
-  // @ts-ignore
-  window.overlay.updateExclusiveOptions(options);
-}
+  try {
+    await wyksync.sendTeamConfig(config);
+    showConfirm('✓ Applied to overlay');
+    addLog('Team config sent', config);
+  } catch (e) {
+    showConfirm('✕ Failed — is the app running?');
+    addLog('Error sending team config:', e);
+  }
+});
 
+// Reset button — clear form and reset overlay to defaults
+btnReset.addEventListener('click', async () => {
+  ['name-a', 'logo-a', 'name-b', 'logo-b'].forEach(id => {
+    (document.getElementById(id) as HTMLInputElement).value = '';
+  });
+  await wyksync.sendTeamConfig({ teamA: { name: '', logo: '' }, teamB: { name: '', logo: '' } });
+  showConfirm('✓ Reset to defaults');
+});
 
+btnInfo.addEventListener('click', async () => {
+  try { const info = await wyksync.getInfo(); addLog('Game Info:', info); }
+  catch (e) { addLog('Error getting info:', e); }
+});
 
-const opacityRange = document.getElementById('opacityRange') as HTMLInputElement;
-opacityRange.addEventListener('change', (ev) => {
-  sendExclusiveOptions();
-})
+btnFeatures.addEventListener('click', async () => {
+  try { const result = await wyksync.setFeatures(); addLog('Set features result:', result); }
+  catch (e) { addLog('Error setting features:', e); }
+});
 
-const animationDurationRange = document.getElementById('animationDurationRange') as HTMLInputElement;
-animationDurationRange.addEventListener('change', (ev) => {
-  sendExclusiveOptions();
-})
-
-const colorPicker = document.getElementById('colorPicker') as HTMLInputElement;
-colorPicker.addEventListener('change', (ev) => {
-  sendExclusiveOptions();
-})
-
-
-document.querySelectorAll('[name="behavior"]').forEach(
-  (radio)=>{radio.addEventListener('change',(a)=>{
-    const radio = a.target as HTMLInputElement;
-    if (radio.checked) {
-      // @ts-ignore
-      window.overlay.setExclusiveModeHotkeyBehavior(radio.value);
-    }
-  })
-})
-
-document.querySelectorAll('[name="exclusiveType"]').forEach(
-  (radio)=>{radio.addEventListener('change',(a)=>{
-    const radio = a.target as HTMLInputElement;
-    if (radio.checked) {
-      // @ts-ignore
-      window.overlay.setExclusiveModeType(radio.value);
-    }
-  })
-})
+btnClear.addEventListener('click', clearLog);
+addLog('WYKSync ready');

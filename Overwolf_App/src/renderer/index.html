@@ -1,86 +1,308 @@
-<div class="row">
-  <script defer src="renderer.js"></script>
-  </head><div class="row"></div>
-  <table class="span12">
-  <tbody>
-    <ul class="versions code">
-      <li class="electron-version"></li>
-    </ul>
-      <tr>
-          <td class="span1"><button id ='setRequiredFeaturesBtn' class="btn">setRequiredFeatures</button></td>
-          <td class="span1"><button id ='getInfoBtn' class="btn">getInfo</button></td>
-          <td class="span1"><button id ='createOSR' class="btn">Create OSR</button></td>
-          <td class="span1"><button id ='visibilityOSR' class="btn">Show all OSR</button></td>
-          <td class="span1"><button id ='updateHotkey' class="btn">update Hotkey</button></td>
-      </tr>
-      <script>
-   </script>
-     <script>
-      const changeOpacityValue = (element) => {
-        document.getElementById('opacityValue').value = element.value;
-      }
-      const animationDurationValue = (element) => {
-        document.getElementById('animationDuration').value = element.value;
-      }
-      window.app.initialize();
+<!DOCTYPE html>
+<html lang="en">
 
-    </script>
-  </tbody>
-  </table>
-</div>
-<br/>
-<div>
-  <h2>Log:</h2>
-  <div class="row">
-  <div class="span12">
-    <textarea id="TerminalTextArea"
-      style="border: 1px solid grey; width:100%; height: 200px;">
-    </textarea>
-    <td class="span1">
-      <button style="margin-top: 10px;" id='clearTerminalTextAreaBtn' class="btn">
-        Clean
-      </button>
-    </td>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WYKSync</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      background: linear-gradient(135deg, #0a0f1a 0%, #111827 100%);
+      color: #fff;
+      padding: 20px;
+      min-height: 100vh;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 18px;
+    }
+
+    .logo {
+      font-size: 1.8rem;
+      font-weight: bold;
+      color: #C9A84C;
+      letter-spacing: 2px;
+    }
+
+    .subtitle {
+      color: #888;
+      font-size: 0.75rem;
+      margin-top: 4px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .card {
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 8px;
+      padding: 12px 14px;
+      margin-bottom: 10px;
+    }
+
+    .card-gold {
+      border-color: rgba(201, 168, 76, 0.3);
+    }
+
+    .card-title {
+      font-size: 0.6rem;
+      font-weight: 700;
+      color: #C9A84C;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid rgba(201, 168, 76, 0.2);
+    }
+
+    .status-label {
+      font-size: 0.6rem;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 4px;
+    }
+
+    .status-value {
+      font-size: 0.95rem;
+      font-weight: 600;
+    }
+
+    .status-value.connected {
+      color: #4ade80;
+    }
+
+    .status-value.waiting {
+      color: #fbbf24;
+    }
+
+    .status-value.error {
+      color: #ef4444;
+    }
+
+    .websocket-url {
+      background: rgba(201, 168, 76, 0.08);
+      border: 1px solid rgba(201, 168, 76, 0.25);
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-family: monospace;
+      font-size: 0.8rem;
+      color: #C9A84C;
+      text-align: center;
+    }
+
+    /* Settings form */
+    .teams-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .team-block-title {
+      font-size: 0.55rem;
+      font-weight: 700;
+      color: #C9A84C;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-bottom: 8px;
+    }
+
+    .field {
+      margin-bottom: 7px;
+    }
+
+    .field label {
+      display: block;
+      font-size: 0.5rem;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 3px;
+    }
+
+    .field input {
+      width: 100%;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+      color: #fff;
+      font-size: 0.72rem;
+      padding: 5px 8px;
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      outline: none;
+    }
+
+    .field input:focus {
+      border-color: #C9A84C;
+    }
+
+    .field input::placeholder {
+      color: #444;
+    }
+
+    .apply-btn {
+      width: 100%;
+      margin-top: 6px;
+      background: #C9A84C;
+      color: #000;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 9px 12px;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .apply-btn:hover {
+      background: #E2CA7A;
+    }
+
+    .reset-btn {
+      width: 100%;
+      margin-top: 6px;
+      background: transparent;
+      color: #555;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 6px;
+      font-size: 0.65rem;
+      padding: 6px;
+      cursor: pointer;
+    }
+
+    .reset-btn:hover {
+      color: #aaa;
+    }
+
+    .confirm-msg {
+      font-size: 0.6rem;
+      color: #4ade80;
+      text-align: center;
+      margin-top: 8px;
+      min-height: 16px;
+    }
+
+    .section-title {
+      font-size: 0.6rem;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin: 10px 0 6px;
+    }
+
+    .log-area {
+      background: rgba(0, 0, 0, 0.4);
+      border-radius: 6px;
+      padding: 8px;
+      height: 90px;
+      overflow-y: auto;
+      font-family: monospace;
+      font-size: 0.65rem;
+      color: #aaa;
+    }
+
+    .log-entry {
+      margin-bottom: 3px;
+      word-break: break-all;
+    }
+
+    .log-entry .time {
+      color: #555;
+      margin-right: 6px;
+    }
+
+    .buttons {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .btn {
+      flex: 1;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #fff;
+      padding: 7px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.72rem;
+    }
+
+    .btn:hover {
+      background: rgba(255, 255, 255, 0.12);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="header">
+    <div class="logo">WYKSync</div>
+    <div class="subtitle">Valorant Spectator HUD</div>
   </div>
-</div>
-</div>
-<br>
-<div >
-  <div class="views" style="display: flex; gap: 24px;">
-    <div class="left-view">
-      <h2>Ad view:</h2>
-      <div style='width: 400px; height: 300px; border: 1px solid;background: transparent;'>
-        <owadview slotsize='400x300' cid='mainAd' />
+
+  <!-- Status -->
+  <div class="card">
+    <div class="status-label">Status</div>
+    <div class="status-value waiting" id="status">Initializing...</div>
+  </div>
+
+  <div class="card">
+    <div class="status-label">Overlay WebSocket</div>
+    <div class="websocket-url">ws://localhost:8765</div>
+  </div>
+
+  <!-- Match Setup -->
+  <div class="card card-gold">
+    <div class="card-title">⚙ Match Setup — Team Logos &amp; Names</div>
+    <div class="teams-grid">
+      <div class="team-block">
+        <div class="team-block-title">Team A (Left)</div>
+        <div class="field">
+          <label>Team Name</label>
+          <input type="text" id="name-a" placeholder="e.g. CONDORS">
+        </div>
+        <div class="field">
+          <label>Logo URL / Path</label>
+          <input type="text" id="logo-a" placeholder="assets/logos/condors.png">
+        </div>
+      </div>
+      <div class="team-block">
+        <div class="team-block-title">Team B (Right)</div>
+        <div class="field">
+          <label>Team Name</label>
+          <input type="text" id="name-b" placeholder="e.g. RIVALS">
+        </div>
+        <div class="field">
+          <label>Logo URL / Path</label>
+          <input type="text" id="logo-b" placeholder="assets/logos/rivals.png">
+        </div>
       </div>
     </div>
-    <div class="left-view">
-      <h2>Input Exclusive:</h2>
-      <div style='width: 400px; height: 300px; border: 1px solid;background: transparent;'>
-        <label style="display: block; margin-bottom: 10px;">
-          Background Color
-          <input type="color" rgba value="#0c0c0c" id="colorPicker">
-        </label>
-         <label style="display: block; margin-bottom: 10px;">
-          <div>Opacity</div>
-          <input type="range" min="0.0" max="1.0" value="0.5" step="0.1" id="opacityRange"  onchange="changeOpacityValue(this)">
-          <input type="input" readonly value="0.5" id="opacityValue">
-        </label>
-        <label style="display: block; margin-bottom: 10px;">
-          <div>Animation Duration</div>
-          <input type="range" min="0" max="1000" value="100" step="10" id="animationDurationRange" onchange="animationDurationValue(this)">
-          <input type="input" readonly value="100" id="animationDuration">
-        </label>
-        <label style="display: block; margin-bottom: 10px;">
-          <div> Type </div>
-            <input type="radio" name="exclusiveType" value="native" checked="checked"> Native
-            <input type="radio" name="exclusiveType" value="customWindow"> As Window
-        </label>
-        <label style="display: block; margin-bottom: 10px;">
-          <div> hotkey Behavior </div>
-            <input type="radio" name="behavior" value="toggle" checked="checked"> toggle
-            <input type="radio" name="behavior" value="pressed"> pressed
-        </label>
-      </div>
-    </div>
+    <button class="apply-btn" id="btn-apply">▶ Apply to Overlay</button>
+    <button class="reset-btn" id="btn-reset">Reset</button>
+    <div class="confirm-msg" id="confirm-msg"></div>
   </div>
-</div>
+
+  <!-- Debug log -->
+  <div class="section-title">Debug Log</div>
+  <div class="log-area" id="log"></div>
+
+  <div class="buttons">
+    <button class="btn" id="btn-info">Get Info</button>
+    <button class="btn" id="btn-features">Set Features</button>
+    <button class="btn" id="btn-clear">Clear Log</button>
+  </div>
+
+  <script src="renderer.js"></script>
+</body>
+
+</html>

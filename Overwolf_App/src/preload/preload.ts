@@ -1,60 +1,21 @@
+const { contextBridge, ipcRenderer } = require('electron');
 
-console.log('** preload **')
-const { contextBridge, ipcRenderer  } = require('electron');
+contextBridge.exposeInMainWorld('wyksync', {
+  onStatusUpdate: (callback: (status: string) => void) => {
+    ipcRenderer.on('status-update', (e, status) => callback(status));
+  },
 
-async function initialize () {
-  function replaceText (selector: string, text: string) {
-   const element = document.querySelector<HTMLElement>(selector);
-   if (element) {
-     element.innerText = text;
-   }
- }
+  onLogMessage: (callback: (...args: any[]) => void) => {
+    ipcRenderer.on('log-message', (e, ...args) => callback(...args));
+  },
 
- replaceText('.electron-version', `ow-electron v${process.versions.electron}`);
-}
+  getInfo: () => ipcRenderer.invoke('get-info'),
 
-contextBridge.exposeInMainWorld('app', {
- initialize
+  setFeatures: () => ipcRenderer.invoke('set-features'),
+
+  // Send team logo/name config to overlay via WebSocket broadcast
+  sendTeamConfig: (config: { teamA?: { name?: string; logo?: string }; teamB?: { name?: string; logo?: string } }) =>
+    ipcRenderer.invoke('send-team-config', config),
 });
 
-contextBridge.exposeInMainWorld('gep', {
-  onMessage: (func) =>{
-    ipcRenderer.on('console-message',(e, ...args)=>{
-      func(...args);
-    });
-  },
-
-  setRequiredFeature: () => {
-    return ipcRenderer.invoke('gep-set-required-feature');
-  },
-
-  getInfo: () => {
-    return ipcRenderer.invoke('gep-getInfo');
-  },
-});
-
-contextBridge.exposeInMainWorld('osr', {
-  openOSR: () => {
-    return ipcRenderer.invoke('createOSR');
-  },
-  toggle: () => {
-    return ipcRenderer.invoke('toggleOSRVisibility');
-  },
-  updateHotkey: () => {
-    return ipcRenderer.invoke('updateHotkey');
-  },
-});
-
-contextBridge.exposeInMainWorld('overlay', {
-  setExclusiveModeType: (mode) => {
-    return ipcRenderer.invoke('EXCLUSIVE_TYPE', mode);
-  },
-  setExclusiveModeHotkeyBehavior: (behavior) => {
-    return ipcRenderer.invoke('EXCLUSIVE_BEHAVIOR',behavior );
-  },
-  updateExclusiveOptions: (options) => {
-    return ipcRenderer.invoke('updateExclusiveOptions', options);
-  }
-});
-
-
+console.log('[Preload] WYKSync bridge ready');

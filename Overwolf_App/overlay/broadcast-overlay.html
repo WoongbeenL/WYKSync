@@ -1,0 +1,125 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+  <title>WYKSync — Valorant Spectator HUD</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="overlay-styles.css" />
+  <script src="overlay.js" defer></script>
+</head>
+
+<body>
+
+  <!-- STATE BANNER -->
+  <div class="state-banner" id="state-banner">MENU</div>
+
+  <!-- MAP / SERIES INFO  -->
+  <div class="map-info-panel" id="map-info">
+    <span class="map-curr">CURRENT: <span id="t-map">—</span></span>
+  </div>
+
+
+
+  <!-- TOP HUD BAR -->
+  <div class="top-bar" id="topbar">
+    <!-- Team A -->
+    <div class="top-team top-team-a">
+      <div class="team-logo-slot" id="logo-a">
+        <img id="logo-img-a" src="" alt="" class="logo-img">
+        <span class="logo-placeholder" id="logo-ph-a"></span>
+      </div>
+      <div class="top-team-info">
+        <span class="top-team-name" id="t-name-a">TEAM A</span>
+        <span class="top-team-sub" id="t-side-a"></span>
+      </div>
+      <span class="top-team-score" id="t-score-a">0</span>
+    </div>
+
+    <div class="timer-gap"></div>
+
+    <!-- Team B -->
+    <div class="top-team top-team-b">
+      <span class="top-team-score" id="t-score-b">0</span>
+      <div class="top-team-info">
+        <span class="top-team-name" id="t-name-b">TEAM B</span>
+        <span class="top-team-sub" id="t-side-b"></span>
+      </div>
+      <div class="team-logo-slot" id="logo-b">
+        <img id="logo-img-b" src="" alt="" class="logo-img">
+        <span class="logo-placeholder" id="logo-ph-b"></span>
+      </div>
+    </div>
+
+    <div class="top-bar-line" id="top-bar-line">
+      <svg viewBox="0 0 620 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M0 2 L230 2 L260 22 L290 2 L310 2 L330 2 L360 22 L390 2 L620 2" stroke="#FFFFFF" stroke-width="3"
+          fill="none" stroke-opacity="0.85" />
+        <path d="M0 2 L230 2 L260 22 L290 2 L310 2 L330 2 L360 22 L390 2 L620 2" stroke="#FFFFFF" stroke-width="1.5"
+          fill="none" stroke-opacity="0.4" filter="url(#line-glow)" />
+        <defs>
+          <filter id="line-glow" x="-2" y="-2" width="624" height="32">
+            <feGaussianBlur stdDeviation="2" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        </defs>
+      </svg>
+    </div>
+  </div>
+
+  <!-- PHASE BANNER -->
+  <div class="phase-banner" id="phase-banner">
+    <span id="phase-text"></span>
+    <span class="phase-round-label">ROUND <span id="t-round" class="phase-round-number">0</span></span>
+  </div>
+
+  <!-- PLAYER COLUMNS -->
+  <div class="players-col left" id="players-left"></div>
+  <div class="players-col right" id="players-right"></div>
+
+  <!-- BUY PHASE OVERLAY -->
+  <div class="buy-phase-overlay" id="buy-phase-overlay">
+    <!-- Left team panel -->
+    <div class="buy-team-panel buy-panel-left">
+      <div class="buy-panel-header">
+        <div class="buy-panel-logo" id="buy-logo-a"></div>
+        <div class="buy-panel-team-info">
+          <span class="buy-team-name" id="buy-name-a">TEAM A</span>
+          <span class="buy-team-economy" id="buy-eco-a"></span>
+        </div>
+
+      </div>
+      <div class="buy-team-players" id="buy-team-left"></div>
+    </div>
+    <!-- Right team panel -->
+    <div class="buy-team-panel buy-panel-right">
+      <div class="buy-panel-header">
+        <div class="buy-panel-logo" id="buy-logo-b"></div>
+        <div class="buy-panel-team-info">
+          <span class="buy-team-name" id="buy-name-b">TEAM B</span>
+          <span class="buy-team-economy" id="buy-eco-b"></span>
+        </div>
+
+      </div>
+      <div class="buy-team-players" id="buy-team-right"></div>
+    </div>
+  </div>
+
+  <!-- DEBUG  -->
+  <div class="debug" id="debug">
+    <span><span class="dl">WS:</span> <span class="dv" id="d-status">Connecting...</span></span>
+    <span><span class="dl">State:</span> <span class="dv" id="d-state">—</span></span>
+    <span><span class="dl">Map:</span> <span class="dv" id="d-map">—</span></span>
+    <span><span class="dl">Rnd:</span> <span class="dv" id="d-round">—</span></span>
+    <span><span class="dl">P:</span> <span class="dv" id="d-players">0</span></span>
+  </div>
+
+
+</body>
+
+</html>
