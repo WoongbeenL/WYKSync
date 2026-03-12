@@ -12,6 +12,7 @@ const express = require("express");
 const cors = require("cors");
 
 const meRoutes = require("./routes/me");
+const tournamentRoutes = require("./routes/tournament");
 
 const app = express();
 
@@ -55,6 +56,9 @@ app.get("/health", (req, res) => {
 
 // /me Route of API
 app.use("/me", meRoutes);
+
+// /tournament Route of API
+app.use("/tournament", tournamentRoutes);
 
 // Error handler
 app.use((err, req, res, next) => {
