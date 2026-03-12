@@ -14,6 +14,9 @@ const requireUser = require("../middleware/requireUser");
 
 router.use(requireUser);
 
+// -----------------------------------------------------------------
+// Helper function
+
 /*
    Function Name   : generateJoinCode
    Parameter    : N/A
@@ -32,11 +35,33 @@ const generateJoinCode = async () => {
       .from("teams")
       .select("join_code")
       .eq("join_code", join_code)
-      .single();
+      .maybeSingle();
 
     if (!existing) return join_code;
   }
 };
+
+/*
+   Function Name   : isTeamCoach
+   Parameter    : userId: INT. Id of the user to check for
+                  teamId: INT. Id of the team to check for
+   Return       : Boolean. Return true if data exists and error is false. Else, return false.
+   Purpose      : This function checks if the user is a coach of the team
+*/
+const isTeamCoach = async (userId, teamId) => {
+  const { data, error } = await supabase
+    .from("team_members")
+    .select("team_member_id")
+    .eq("id", userId)
+    .eq("team_id", teamId)
+    .eq("role", "coach")
+    .single();
+
+  return Boolean(data) && !error;
+};
+
+// -----------------------------------------------------------------
+// Routes
 
 /*
    Route Name   : GET /team
@@ -90,6 +115,32 @@ router.post("/", async (req, res) => {
       return res.status(400).json({ error: "Team name is required" });
     }
 
+    // Check if the user is onboarded
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("is_onboarded")
+      .eq("id", userId)
+      .single();
+
+    if (!profile?.is_onboarded) {
+      return res.status(403).json({
+        error: "You must complete your profile before creating a team",
+      });
+    }
+
+    // Check user is not already on a team
+    const { data: currentMember } = await supabase
+      .from("team_members")
+      .select("team_member_id")
+      .eq("id", userId)
+      .maybeSingle();
+
+    if (currentMember) {
+      return res
+        .status(409)
+        .json({ error: "You are already a member of a team" });
+    }
+
     const join_code = await generateJoinCode();
 
     const { data: team, error: teamError } = await supabase
@@ -98,7 +149,14 @@ router.post("/", async (req, res) => {
       .select()
       .single();
 
-    if (teamError) throw teamError;
+    if (teamError) {
+      if (teamError.code === "23505") {
+        return res
+          .status(409)
+          .json({ error: "A team with this name already exists" });
+      }
+      throw teamError;
+    }
 
     const { error: memberError } = await supabase.from("team_members").insert({
       id: userId,
@@ -107,7 +165,7 @@ router.post("/", async (req, res) => {
     });
 
     if (memberError) {
-      // Rollback: delete the team if coach assignment fails
+      // Delete the team if coach assignment fails
       await supabase.from("teams").delete().eq("team_id", team.team_id);
       throw memberError;
     }
@@ -125,7 +183,7 @@ router.post("/", async (req, res) => {
                   join_code: String. Team join code.
    Return       : Json response
                   member: Object. Returns the created team_member row.
-   Purpose      : Allows an onboarded user to join a team using a join code.
+   Purpose      : Allows onboarded users to join a team using the join code.
 */
 router.post("/join", async (req, res) => {
   try {
@@ -134,6 +192,18 @@ router.post("/join", async (req, res) => {
 
     if (!join_code || !join_code.trim()) {
       return res.status(400).json({ error: "join_code is required" });
+    }
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("is_onboarded")
+      .eq("id", userId)
+      .single();
+
+    if (!profile?.is_onboarded) {
+      return res.status(403).json({
+        error: "You must complete your profile before joining a team",
+      });
     }
 
     // Look up the team by join code
@@ -187,8 +257,14 @@ router.post("/join", async (req, res) => {
 */
 router.patch("/:team_id", async (req, res) => {
   try {
+    const userId = req.user.id;
     const { team_id } = req.params;
     const { name, logo_url } = req.body;
+
+    const isCoach = await isCoachOfTeam(userId, team_id);
+    if (!isCoach) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
 
     if (!name && !logo_url) {
       return res
@@ -236,7 +312,13 @@ router.patch("/:team_id", async (req, res) => {
 */
 router.delete("/:team_id", async (req, res) => {
   try {
+    const userId = req.user.id;
     const { team_id } = req.params;
+
+    const isCoach = await isCoachOfTeam(userId, team_id);
+    if (!isCoach) {
+      return res.status(403).json({ error: "Forbidden" });
+    }
 
     const { error } = await supabase
       .from("teams")
