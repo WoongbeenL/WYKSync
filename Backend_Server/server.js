@@ -13,7 +13,7 @@ const cors = require("cors");
 
 const meRoutes = require("./routes/me");
 const teamRoutes = require("./routes/team");
-const tournamentRoutes = require("./route.tournament");
+const tournamentRoutes = require("./route/tournament");
 
 const app = express();
 
