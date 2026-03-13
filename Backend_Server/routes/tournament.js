@@ -54,9 +54,6 @@ const getCoachTeam = async (userId) => {
 };
 
 /*
-  Returns the user's role in a tournament, or null.
-*/
-/*
    Function Name   : getTournamentRole
    Parameter    : N/A
    Return       : userId: INT. Id of user to check for
