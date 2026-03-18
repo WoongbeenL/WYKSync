@@ -12,7 +12,7 @@ export class MainWindowController {
   public createAndShow(): void {
     this.window = new BrowserWindow({
       width: 500,
-      height: 450,
+      height: 620,
       resizable: false,
       title: 'WYKSync',
       webPreferences: {
