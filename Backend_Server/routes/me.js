@@ -15,6 +15,46 @@ const requireUser = require("../middleware/requireUser");
 router.use(requireUser);
 
 /*
+   Route Name   : GET /me/search
+   Parameter    : display_name (query param)
+   Return       : Json response
+                  profiles: Array. Returns matching profiles.
+   Purpose      : Searches for profiles by display_name.
+                  Used to find users to add as tournament organisers.
+*/
+router.get("/search", async (req, res) => {
+  try {
+    const { display_name } = req.query;
+
+    if (!display_name || !display_name.trim()) {
+      return res
+        .status(400)
+        .json({ error: "display_name query parameter is required" });
+    }
+
+    if (display_name.trim().length < 3) {
+      return res
+        .status(400)
+        .json({ error: "Search term must be at least 3 characters" });
+    }
+
+    const { data: profiles, error } = await supabase
+      .from("profiles")
+      .select("id, display_name")
+      .ilike("display_name", `%${display_name.trim()}%`)
+      .neq("id", req.user.id) // exclude the user requesting
+      .limit(10);
+
+    if (error) throw error;
+
+    res.json({ profiles });
+  } catch (err) {
+    console.error("GET /me/search error: ", err);
+    res.status(500).json({ error: "Server Error" });
+  }
+});
+
+/*
    Route Name   : GET /me
    Parameter    : Request object with current user id
    Return       : Json response
@@ -33,7 +73,12 @@ router.get("/", async (req, res) => {
       .eq("id", userId)
       .single();
 
-    if (error) throw error;
+    if (error) {
+      if (error.code === "PGRST116") {
+        return res.status(404).json({ error: "Profile not found" });
+      }
+      throw error;
+    }
 
     res.json(data);
   } catch (err) {

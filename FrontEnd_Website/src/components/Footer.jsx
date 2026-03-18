@@ -15,11 +15,8 @@ const Footer=()=>{
                         <a href="/overlay">
                             <p>Live Overlay</p>
                         </a>
-                        <a href="/leaderboard">
-                            <p>Leaderboards</p>
-                        </a>
-                        <a href="/vetos">
-                            <p>Vetos</p>
+                        <a href="/vetoes">
+                            <p>Vetoes</p>
                         </a>
                     </div>
                     <div className="sb__footer-links-div">

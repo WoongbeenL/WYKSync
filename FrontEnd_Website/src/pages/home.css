@@ -100,3 +100,72 @@
   border-color: #ff4655;
   transform: translateY(-5px);
 }
+
+/* TEAM */
+.meet {
+  margin-top: 5rem;
+}
+
+.meet h2 {
+  color: #ff4655;
+  margin-bottom: 1rem;
+}
+
+.meet-subtitle {
+  color: #bbb;
+  line-height: 1.6;
+  max-width: 780px;
+  margin-bottom: 2rem;
+}
+
+.team-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+  margin-bottom: 3rem;
+}
+
+.team-card {
+  background: #111;
+  border: 1px solid #222;
+  border-radius: 10px;
+  padding: 1.2rem;
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+
+.team-card:hover {
+  border-color: #ff4655;
+  transform: translateY(-3px);
+}
+
+.team-role {
+  color: #ff7d88;
+  font-weight: 600;
+  margin: 0 0 0.5rem;
+}
+
+.team-card h3 {
+  margin: 0 0 0.9rem;
+  color: #fff;
+}
+
+.team-link {
+  display: inline-block;
+  text-decoration: none;
+  color: #fff;
+  background: #ff4655;
+  padding: 0.45rem 0.8rem;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  transition: background 0.2s ease;
+}
+
+.team-link:hover {
+  background: #ff2a3f;
+}
+
+@media (max-width: 768px) {
+  .home {
+    padding: 3rem 1.2rem;
+  }
+}
