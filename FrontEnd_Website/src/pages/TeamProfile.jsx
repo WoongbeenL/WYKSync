@@ -4,6 +4,7 @@ import {
   createTeamForCurrentUser,
   disbandTeamForCurrentUser,
   fetchCurrentUserTeamProfile,
+  getCachedTeamProfileForCurrentUser,
   previewTeamJoin,
   updateTeamForCurrentUser,
 } from "../lib/teamProfile";
@@ -41,6 +42,12 @@ export default function TeamProfile({ user, onProfileUpdated }) {
         setTeamProfile(null);
         setIsLoading(false);
         return;
+      }
+
+      const cachedTeam = getCachedTeamProfileForCurrentUser(user);
+      if (cachedTeam) {
+        setTeamProfile(cachedTeam);
+        setTeamName(cachedTeam.teamName || "");
       }
 
       setIsLoading(true);
@@ -261,6 +268,15 @@ export default function TeamProfile({ user, onProfileUpdated }) {
     setIsSaving(false);
 
     if (createError) {
+      if (createError === "You are already a member of a team") {
+        const { teamProfile: existingTeam } = await fetchCurrentUserTeamProfile(user);
+        if (existingTeam) {
+          setTeamProfile(existingTeam);
+          setTeamName(existingTeam.teamName || "");
+          setSuccess("Loaded your existing team profile.");
+          return;
+        }
+      }
       setError(createError);
       if (createdTeam) setTeamProfile(createdTeam);
       return;

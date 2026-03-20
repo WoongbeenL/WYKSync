@@ -74,23 +74,40 @@ router.get("/current", async (req, res) => {
   try {
     const userId = req.user.id;
 
-    const { data: membership, error } = await supabase
+    const { data: memberships, error: membershipError } = await supabase
       .from("team_members")
-      .select("role, teams (*)")
+      .select("team_member_id, team_id, role")
       .eq("id", userId)
-      .maybeSingle();
+      .order("team_member_id", { ascending: false })
+      .limit(1);
 
-    if (error) {
-      throw error;
+    if (membershipError) {
+      throw membershipError;
     }
 
-    if (!membership?.teams) {
+    const membership = Array.isArray(memberships) ? memberships[0] : null;
+
+    if (!membership?.team_id) {
+      return res.status(404).json({ error: "Team not found" });
+    }
+
+    const { data: team, error: teamError } = await supabase
+      .from("teams")
+      .select("*")
+      .eq("team_id", membership.team_id)
+      .maybeSingle();
+
+    if (teamError) {
+      throw teamError;
+    }
+
+    if (!team) {
       return res.status(404).json({ error: "Team not found" });
     }
 
     res.json({
       team: {
-        ...membership.teams,
+        ...team,
         role: membership.role,
       },
     });
@@ -166,13 +183,17 @@ router.post("/", async (req, res) => {
     }
 
     // Check user is not already on a team
-    const { data: currentMember } = await supabase
+    const { data: existingMemberships, error: membershipLookupError } = await supabase
       .from("team_members")
       .select("team_member_id")
       .eq("id", userId)
-      .maybeSingle();
+      .limit(1);
 
-    if (currentMember) {
+    if (membershipLookupError) {
+      throw membershipLookupError;
+    }
+
+    if (Array.isArray(existingMemberships) && existingMemberships.length > 0) {
       return res
         .status(409)
         .json({ error: "You are already a member of a team" });

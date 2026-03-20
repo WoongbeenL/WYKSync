@@ -1,6 +1,44 @@
 // Team profile helpers keep the page components from getting overloaded with API details.
 import { requestBackend } from "./backendApi";
 
+const getTeamProfileStorageKey = (userIdentifier) =>
+  `team-profile:${String(userIdentifier || "").trim().toLowerCase()}`;
+
+const readCachedTeamProfile = (userIdentifier) => {
+  if (typeof window === "undefined" || !userIdentifier) return null;
+
+  try {
+    const cached = window.localStorage.getItem(
+      getTeamProfileStorageKey(userIdentifier),
+    );
+    if (!cached) return null;
+    return normalizeTeamProfile(JSON.parse(cached));
+  } catch {
+    return null;
+  }
+};
+
+export const getCachedTeamProfileForCurrentUser = (userIdentifier) =>
+  readCachedTeamProfile(userIdentifier);
+
+const writeCachedTeamProfile = (userIdentifier, teamProfile) => {
+  if (typeof window === "undefined" || !userIdentifier) return;
+
+  try {
+    if (!teamProfile) {
+      window.localStorage.removeItem(getTeamProfileStorageKey(userIdentifier));
+      return;
+    }
+
+    window.localStorage.setItem(
+      getTeamProfileStorageKey(userIdentifier),
+      JSON.stringify(teamProfile),
+    );
+  } catch {
+    // Ignore storage failures. The backend remains the source of truth.
+  }
+};
+
 // Normalizes different backend response shapes into one frontend-friendly object.
 const normalizeTeamProfile = (payload) => {
   const team = payload?.team || payload?.teamProfile || payload?.profile || payload;
@@ -43,8 +81,18 @@ export const fetchCurrentUserTeamProfile = async (userIdentifier) => {
     allowNotFound: true,
   });
 
+  const normalizedTeam = normalizeTeamProfile(result.data);
+  if (normalizedTeam) {
+    writeCachedTeamProfile(userIdentifier, normalizedTeam);
+    return {
+      teamProfile: normalizedTeam,
+      error: result.error,
+    };
+  }
+
+  const cachedTeam = readCachedTeamProfile(userIdentifier);
   return {
-    teamProfile: normalizeTeamProfile(result.data),
+    teamProfile: cachedTeam,
     error: result.error,
   };
 };
@@ -69,8 +117,13 @@ export const createTeamForCurrentUser = async ({ teamName, userIdentifier }) => 
     },
   });
 
+  const normalizedTeam = normalizeTeamProfile(result.data);
+  if (normalizedTeam) {
+    writeCachedTeamProfile(userIdentifier, normalizedTeam);
+  }
+
   return {
-    teamProfile: normalizeTeamProfile(result.data),
+    teamProfile: normalizedTeam,
     error: result.error,
   };
 };
@@ -102,8 +155,13 @@ export const updateTeamForCurrentUser = async ({
     },
   });
 
+  const normalizedTeam = normalizeTeamProfile(result.data);
+  if (normalizedTeam) {
+    writeCachedTeamProfile(userIdentifier, normalizedTeam);
+  }
+
   return {
-    teamProfile: normalizeTeamProfile(result.data),
+    teamProfile: normalizedTeam,
     error: result.error,
   };
 };
@@ -125,6 +183,10 @@ export const disbandTeamForCurrentUser = async ({
     requireAuth: true,
     fallbackError: "Could not delete team.",
   });
+
+  if (!result.error) {
+    writeCachedTeamProfile(userIdentifier, null);
+  }
 
   return { error: result.error };
 };
