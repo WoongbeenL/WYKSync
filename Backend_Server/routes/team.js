@@ -64,6 +64,43 @@ const isTeamCoach = async (userId, teamId) => {
 // Routes
 
 /*
+   Route Name   : GET /team/current
+   Parameter    : Request object with current user id
+   Return       : Json response
+                  team: Object. Returns current user's team data with role.
+   Purpose      : Returns the authenticated user's current team.
+*/
+router.get("/current", async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const { data: membership, error } = await supabase
+      .from("team_members")
+      .select("role, teams (*)")
+      .eq("id", userId)
+      .maybeSingle();
+
+    if (error) {
+      throw error;
+    }
+
+    if (!membership?.teams) {
+      return res.status(404).json({ error: "Team not found" });
+    }
+
+    res.json({
+      team: {
+        ...membership.teams,
+        role: membership.role,
+      },
+    });
+  } catch (err) {
+    console.error("GET /team/current error: ", err);
+    res.status(500).json({ error: "Server Error" });
+  }
+});
+
+/*
    Route Name   : GET /team
    Parameter    : Request object with a join code
    Return       : Json response
@@ -261,7 +298,7 @@ router.patch("/:team_id", async (req, res) => {
     const { team_id } = req.params;
     const { name, logo_url } = req.body;
 
-    const isCoach = await isCoachOfTeam(userId, team_id);
+    const isCoach = await isTeamCoach(userId, team_id);
     if (!isCoach) {
       return res.status(403).json({ error: "Forbidden" });
     }
@@ -315,7 +352,7 @@ router.delete("/:team_id", async (req, res) => {
     const userId = req.user.id;
     const { team_id } = req.params;
 
-    const isCoach = await isCoachOfTeam(userId, team_id);
+    const isCoach = await isTeamCoach(userId, team_id);
     if (!isCoach) {
       return res.status(403).json({ error: "Forbidden" });
     }

@@ -1,3 +1,4 @@
+/* Tournament page styles cover the form, grid, and details view. */
 .tournaments {
   padding: 2rem;
   color: white;
@@ -8,6 +9,7 @@
   color: black;
 }
 
+/* The create tournament form area. */
 .tournament-input {
   background: #111;
   padding: 1.5rem;
@@ -63,6 +65,7 @@
   background: #ff2a3f;
 }
 
+/* Wrappers help each field keep its own label and error text. */
 .input-group {
   flex: 1;
   min-width: 180px;
@@ -91,6 +94,7 @@
   color: #ff9da7;
 }
 
+/* Message shown when users need to log in first. */
 .tournament-auth-cta {
   background: #111;
   padding: 1.2rem 1.5rem;
@@ -120,12 +124,14 @@
   background: #ff2a3f;
 }
 
+/* Grid of tournament cards. */
 .tournament-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
   gap: 2rem;
 }
 
+/* Filter/search toolbar above the card grid. */
 .listing-toolbar {
   background: #111;
   border: 1px solid #222;
@@ -152,6 +158,7 @@
   border-color: #ff4655;
 }
 
+/* Individual tournament card styling. */
 .tournament-card {
   background: #181818;
   border: 1px solid #222;
@@ -227,6 +234,7 @@
   background: #ff2a3f;
 }
 
+/* Big detail view after a card is selected. */
 .tournament-details {
   background: #111;
   border: 1px solid #222;
@@ -249,6 +257,7 @@
   border-color: #ff4655;
 }
 
+/* Tabs switch between overview, participants, and standings. */
 .tournament-tabs {
   display: flex;
   flex-wrap: wrap;
@@ -287,6 +296,7 @@
   margin-bottom: 0.7rem;
 }
 
+/* Buttons used for joining and leaving tournaments. */
 .join-btn,
 .leave-btn {
   border: none;
@@ -325,6 +335,7 @@
   color: #ff6b78;
 }
 
+/* Small callout when a team profile is required to register. */
 .team-required-cta {
   background: #1a1a1a;
   border: 1px solid #333;
@@ -361,6 +372,7 @@
   margin-bottom: 0.35rem;
 }
 
+/* Basic table styles for standings. */
 .standings-table {
   width: 100%;
   border-collapse: collapse;
@@ -377,6 +389,7 @@
   background: #1e1e1e;
 }
 
+/* Pagination row at the bottom of the list. */
 .pagination {
   margin-top: 1.25rem;
   display: flex;

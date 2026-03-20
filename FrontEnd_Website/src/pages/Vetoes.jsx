@@ -1,8 +1,9 @@
 import "./vetoes.css";
-// useState allows page to remember values like team names
+// This page is the map veto tool, so most of the logic is about turn order and map state.
 import { useEffect, useMemo, useState } from "react";
 
 //TODO: Add a link for each team to do map vetoes along with spectators or find a different way to differentiate it.
+// Full map pool list for when the user wants every map available.
 const ALL_MAPS = [
   "Corrode",
   "Abyss",
@@ -17,18 +18,22 @@ const ALL_MAPS = [
   "Bind",
   "Split",
 ];
+// Competitive pool is the smaller set used for standard matches.
 const COMPETITIVE_MAPS = ["Ascent", "Bind", "Haven", "Split", "Lotus", "Sunset", "Icebox"];
 const SIDE_OPTIONS = ["Attack", "Defense"];
+// This builds the image path for each map card.
 const MAP_IMAGE_FILENAMES = ALL_MAPS.reduce((acc, map) => {
   acc[map] = `/maps/${map.toLowerCase()}.jpg`;
   return acc;
 }, {});
 
+// If a map image is missing, this SVG fallback keeps the card from looking broken.
 const getFallbackMapImage = (mapName) =>
   `data:image/svg+xml;utf8,${encodeURIComponent(
     `<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1200"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#231f20"/><stop offset="100%" stop-color="#111"/></linearGradient></defs><rect width="100%" height="100%" fill="url(#g)"/><text x="50%" y="50%" fill="#ff4655" font-size="92" text-anchor="middle" dominant-baseline="middle" font-family="Arial, Helvetica, sans-serif">${mapName}</text></svg>`
   )}`;
 
+// Every map starts out available with no team attached to it yet.
 const getInitialMapStates = () =>
   ALL_MAPS.reduce((acc, map) => {
     acc[map] = {
@@ -41,6 +46,7 @@ const getInitialMapStates = () =>
     return acc;
   }, {});
 
+// Chooses which pool of maps should be active based on the dropdown.
 const getActiveMapPool = (poolKey) => {
   if (poolKey === "all") return ALL_MAPS;
   if (poolKey === "comp") return COMPETITIVE_MAPS;
@@ -48,6 +54,7 @@ const getActiveMapPool = (poolKey) => {
   return COMPETITIVE_MAPS;
 };
 
+// Builds the step-by-step veto order depending on BO1, BO3, BO5, etc.
 const getActionPlan = (format, firstTeam, secondTeam, mapCount, poolKey) => {
   if (!firstTeam || !secondTeam) return [];
   const appendBansUntilDecider = (baseActions) => {
@@ -104,11 +111,11 @@ const getActionPlan = (format, firstTeam, secondTeam, mapCount, poolKey) => {
 };
 
 export default function Vetoes() {
-// these store what the user types for team names
+// These store what the user types for team names.
   const [teamA, setTeamA] = useState("");
   const [teamB, setTeamB] = useState("");
 
-  //this stores what mode the user chooses "coin" or "manual"
+  // This stores whether the team order is decided by coin flip or manually.
   const [mode, setMode] = useState(null); 
 
   const [coinWinner, setCoinWinner] = useState(null);
@@ -116,7 +123,7 @@ export default function Vetoes() {
   const [team2, setTeam2] = useState(null);
   const [teamInputErrors, setTeamInputErrors] = useState({});
 
-  //initiallized state for selected value
+  // These control the current veto settings and progress.
   const [selectedMapPool, setSelectedMapPool] = useState("comp");
   const [selectedVeto, setSelectedVeto] = useState("bo3");
   const [actingAs, setActingAs] = useState("spectator");
@@ -140,23 +147,24 @@ export default function Vetoes() {
   );
   const vetoComplete = team1 && team2 && !currentAction;
 
-  // Runs when the Coin Flip button is pressed
+  // Runs when the Coin Flip button is pressed.
   const runCoinFlip = () => {
     if (!validateTeamInputs()) return;
     const winner = Math.random() < 0.5 ? teamA : teamB;
     setCoinWinner(winner);
   };
 
-  //Handle the change event to update the state
+  // Updates the map pool dropdown choice.
   const handleChange = (event) => {
     setSelectedMapPool(event.target.value);
   };
 
-   //Handle the change event to update the state
+   // Updates the veto format dropdown choice.
   const vetoPick = (event) => {
     setSelectedVeto(event.target.value);
   };
 
+  // Resets the current veto progress but keeps the chosen teams and settings.
   const resetVetoProgress = () => {
     setActingAs("spectator");
     setActionHistory([]);
@@ -166,6 +174,7 @@ export default function Vetoes() {
     setMapStates(getInitialMapStates());
   };
 
+  // Basic validation so the veto flow does not start with missing or duplicate team names.
   const validateTeamInputs = () => {
     const errors = {};
     const trimmedTeamA = teamA.trim();
@@ -185,6 +194,7 @@ export default function Vetoes() {
     return Object.keys(errors).length === 0;
   };
 
+  // Clears the specific field error when the user starts typing again.
   const clearTeamInputError = (field) => {
     setTeamInputErrors((prev) => {
       const next = { ...prev };
@@ -194,7 +204,7 @@ export default function Vetoes() {
     });
   };
 
-  // Winner chooses which team number they want
+  // The coin flip winner chooses whether they want to be Team 1 or Team 2.
   const chooseTeam = (choice) => {
     if (choice === "team1") {
       setTeam1(coinWinner);
@@ -206,6 +216,7 @@ export default function Vetoes() {
     resetVetoProgress();
   };
 
+  // Manual mode skips the coin flip and just assigns the order directly.
   const startManualOrder = (firstTeam) => {
     if (!validateTeamInputs()) return;
     const secondTeam = firstTeam === teamA ? teamB : teamA;
@@ -216,12 +227,14 @@ export default function Vetoes() {
   };
 
   useEffect(() => {
+    // If the format or map pool changes, the current veto progress should restart.
     if (team1 && team2) {
       resetVetoProgress();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedVeto, selectedMapPool]);
 
+  // Once all planned actions are done, this checks whether we can mark a decider map.
   const finishIfNeeded = (nextMapStates, nextStepIndex) => {
     if (nextStepIndex < actionPlan.length) return;
 
@@ -238,6 +251,7 @@ export default function Vetoes() {
     }
   };
 
+  // Handles clicking a map card for bans and picks.
   const handleMapAction = (mapName) => {
     if (!team1 || !team2 || vetoComplete || !currentAction) return;
 
@@ -292,6 +306,7 @@ export default function Vetoes() {
     setCurrentStepIndex(nextStepIndex);
   };
 
+  // Handles the side selection step after a map is chosen.
   const handleSidePick = (sideChoice) => {
     if (!team1 || !team2 || vetoComplete || !currentAction) return;
     if (currentAction.type !== "side") return;
@@ -367,7 +382,7 @@ export default function Vetoes() {
       </div>
 
     {/*TODO: Replace with login needed to continue. */}
-      {/* Team Inputs */}
+      {/* Team input area starts the whole veto flow. */}
       <div className="team-inputs">
         <div className="team-input-group">
           <input
@@ -398,7 +413,7 @@ export default function Vetoes() {
       </div>
       {teamInputErrors.general && <p className="input-error-text">{teamInputErrors.general}</p>}
 
-      {/* Team order method selection */}
+      {/* User picks how team order should be decided. */}
       {!mode && (
         <div className="decider-buttons">
           <button
@@ -422,12 +437,12 @@ export default function Vetoes() {
         </div>
       )}
 
-      {/* if coin was chosen*/}
+      {/* If coin flip mode was picked, show the flip button first. */}
       {mode === "coin" && !coinWinner && (
         <button className="flow-btn" onClick={runCoinFlip}>Flip Coin</button>
         )}
 
-      {/* Show winner */}
+      {/* Once there is a winner, let them choose team order. */}
       {coinWinner && !team1 && (
         <>
           <p>{coinWinner} won the coin flip!</p>
@@ -442,8 +457,7 @@ export default function Vetoes() {
           </button>
         </>
       )}
-      {/* Final result */}
-      {/* TODO: Add Logic to Map Bans Need to Add Map Pool Feature ability to pick what maps are in rotation (7 maps). Then what Type of Vetoes BO1, BO3, BO5.*/}
+      {/* Main veto interface after both team slots are set. */}
       {team1 && team2 && (
         <div className='final'>
           <>
@@ -474,6 +488,7 @@ export default function Vetoes() {
           )}
           </>
           <>
+          {/* Map cards act like the main control surface for bans and picks. */}
           <div className={`map-grid ${selectedMapPool === "all" ? "map-grid-square" : "map-grid-vertical"}`}>
           {activeMaps.map((map) => {
             const mapState = mapStates[map] || {
@@ -599,7 +614,7 @@ export default function Vetoes() {
         </div>
       )}
 
-     {/* if manual was chosen*/}
+     {/* Manual mode buttons only show if that flow was selected. */}
       {mode === "manual" && (
         <div className="manual-order">
           <p>Manually choose which team goes first.</p>

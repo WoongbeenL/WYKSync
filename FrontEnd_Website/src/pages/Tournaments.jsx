@@ -1,3 +1,4 @@
+// Tournaments page handles viewing, filtering, creating, and joining tournaments.
 import { useEffect, useMemo, useState } from "react";
 import "./tournaments.css";
 import { fetchCurrentUserTeamProfile } from "../lib/teamProfile";
@@ -7,7 +8,9 @@ import {
   requestBackendWithFallback,
 } from "../lib/backendApi";
 
+// This page has a lot going on, so helper functions keep the JSX from getting too messy.
 export default function Tournaments({ user }) {
+  // Dropdown options for tournament format.
   const formatOptions = [
     { value: "single_elimination", label: "Single Elimination" },
     { value: "double_elimination", label: "Double Elimination" },
@@ -45,11 +48,13 @@ export default function Tournaments({ user }) {
 
   const pageSize = 6;
 
+  // Formats date/time values so the cards and details page look more readable.
   const formatDateTimeLabel = (value) => {
     if (!value) return "TBD";
     return new Date(value).toLocaleString();
   };
 
+  // Formats prize pool text while safely handling missing values.
   const formatPrizePoolLabel = (value) => {
     if (value === "" || value === null || value === undefined) return "TBD";
     const numericValue = Number(value);
@@ -57,11 +62,13 @@ export default function Tournaments({ user }) {
     return `$${numericValue}`;
   };
 
+  // Turns backend format codes into labels the UI can show nicely.
   const formatTournamentFormatLabel = (value) => {
     const matchedFormat = formatOptions.find((option) => option.value === value);
     return matchedFormat?.label || value || "TBD";
   };
 
+  // Normalizes backend tournament data so the rest of the page can use one shape.
   const normalizeTournament = (tournament) => ({
     ...tournament,
     id: tournament.id ?? tournament.tournament_id,
@@ -78,6 +85,7 @@ export default function Tournaments({ user }) {
     standings: Array.isArray(tournament.standings) ? tournament.standings : [],
   });
 
+  // Validates the create-tournament form before we try to submit it.
   const validateTournamentForm = () => {
     const errors = {};
     const trimmedName = name.trim();
@@ -111,6 +119,7 @@ export default function Tournaments({ user }) {
     return errors;
   };
 
+  // Clears one field error after the user starts fixing that input.
   const clearFieldError = (fieldName) => {
     if (!formErrors[fieldName]) return;
     setFormErrors((prev) => {
@@ -120,6 +129,7 @@ export default function Tournaments({ user }) {
     });
   };
 
+  // Loads tournament data from the backend.
   const fetchTournaments = async () => {
     if (!backendUrl) {
       setApiError("VITE_BACKEND_URL is missing.");
@@ -147,6 +157,7 @@ export default function Tournaments({ user }) {
     );
   };
 
+  // Creates a new tournament from the form values.
   const addTournament = async () => {
     const errors = validateTournamentForm();
     if (Object.keys(errors).length > 0) {
@@ -211,6 +222,7 @@ export default function Tournaments({ user }) {
     setFormErrors({});
   };
 
+  // Deletes a tournament card and removes it from local state.
   const deleteTournament = async (id) => {
     if (!backendUrl) {
       setApiError("VITE_BACKEND_URL is missing.");
@@ -243,6 +255,7 @@ export default function Tournaments({ user }) {
     }
   };
 
+  // Keeps the selected tournament and list view in sync.
   const updateSelectedTournament = (updatedTournament) => {
     setSelectedTournament(updatedTournament);
     setTournaments((prev) =>
@@ -252,8 +265,10 @@ export default function Tournaments({ user }) {
     );
   };
 
+  // Team name is used for registration if the user already has a team profile.
   const getRegistrationIdentity = () => teamProfile?.teamName || user;
 
+  // Adds the current user's team to the selected tournament.
   const joinTournament = () => {
     if (!selectedTournament || !user) return;
     if (!teamProfile) return;
@@ -282,6 +297,7 @@ export default function Tournaments({ user }) {
     updateSelectedTournament(updatedTournament);
   };
 
+  // Removes the current user's team from the selected tournament.
   const leaveTournament = () => {
     if (!selectedTournament || !user) return;
     const registrationIdentity = getRegistrationIdentity();
@@ -301,6 +317,7 @@ export default function Tournaments({ user }) {
     updateSelectedTournament(updatedTournament);
   };
 
+  // Memo keeps the filter/sort work from re-running unless the inputs actually change.
   const filteredAndSortedTournaments = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
 
@@ -356,16 +373,19 @@ export default function Tournaments({ user }) {
   const availableGames = [...new Set(tournaments.map((t) => t.game))];
 
   useEffect(() => {
+    // Changing filter controls should reset the list back to page 1.
     setCurrentPage(1);
   }, [searchTerm, statusFilter, gameFilter, dateFilter, sortBy]);
 
   useEffect(() => {
+    // Initial tournament load when the page first opens.
     fetchTournaments();
   }, []);
 
   useEffect(() => {
     let active = true;
 
+    // Load the user's team profile so the page can decide whether registration is allowed.
     const loadTeamProfile = async () => {
       if (!user) {
         setTeamProfile(null);
@@ -399,6 +419,7 @@ export default function Tournaments({ user }) {
 
       {selectedTournament ? (
         <div className="tournament-details">
+          {/* Detail view replaces the grid when one tournament is selected. */}
           <button
             className="back-btn"
             onClick={() => {
@@ -461,6 +482,7 @@ export default function Tournaments({ user }) {
 
             {activeTab === "participants" && (
               <div className="detail-section">
+                {/* Registration area changes depending on login/team-profile state. */}
                 <h3>Teams</h3>
                 <p>
                   Registered: {selectedTournament.participants.length}/{selectedTournament.teams}
@@ -540,6 +562,7 @@ export default function Tournaments({ user }) {
         <>
           {user ? (
             <div className="tournament-input">
+              {/* Create form only shows for logged-in users. */}
               <div className="input-group">
                 <input
                   className={formErrors.name ? "field-error" : ""}
@@ -665,6 +688,7 @@ export default function Tournaments({ user }) {
           )}
 
           <div className="listing-toolbar">
+            {/* These controls let users search and narrow down the tournament list. */}
             <input
               type="text"
               placeholder="Search tournaments, organizer, game..."
@@ -717,6 +741,7 @@ export default function Tournaments({ user }) {
                 className="tournament-card"
                 onClick={() => setSelectedTournament(tournament)}
               >
+                {/* Placeholder image block until real tournament images are added. */}
                 <div className="tournament-image">
                   Image
                 </div>

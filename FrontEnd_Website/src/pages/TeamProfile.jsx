@@ -1,3 +1,4 @@
+// Team profile page lets users manage both their account info and their team info.
 import { useEffect, useState } from "react";
 import {
   createTeamForCurrentUser,
@@ -10,6 +11,7 @@ import { supabase } from "../lib/supabaseClient";
 import { backendUrl, parseBackendError } from "../lib/backendApi";
 import "./team-profile.css";
 
+// This page has a few different forms, so there is a decent amount of state to track.
 export default function TeamProfile({ user, onProfileUpdated }) {
   const [teamName, setTeamName] = useState("");
   const [teamProfile, setTeamProfile] = useState(null);
@@ -33,6 +35,7 @@ export default function TeamProfile({ user, onProfileUpdated }) {
   useEffect(() => {
     let active = true;
 
+    // Loads the current user's team profile when the page opens or the user changes.
     const loadTeamProfile = async () => {
       if (!user) {
         setTeamProfile(null);
@@ -64,6 +67,7 @@ export default function TeamProfile({ user, onProfileUpdated }) {
   useEffect(() => {
     let active = true;
 
+    // Loads the account section separately because it comes from auth + backend profile data.
     const loadAccountProfile = async () => {
       if (!user) {
         setCurrentEmail("");
@@ -135,6 +139,7 @@ export default function TeamProfile({ user, onProfileUpdated }) {
     };
   }, [user]);
 
+  // Saves the display name shown in the user's backend profile.
   const handleSaveDisplayName = async (event) => {
     event.preventDefault();
 
@@ -196,6 +201,7 @@ export default function TeamProfile({ user, onProfileUpdated }) {
     }
   };
 
+  // Starts the email change flow through Supabase auth.
   const handleSaveEmail = async (event) => {
     event.preventDefault();
 
@@ -236,6 +242,7 @@ export default function TeamProfile({ user, onProfileUpdated }) {
     }
   };
 
+  // Creates a brand new team for the logged-in user.
   const handleCreateTeam = async (event) => {
     event.preventDefault();
     setError("");
@@ -264,6 +271,7 @@ export default function TeamProfile({ user, onProfileUpdated }) {
     setSuccess("Team profile created.");
   };
 
+  // Updates the current team's name.
   const handleUpdateTeam = async (event) => {
     event.preventDefault();
     setError("");
@@ -277,6 +285,7 @@ export default function TeamProfile({ user, onProfileUpdated }) {
     setIsSaving(true);
     const { teamProfile: updatedTeam, error: updateError } =
       await updateTeamForCurrentUser({
+        teamId: teamProfile?.teamId,
         teamName,
         userIdentifier: user,
       });
@@ -292,6 +301,7 @@ export default function TeamProfile({ user, onProfileUpdated }) {
     setSuccess("Team profile updated.");
   };
 
+  // Deletes the current team after a confirmation prompt.
   const handleDisbandTeam = async () => {
     if (!user || !teamProfile) return;
 
@@ -301,7 +311,10 @@ export default function TeamProfile({ user, onProfileUpdated }) {
     setError("");
     setSuccess("");
     setIsSaving(true);
-    const { error: disbandError } = await disbandTeamForCurrentUser(user);
+    const { error: disbandError } = await disbandTeamForCurrentUser({
+      teamId: teamProfile?.teamId,
+      userIdentifier: user,
+    });
     setIsSaving(false);
 
     if (disbandError) {
@@ -314,6 +327,7 @@ export default function TeamProfile({ user, onProfileUpdated }) {
     setSuccess("Team disbanded.");
   };
 
+  // Lets the user test a join code before a full join flow exists.
   const handlePreviewJoin = async (event) => {
     event.preventDefault();
     setJoinPreview(null);
@@ -365,6 +379,7 @@ export default function TeamProfile({ user, onProfileUpdated }) {
               <p>
                 <strong>Current Email:</strong> {currentEmail || user}
               </p>
+              {/* Separate forms keep display-name and email updates independent from each other. */}
               <form className="team-profile-form" onSubmit={handleSaveDisplayName}>
                 <input
                   type="text"
@@ -438,6 +453,7 @@ export default function TeamProfile({ user, onProfileUpdated }) {
 
       {user && !isLoading && !teamProfile && (
         <>
+          {/* If no team exists yet, the page shows create and join-preview options. */}
           <form className="team-profile-card team-profile-form" onSubmit={handleCreateTeam}>
             <h2>Create Team</h2>
             <input

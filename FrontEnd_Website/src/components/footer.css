@@ -1,16 +1,20 @@
+/* Footer-specific styles are grouped here to keep the layout component cleaner. */
 .section__padding{
     padding: 4rem 4rem;
 }
 
+/* Dark footer background to match the rest of the site. */
 .footer{
     background-color: black;
 }
 
+/* Main footer wrapper stacks sections vertically. */
 .sb__footer{
     display: flex;
     flex-direction: column;
 }
 
+/* This controls the multi-column link layout. */
 .sb__footer-links{
     display:flex;
     justify-content: space-between;
@@ -31,11 +35,13 @@
     color: white;
 }
 
+/* Footer links use a lighter muted color by default. */
 a{
     color: rgb(175,175,179);
     text-decoration: none;
 }
 
+/* Social icons are kept on one row. */
 .socialmedia{
     display: flex;
     flex-direction: row;
@@ -45,6 +51,7 @@ a{
     width: 50px;
 }
 
+/* Section heading styling inside each footer column. */
 .sb__footer-links-div h4{
     font-size: 14px;
     line-height: 17px;

@@ -1,3 +1,4 @@
+/* Veto page styling for the map selection workflow. */
 .vetoes{
   min-height: 100vh;
   background: radial-gradient(circle at top, #0f0f0f, #000);
@@ -6,6 +7,7 @@
   font-family: Arial, Helvetica, sans-serif;
 }
 
+/* Top dropdown controls for map pool and veto format. */
 .dropdown_menus{
   display: flex;
   flex-wrap: wrap;
@@ -73,6 +75,7 @@
   color: #aaa;
 }
 
+/* Team name inputs near the start of the flow. */
 .team-inputs {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -98,6 +101,7 @@
   margin-top: 1.5rem;
 }
 
+/* Current acting role selector. */
 .acting-role {
   margin-top: 0.6rem;
   display: inline-flex;
@@ -141,6 +145,7 @@
   text-align: center;
 }
 
+/* Buttons used through the setup flow. */
 .flow-btn {
   background: #151515;
   color: #fff;
@@ -164,6 +169,7 @@
   box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.15);
 }
 
+/* Main map card button styles. */
 .map-btn {
   margin: 0.4rem;
   padding: 0;
@@ -179,6 +185,7 @@
   width: 100%;
 }
 
+/* Grid wrappers for different map pool layouts. */
 .map-grid {
   margin-top: 1rem;
   display: grid;
@@ -202,6 +209,7 @@
   aspect-ratio: 3 / 4;
 }
 
+/* Image fills each map card. */
 .map-btn-image {
   position: absolute;
   inset: 0;
@@ -224,6 +232,7 @@
   backdrop-filter: blur(1px);
 }
 
+/* State styles for available, banned, picked, and decider maps. */
 .map-btn.available {
   background: #111;
   color: #fff;
@@ -264,6 +273,7 @@
   cursor: not-allowed;
 }
 
+/* Small badge in the corner for picked/decider maps. */
 .map-btn-status {
   position: absolute;
   top: 0.45rem;
@@ -286,6 +296,7 @@
   color: #3b2c00;
 }
 
+/* Veto log area that reads almost like a chat feed. */
 .ban-history {
   margin-top: 1rem;
   display: flex;
@@ -318,6 +329,7 @@
   margin-bottom: 0;
 }
 
+/* Side picker buttons after a map is chosen. */
 .side-picker {
   margin-top: 1rem;
 }
@@ -336,6 +348,7 @@
   margin-top: 1rem;
 }
 
+/* Shared error styling for invalid team inputs. */
 .field-error {
   border-color: #ff6b78 !important;
 }

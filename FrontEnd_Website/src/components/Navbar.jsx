@@ -1,5 +1,7 @@
+// Navbar stays on every page and gives quick links to the main sections.
 import logoImg from "../assets/WYKSync.png";
 
+// Simple nav component for site branding and page links.
 export default function Navbar() {
   return (
     <nav className="nav">
@@ -20,6 +22,7 @@ export default function Navbar() {
   );
 }
 
+// This helper highlights the current page link in the nav.
 function CustomLink({ href, children, ...props }) {
   const path = window.location.pathname;
   return (
