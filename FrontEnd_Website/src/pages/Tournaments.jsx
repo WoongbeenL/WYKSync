@@ -12,9 +12,9 @@ import {
 export default function Tournaments({ user }) {
   // Dropdown options for tournament format.
   const formatOptions = [
-    { value: "single_elimination", label: "Single Elimination" },
-    { value: "double_elimination", label: "Double Elimination" },
-    { value: "round_robin", label: "Round Robin" },
+    { value: "single elim", label: "Single Elimination" },
+    { value: "double elim", label: "Double Elimination" },
+    { value: "round robin", label: "Round Robin" },
     { value: "swiss", label: "Swiss" },
   ];
 
@@ -27,7 +27,7 @@ export default function Tournaments({ user }) {
   const [endDateTime, setEndDateTime] = useState("");
   const [game, setGame] = useState("Valorant");
   const [status, setStatus] = useState("upcoming");
-  const [format, setFormat] = useState("single_elimination");
+  const [format, setFormat] = useState("single elim");
   const [rules, setRules] = useState(
     "Standard competitive rules apply. All matches are Best of 3."
   );
@@ -45,6 +45,7 @@ export default function Tournaments({ user }) {
   const [teamProfileError, setTeamProfileError] = useState("");
   const [apiError, setApiError] = useState("");
   const [isSavingTournament, setIsSavingTournament] = useState(false);
+  const [hasCheckedSession, setHasCheckedSession] = useState(false);
 
   const pageSize = 6;
 
@@ -79,7 +80,7 @@ export default function Tournaments({ user }) {
     endDateTime: tournament.endDateTime ?? tournament.end_date ?? "",
     game: tournament.game ?? "Unknown",
     status: tournament.status ?? "upcoming",
-    format: tournament.format ?? "single_elimination",
+    format: tournament.format ?? "single elim",
     rules: tournament.rules ?? tournament.description ?? "No rules provided.",
     participants: Array.isArray(tournament.participants) ? tournament.participants : [],
     standings: Array.isArray(tournament.standings) ? tournament.standings : [],
@@ -140,6 +141,7 @@ export default function Tournaments({ user }) {
     const result = await requestBackendWithFallback(
       ["/tournament"],
       {
+        requireAuth: true,
         fallbackError: "Could not load tournaments.",
         allowNotFound: true,
       }
@@ -217,7 +219,7 @@ export default function Tournaments({ user }) {
     setEndDateTime("");
     setGame("Valorant");
     setStatus("upcoming");
-    setFormat("single_elimination");
+    setFormat("single elim");
     setRules("Standard competitive rules apply. All matches are Best of 3.");
     setFormErrors({});
   };
@@ -378,8 +380,29 @@ export default function Tournaments({ user }) {
   }, [searchTerm, statusFilter, gameFilter, dateFilter, sortBy]);
 
   useEffect(() => {
-    // Initial tournament load when the page first opens.
-    fetchTournaments();
+    let active = true;
+
+    const prepareTournamentPage = async () => {
+      if (!supabase) {
+        if (active) {
+          setHasCheckedSession(true);
+          setApiError("Supabase auth is unavailable.");
+        }
+        return;
+      }
+
+      await supabase.auth.getSession();
+      if (!active) return;
+
+      setHasCheckedSession(true);
+      await fetchTournaments();
+    };
+
+    prepareTournamentPage();
+
+    return () => {
+      active = false;
+    };
   }, []);
 
   useEffect(() => {
@@ -415,7 +438,7 @@ export default function Tournaments({ user }) {
   return (
     <div className="tournaments">
       <h1>Tournaments</h1>
-      {apiError && <p className="team-required-error">{apiError}</p>}
+      {apiError && hasCheckedSession && <p className="team-required-error">{apiError}</p>}
 
       {selectedTournament ? (
         <div className="tournament-details">
@@ -703,7 +726,7 @@ export default function Tournaments({ user }) {
               <option value="all">All Statuses</option>
               <option value="upcoming">Upcoming</option>
               <option value="live">Live</option>
-              <option value="completed">Completed</option>
+              <option value="complete">Completed</option>
             </select>
 
             <select value={gameFilter} onChange={(e) => setGameFilter(e.target.value)}>
