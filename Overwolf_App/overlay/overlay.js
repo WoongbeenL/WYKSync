@@ -1,7 +1,7 @@
 // ========================================
 // CONFIG
 // ========================================
-const CONFIG = { wsUrl: 'ws://localhost:8765', showDebug: true };
+const CONFIG = { wsUrl: 'ws://localhost:8765' };
 
 // ========================================
 // AGENT IMAGE MAP
@@ -174,16 +174,8 @@ const el = {
 
   buyLogoA: document.getElementById('buy-logo-a'),
   buyLogoB: document.getElementById('buy-logo-b'),
-  // Debug
-  debug: document.getElementById('debug'),
-  dStatus: document.getElementById('d-status'),
-  dState: document.getElementById('d-state'),
-  dMap: document.getElementById('d-map'),
-  dRound: document.getElementById('d-round'),
-  dPlayers: document.getElementById('d-players'),
 };
 
-if (!CONFIG.showDebug) el.debug.style.display = 'none';
 
 // ========================================
 // WEBSOCKET
@@ -195,9 +187,8 @@ let needsCardIntro = true; // true when player cards need entrance animation
 let mapPoolData = null; // { maps: [{ name, scoreA, scoreB, isCurrent }] }
 
 function connect() {
-  el.dStatus.textContent = 'Connecting...';
   ws = new WebSocket(CONFIG.wsUrl);
-  ws.onopen = () => { el.dStatus.textContent = 'Connected'; };
+  ws.onopen = () => { };
   ws.onmessage = (e) => {
     try {
       const msg = JSON.parse(e.data);
@@ -206,8 +197,8 @@ function connect() {
       else if (msg.type === 'map-pool-config') { applyMapPoolConfig(msg.config); }
     } catch (err) { console.error(err); }
   };
-  ws.onclose = () => { el.dStatus.textContent = 'Disconnected'; setTimeout(connect, 3000); };
-  ws.onerror = () => { el.dStatus.textContent = 'Error'; };
+  ws.onclose = () => { setTimeout(connect, 3000); };
+  ws.onerror = () => { };
 }
 
 // Apply team config pushed from the Overwolf app renderer
@@ -279,8 +270,7 @@ function renderSeriesTracker() {
       // Empty slot
       slot.className = 'series-map-slot';
       nameEl.textContent = '—';
-      scoreEl.querySelector('.series-score-a').textContent = '0';
-      scoreEl.querySelector('.series-score-b').textContent = '0';
+      scoreEl.style.display = 'none';
       // Remove any LIVE tag
       const existingTag = slot.querySelector('.series-live-tag');
       if (existingTag) existingTag.remove();
@@ -288,8 +278,16 @@ function renderSeriesTracker() {
     }
 
     nameEl.textContent = mapEntry.name;
-    scoreEl.querySelector('.series-score-a').textContent = mapEntry.scoreA ?? 0;
-    scoreEl.querySelector('.series-score-b').textContent = mapEntry.scoreB ?? 0;
+
+    // Only show score if at least one value was entered (non-zero)
+    const hasEnteredScore = (mapEntry.scoreA && mapEntry.scoreA > 0) || (mapEntry.scoreB && mapEntry.scoreB > 0);
+    if (hasEnteredScore) {
+      scoreEl.style.display = '';
+      scoreEl.querySelector('.series-score-a').textContent = mapEntry.scoreA ?? 0;
+      scoreEl.querySelector('.series-score-b').textContent = mapEntry.scoreB ?? 0;
+    } else {
+      scoreEl.style.display = 'none';
+    }
 
     // Determine if this is the current map
     const isCurrentByFlag = mapEntry.isCurrent;
@@ -325,11 +323,7 @@ function render() {
   if (!gameData) return;
   const state = gameData.gameState || 'unknown';
 
-  // Debug
-  el.dState.textContent = state;
-  el.dMap.textContent = gameData.map || '—';
-  el.dRound.textContent = gameData.roundNumber || 0;
-  el.dPlayers.textContent = gameData.players?.length || 0;
+
 
   // State banner
   el.stateBanner.className = 'state-banner visible ' + state;
@@ -563,46 +557,7 @@ function buyPlayerRow(p) {
       </div>`;
 }
 
-// ========================================
-// DEBUG TEST HELPERS 
-// ========================================
-const MOCK_PLAYERS = [
-  // Team 0
-  { name: 'Faker#NA1', team: 0, agent: 'jett', isAlive: true, health: 150, kills: 12, deaths: 3, assists: 5, money: 4700, weapon: 'vandal', shield: 50, ultPoints: 7, ultMax: 7, hasSpike: false },
-  { name: 'Shroud#NA1', team: 0, agent: 'sage', isAlive: true, health: 100, kills: 8, deaths: 5, assists: 9, money: 3200, weapon: 'phantom', shield: 25, ultPoints: 5, ultMax: 8, hasSpike: false },
-  { name: 'TenZ#RIOT', team: 0, agent: 'reyna', isAlive: true, health: 80, kills: 15, deaths: 7, assists: 2, money: 800, weapon: 'sheriff', shield: 0, ultPoints: 4, ultMax: 6, hasSpike: true },
-  { name: 'Hiko#NA1', team: 0, agent: 'sova', isAlive: false, health: 0, kills: 5, deaths: 8, assists: 7, money: 2100, weapon: 'spectre', shield: 25, ultPoints: 3, ultMax: 7, hasSpike: false },
-  { name: 'Subroza#NA1', team: 0, agent: 'omen', isAlive: true, health: 45, kills: 6, deaths: 6, assists: 4, money: 5000, weapon: 'vandal', shield: 50, ultPoints: 6, ultMax: 7, hasSpike: false },
-  // Team 1
-  { name: 'Aspas#BR1', team: 1, agent: 'raze', isAlive: true, health: 130, kills: 18, deaths: 4, assists: 3, money: 3900, weapon: 'vandal', shield: 50, ultPoints: 7, ultMax: 7, hasSpike: false },
-  { name: 'Chronicle#EU', team: 1, agent: 'killjoy', isAlive: true, health: 100, kills: 7, deaths: 6, assists: 8, money: 2800, weapon: 'phantom', shield: 25, ultPoints: 5, ultMax: 8, hasSpike: false },
-  { name: 'Derke#RIOT', team: 1, agent: 'chamber', isAlive: true, health: 100, kills: 11, deaths: 5, assists: 4, money: 4200, weapon: 'operator', shield: 50, ultPoints: 6, ultMax: 7, hasSpike: false },
-  { name: 'Less#BR1', team: 1, agent: 'viper', isAlive: false, health: 0, kills: 4, deaths: 9, assists: 6, money: 1500, weapon: 'spectre', shield: 0, ultPoints: 2, ultMax: 7, hasSpike: false },
-  { name: 'Sacy#BR1', team: 1, agent: 'breach', isAlive: true, health: 60, kills: 9, deaths: 7, assists: 10, money: 3600, weapon: 'vandal', shield: 25, ultPoints: 4, ultMax: 7, hasSpike: false },
-];
 
-let mockRound = 8;
-
-function debugSetState(state, phase) {
-  gameData = {
-    gameState: state,
-    map: 'ascent',
-    roundNumber: mockRound,
-    roundPhase: phase || '',
-    score: { team0: 5, team1: 3 },
-    players: state === 'in_game' ? JSON.parse(JSON.stringify(MOCK_PLAYERS)) : [],
-    observing: 'TenZ',
-  };
-  render();
-}
-
-function debugNextRound() {
-  mockRound++;
-  if (gameData) {
-    gameData.roundNumber = mockRound;
-    render();
-  }
-}
 
 // ========================================
 // BOOT

@@ -1068,27 +1068,4 @@
       height: 40px;
     }
 
-    /* ============================
-     DEBUG
-     ============================ */
-    .debug {
-      position: fixed;
-      bottom: 10px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: var(--bg-panel-dark);
-      backdrop-filter: blur(8px);
-      padding: 8px 14px;
-      border-radius: 6px;
-      font-size: 0.55rem;
-      color: var(--text-muted);
-      font-family: monospace;
-      border: 1px solid var(--border-subtle);
-      z-index: 200;
-      display: flex;
-      gap: 12px;
-    }
-
-    .debug .dv {
-      color: var(--gold);
-    }
+
