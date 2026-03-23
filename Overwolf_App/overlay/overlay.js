@@ -1,7 +1,7 @@
-﻿// ========================================
+// ========================================
 // CONFIG
 // ========================================
-const CONFIG = { wsUrl: 'ws://localhost:8765', showDebug: true };
+const CONFIG = { wsUrl: 'ws://localhost:8765' };
 
 // ========================================
 // AGENT IMAGE MAP
@@ -159,7 +159,7 @@ const el = {
   sideA: document.getElementById('t-side-a'),
   sideB: document.getElementById('t-side-b'),
   round: document.getElementById('t-round'),
-  map: document.getElementById('t-map'),
+  seriesTracker: document.getElementById('series-tracker'),
   phase: document.getElementById('phase-banner'),
   phaseText: document.getElementById('phase-text'),
   topBarLine: document.getElementById('top-bar-line'),
@@ -174,16 +174,8 @@ const el = {
 
   buyLogoA: document.getElementById('buy-logo-a'),
   buyLogoB: document.getElementById('buy-logo-b'),
-  // Debug
-  debug: document.getElementById('debug'),
-  dStatus: document.getElementById('d-status'),
-  dState: document.getElementById('d-state'),
-  dMap: document.getElementById('d-map'),
-  dRound: document.getElementById('d-round'),
-  dPlayers: document.getElementById('d-players'),
 };
 
-if (!CONFIG.showDebug) el.debug.style.display = 'none';
 
 // ========================================
 // WEBSOCKET
@@ -191,20 +183,22 @@ if (!CONFIG.showDebug) el.debug.style.display = 'none';
 let ws = null, gameData = null;
 let buyPhaseActive = false;
 let buyFadeTimeout = null;
+let needsCardIntro = true; // true when player cards need entrance animation
+let mapPoolData = null; // { maps: [{ name, scoreA, scoreB, isCurrent }] }
 
 function connect() {
-  el.dStatus.textContent = 'Connecting...';
   ws = new WebSocket(CONFIG.wsUrl);
-  ws.onopen = () => { el.dStatus.textContent = 'Connected'; };
+  ws.onopen = () => { };
   ws.onmessage = (e) => {
     try {
       const msg = JSON.parse(e.data);
       if (msg.type === 'game-data') { gameData = msg.data; render(); }
       else if (msg.type === 'team-config') { applyTeamConfig(msg.config); }
+      else if (msg.type === 'map-pool-config') { applyMapPoolConfig(msg.config); }
     } catch (err) { console.error(err); }
   };
-  ws.onclose = () => { el.dStatus.textContent = 'Disconnected'; setTimeout(connect, 3000); };
-  ws.onerror = () => { el.dStatus.textContent = 'Error'; };
+  ws.onclose = () => { setTimeout(connect, 3000); };
+  ws.onerror = () => { };
 }
 
 // Apply team config pushed from the Overwolf app renderer
@@ -242,6 +236,85 @@ function setLogo(team, url) {
   }
 }
 
+// Apply map pool config pushed from the Overwolf app renderer
+function applyMapPoolConfig(cfg) {
+  if (!cfg) { mapPoolData = null; return; }
+  mapPoolData = cfg;
+  // Re-render immediately if we already have game data
+  if (gameData) render();
+}
+
+// Render the series tracker (1, 3, or 5 slots based on format)
+function renderSeriesTracker() {
+  if (!mapPoolData || !mapPoolData.maps) return;
+  const format = mapPoolData.format || mapPoolData.maps.length || 3;
+  const currentGameMap = (gameData?.map || '').toLowerCase();
+
+  for (let i = 0; i < 5; i++) {
+    const slot = document.getElementById('series-slot-' + i);
+    const nameEl = document.getElementById('series-name-' + i);
+    const scoreEl = document.getElementById('series-score-' + i);
+    if (!slot) continue;
+
+    // Show/hide based on format
+    if (i < format) {
+      slot.style.display = '';
+    } else {
+      slot.style.display = 'none';
+      continue;
+    }
+
+    const mapEntry = mapPoolData.maps[i];
+
+    if (!mapEntry || !mapEntry.name) {
+      // Empty slot
+      slot.className = 'series-map-slot';
+      nameEl.textContent = '—';
+      scoreEl.style.display = 'none';
+      // Remove any LIVE tag
+      const existingTag = slot.querySelector('.series-live-tag');
+      if (existingTag) existingTag.remove();
+      continue;
+    }
+
+    nameEl.textContent = mapEntry.name;
+
+    // Only show score if at least one value was entered (non-zero)
+    const hasEnteredScore = (mapEntry.scoreA && mapEntry.scoreA > 0) || (mapEntry.scoreB && mapEntry.scoreB > 0);
+    if (hasEnteredScore) {
+      scoreEl.style.display = '';
+      scoreEl.querySelector('.series-score-a').textContent = mapEntry.scoreA ?? 0;
+      scoreEl.querySelector('.series-score-b').textContent = mapEntry.scoreB ?? 0;
+    } else {
+      scoreEl.style.display = 'none';
+    }
+
+    // Determine if this is the current map
+    const isCurrentByFlag = mapEntry.isCurrent;
+    const isCurrentByGame = currentGameMap && mapEntry.name.toLowerCase() === currentGameMap;
+    const isCurrent = isCurrentByFlag || isCurrentByGame;
+
+    // Determine if completed (has a decisive score and is not current)
+    const hasScore = (mapEntry.scoreA > 0 || mapEntry.scoreB > 0);
+    const isCompleted = hasScore && !isCurrent && (mapEntry.scoreA >= 13 || mapEntry.scoreB >= 13);
+
+    slot.className = 'series-map-slot' + (isCurrent ? ' current' : '') + (isCompleted ? ' completed' : '');
+
+    // LIVE tag management
+    let liveTag = slot.querySelector('.series-live-tag');
+    if (isCurrent) {
+      if (!liveTag) {
+        liveTag = document.createElement('div');
+        liveTag.className = 'series-live-tag';
+        liveTag.textContent = 'LIVE';
+        slot.appendChild(liveTag);
+      }
+    } else {
+      if (liveTag) liveTag.remove();
+    }
+  }
+}
+
 
 // ========================================
 // RENDER
@@ -250,11 +323,7 @@ function render() {
   if (!gameData) return;
   const state = gameData.gameState || 'unknown';
 
-  // Debug
-  el.dState.textContent = state;
-  el.dMap.textContent = gameData.map || '—';
-  el.dRound.textContent = gameData.roundNumber || 0;
-  el.dPlayers.textContent = gameData.players?.length || 0;
+
 
   // State banner
   el.stateBanner.className = 'state-banner visible ' + state;
@@ -268,7 +337,14 @@ function render() {
     el.scoreA.textContent = gameData.score?.team0 ?? 0;
     el.scoreB.textContent = gameData.score?.team1 ?? 0;
     el.round.textContent = gameData.roundNumber || 0;
-    el.map.textContent = fmtMap(gameData.map);
+
+    // Series tracker
+    if (mapPoolData && mapPoolData.maps && mapPoolData.maps.length > 0) {
+      el.seriesTracker.classList.add('visible');
+      renderSeriesTracker();
+    } else {
+      el.seriesTracker.classList.remove('visible');
+    }
 
     // Attack / Defense side labels
     const atkTeam = gameData.attackingTeam;
@@ -303,6 +379,7 @@ function render() {
     el.topbar.classList.remove('visible');
     el.topBarLine.classList.remove('visible');
     el.phase.classList.remove('visible');
+    el.seriesTracker.classList.remove('visible');
     el.pLeft.innerHTML = '';
     el.pRight.innerHTML = '';
     if (buyPhaseActive) hideBuyPhase(false);
@@ -342,7 +419,14 @@ function renderPlayers() {
   el.pLeft.innerHTML = t0.map(p => card(p, obs, 'left', isBuy)).join('');
   el.pRight.innerHTML = t1.map(p => card(p, obs, 'right', isBuy)).join('');
 
-  document.querySelectorAll('.p-card').forEach((c, i) => setTimeout(() => c.classList.add('show'), i * 40));
+  if (needsCardIntro) {
+    // Staggered entrance animation (only on first show / after buy phase)
+    document.querySelectorAll('.p-card').forEach((c, i) => setTimeout(() => c.classList.add('show'), i * 40));
+    needsCardIntro = false;
+  } else {
+    // Already visible — add .show immediately, no animation flicker
+    document.querySelectorAll('.p-card').forEach(c => c.classList.add('show'));
+  }
 }
 
 function card(p, obs, side, isBuy) {
@@ -387,6 +471,7 @@ function card(p, obs, side, isBuy) {
 function showBuyPhase() {
   if (buyFadeTimeout) { clearTimeout(buyFadeTimeout); buyFadeTimeout = null; }
   buyPhaseActive = true;
+  needsCardIntro = true; // cards will need entrance animation when combat starts
   el.buyOverlay.classList.remove('fade-out');
   el.buyOverlay.classList.add('visible');
   // Hide sideline player cards
@@ -472,46 +557,7 @@ function buyPlayerRow(p) {
       </div>`;
 }
 
-// ========================================
-// DEBUG TEST HELPERS 
-// ========================================
-const MOCK_PLAYERS = [
-  // Team 0
-  { name: 'Faker#NA1', team: 0, agent: 'jett', isAlive: true, health: 150, kills: 12, deaths: 3, assists: 5, money: 4700, weapon: 'vandal', shield: 50, ultPoints: 7, ultMax: 7, hasSpike: false },
-  { name: 'Shroud#NA1', team: 0, agent: 'sage', isAlive: true, health: 100, kills: 8, deaths: 5, assists: 9, money: 3200, weapon: 'phantom', shield: 25, ultPoints: 5, ultMax: 8, hasSpike: false },
-  { name: 'TenZ#RIOT', team: 0, agent: 'reyna', isAlive: true, health: 80, kills: 15, deaths: 7, assists: 2, money: 800, weapon: 'sheriff', shield: 0, ultPoints: 4, ultMax: 6, hasSpike: true },
-  { name: 'Hiko#NA1', team: 0, agent: 'sova', isAlive: false, health: 0, kills: 5, deaths: 8, assists: 7, money: 2100, weapon: 'spectre', shield: 25, ultPoints: 3, ultMax: 7, hasSpike: false },
-  { name: 'Subroza#NA1', team: 0, agent: 'omen', isAlive: true, health: 45, kills: 6, deaths: 6, assists: 4, money: 5000, weapon: 'vandal', shield: 50, ultPoints: 6, ultMax: 7, hasSpike: false },
-  // Team 1
-  { name: 'Aspas#BR1', team: 1, agent: 'raze', isAlive: true, health: 130, kills: 18, deaths: 4, assists: 3, money: 3900, weapon: 'vandal', shield: 50, ultPoints: 7, ultMax: 7, hasSpike: false },
-  { name: 'Chronicle#EU', team: 1, agent: 'killjoy', isAlive: true, health: 100, kills: 7, deaths: 6, assists: 8, money: 2800, weapon: 'phantom', shield: 25, ultPoints: 5, ultMax: 8, hasSpike: false },
-  { name: 'Derke#RIOT', team: 1, agent: 'chamber', isAlive: true, health: 100, kills: 11, deaths: 5, assists: 4, money: 4200, weapon: 'operator', shield: 50, ultPoints: 6, ultMax: 7, hasSpike: false },
-  { name: 'Less#BR1', team: 1, agent: 'viper', isAlive: false, health: 0, kills: 4, deaths: 9, assists: 6, money: 1500, weapon: 'spectre', shield: 0, ultPoints: 2, ultMax: 7, hasSpike: false },
-  { name: 'Sacy#BR1', team: 1, agent: 'breach', isAlive: true, health: 60, kills: 9, deaths: 7, assists: 10, money: 3600, weapon: 'vandal', shield: 25, ultPoints: 4, ultMax: 7, hasSpike: false },
-];
 
-let mockRound = 8;
-
-function debugSetState(state, phase) {
-  gameData = {
-    gameState: state,
-    map: 'ascent',
-    roundNumber: mockRound,
-    roundPhase: phase || '',
-    score: { team0: 5, team1: 3 },
-    players: state === 'in_game' ? JSON.parse(JSON.stringify(MOCK_PLAYERS)) : [],
-    observing: 'TenZ',
-  };
-  render();
-}
-
-function debugNextRound() {
-  mockRound++;
-  if (gameData) {
-    gameData.roundNumber = mockRound;
-    render();
-  }
-}
 
 // ========================================
 // BOOT

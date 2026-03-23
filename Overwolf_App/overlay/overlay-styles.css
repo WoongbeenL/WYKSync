@@ -1,4 +1,4 @@
-﻿    /* ============================
+    /* ============================
      ROOT & RESET
      ============================ */
     :root {
@@ -262,39 +262,102 @@
     }
 
     /* ============================
-     MAP & SPONSOR PANELS
+     SERIES MAP TRACKER
      ============================ */
-    .map-info-panel {
+    .series-tracker {
       position: fixed;
       top: 18px;
       left: 18px;
       display: flex;
-      flex-direction: column;
-      gap: 2px;
-      font-size: 0.65rem;
-      font-weight: 800;
-      letter-spacing: 1.5px;
+      gap: 4px;
       z-index: 90;
+      opacity: 0;
+      transition: opacity 0.4s;
+      pointer-events: none;
+    }
+
+    .series-tracker.visible {
+      opacity: 1;
+    }
+
+    .series-map-slot {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      min-width: 90px;
+      padding: 6px 12px;
       background: var(--bg-panel-dark);
-      padding: 6px 14px;
-      border-left: 2px solid var(--gold);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+      transition: border-color 0.3s, box-shadow 0.3s;
     }
 
-    .map-curr {
-      color: var(--text-primary);
+    .series-map-slot.current {
+      border-color: var(--gold);
+      box-shadow: 0 0 16px rgba(201, 168, 76, 0.25), 0 4px 12px rgba(0, 0, 0, 0.5);
     }
 
-    .map-curr span {
-      color: var(--gold-light);
+    .series-map-slot.completed {
+      opacity: 0.6;
     }
 
-    .map-decider {
+    .series-slot-label {
+      font-size: 0.45rem;
+      font-weight: 700;
       color: var(--text-muted);
-      font-size: 0.55rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
     }
 
+    .series-map-slot.current .series-slot-label {
+      color: var(--gold);
+    }
 
+    .series-slot-name {
+      font-size: 0.75rem;
+      font-weight: 800;
+      color: var(--white);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+    }
+
+    .series-slot-score {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.85rem;
+      font-weight: 900;
+    }
+
+    .series-slot-score .series-score-a,
+    .series-slot-score .series-score-b {
+      color: var(--white);
+      min-width: 16px;
+      text-align: center;
+    }
+
+    .series-slot-score .series-score-sep {
+      color: var(--text-muted);
+      font-size: 0.65rem;
+    }
+
+    .series-map-slot.current .series-slot-score .series-score-sep {
+      color: var(--gold);
+    }
+
+    .series-live-tag {
+      font-size: 0.4rem;
+      font-weight: 900;
+      color: #000;
+      background: var(--gold);
+      padding: 1px 6px;
+      border-radius: 2px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      animation: pulse-glow 2s infinite;
+    }
 
     /* ============================
      PHASE BANNER
@@ -1005,27 +1068,4 @@
       height: 40px;
     }
 
-    /* ============================
-     DEBUG
-     ============================ */
-    .debug {
-      position: fixed;
-      bottom: 10px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: var(--bg-panel-dark);
-      backdrop-filter: blur(8px);
-      padding: 8px 14px;
-      border-radius: 6px;
-      font-size: 0.55rem;
-      color: var(--text-muted);
-      font-family: monospace;
-      border: 1px solid var(--border-subtle);
-      z-index: 200;
-      display: flex;
-      gap: 12px;
-    }
-
-    .debug .dv {
-      color: var(--gold);
-    }
+
