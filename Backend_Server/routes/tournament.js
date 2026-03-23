@@ -160,6 +160,24 @@ router.post("/", async (req, res) => {
       throw error;
     }
 
+    // Manually assign the creator as owner
+    const { error: ownerError } = await supabase
+      .from("user_tournament")
+      .insert({
+        id: userId,
+        tournament_id: tournament.tournament_id,
+        role: "owner",
+      });
+
+    if (ownerError) {
+      // Delete the tournament if owner assignment fails
+      await supabase
+        .from("tournaments")
+        .delete()
+        .eq("tournament_id", tournament.tournament_id);
+      throw ownerError;
+    }
+
     res.status(201).json({ tournament });
   } catch (err) {
     console.error("POST /tournaments error: ", err);
