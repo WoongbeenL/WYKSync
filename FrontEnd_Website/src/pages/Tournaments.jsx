@@ -1,15 +1,51 @@
 // Tournaments page handles viewing, filtering, creating, and joining tournaments.
 import { useEffect, useMemo, useState } from "react";
 import "./tournaments.css";
-import { fetchCurrentUserTeamProfile } from "../lib/teamProfile";
+import defaultTournamentImage from "../assets/defaulttourney.jpg";
+import {
+  fetchCurrentUserTeamProfile,
+  getCachedTeamProfileForCurrentUser,
+} from "../lib/teamProfile";
 import { supabase } from "../lib/supabaseClient";
 import {
   backendUrl,
   requestBackendWithFallback,
 } from "../lib/backendApi";
 
+const getTournamentAdminStorageKey = (userIdentifier) =>
+  `tournament-admin:${String(userIdentifier || "").trim().toLowerCase()}`;
+
+const readManagedTournamentIds = (userIdentifier) => {
+  if (typeof window === "undefined" || !userIdentifier) return [];
+
+  try {
+    const stored = window.localStorage.getItem(
+      getTournamentAdminStorageKey(userIdentifier)
+    );
+    const parsed = stored ? JSON.parse(stored) : [];
+    return Array.isArray(parsed) ? parsed.map((id) => String(id)) : [];
+  } catch {
+    return [];
+  }
+};
+
+const writeManagedTournamentIds = (userIdentifier, ids) => {
+  if (typeof window === "undefined" || !userIdentifier) return;
+
+  try {
+    window.localStorage.setItem(
+      getTournamentAdminStorageKey(userIdentifier),
+      JSON.stringify(ids)
+    );
+  } catch {
+    // Ignore storage failures.
+  }
+};
+
 // This page has a lot going on, so helper functions keep the JSX from getting too messy.
 export default function Tournaments({ user }) {
+  const defaultGame = "Valorant";
+
   // Dropdown options for tournament format.
   const formatOptions = [
     { value: "single elim", label: "Single Elimination" },
@@ -25,7 +61,7 @@ export default function Tournaments({ user }) {
   const [organizer, setOrganizer] = useState("");
   const [startDateTime, setStartDateTime] = useState("");
   const [endDateTime, setEndDateTime] = useState("");
-  const [game, setGame] = useState("Valorant");
+  const [game, setGame] = useState(defaultGame);
   const [status, setStatus] = useState("upcoming");
   const [format, setFormat] = useState("single elim");
   const [rules, setRules] = useState(
@@ -45,7 +81,16 @@ export default function Tournaments({ user }) {
   const [teamProfileError, setTeamProfileError] = useState("");
   const [apiError, setApiError] = useState("");
   const [isSavingTournament, setIsSavingTournament] = useState(false);
+  const [isUpdatingTournament, setIsUpdatingTournament] = useState(false);
   const [hasCheckedSession, setHasCheckedSession] = useState(false);
+  const [managedTournamentIds, setManagedTournamentIds] = useState([]);
+  const [isEditingTournament, setIsEditingTournament] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [editStartDateTime, setEditStartDateTime] = useState("");
+  const [editEndDateTime, setEditEndDateTime] = useState("");
+  const [editFormat, setEditFormat] = useState("single elim");
+  const [editStatus, setEditStatus] = useState("upcoming");
+  const [editRules, setEditRules] = useState("");
 
   const pageSize = 6;
 
@@ -78,7 +123,12 @@ export default function Tournaments({ user }) {
     organizer: tournament.organizer ?? "TBD",
     startDateTime: tournament.startDateTime ?? tournament.start_date ?? "",
     endDateTime: tournament.endDateTime ?? tournament.end_date ?? "",
-    game: tournament.game ?? "Unknown",
+    game: tournament.game ?? defaultGame,
+    imageUrl:
+      tournament.imageUrl ??
+      tournament.image_url ??
+      tournament.banner_url ??
+      defaultTournamentImage,
     status: tournament.status ?? "upcoming",
     format: tournament.format ?? "single elim",
     rules: tournament.rules ?? tournament.description ?? "No rules provided.",
@@ -128,6 +178,27 @@ export default function Tournaments({ user }) {
       delete next[fieldName];
       return next;
     });
+  };
+
+  const canManageTournament = (tournament) =>
+    Boolean(tournament && user && managedTournamentIds.includes(String(tournament.id)));
+
+  const canAttemptManageTournament = (tournament) => Boolean(tournament && user);
+
+  const beginEditingTournament = (tournament) => {
+    if (!tournament) return;
+
+    setEditName(tournament.name || "");
+    setEditStartDateTime(tournament.startDateTime ? tournament.startDateTime.slice(0, 10) : "");
+    setEditEndDateTime(tournament.endDateTime ? tournament.endDateTime.slice(0, 10) : "");
+    setEditFormat(tournament.format || "single elim");
+    setEditStatus(tournament.status || "upcoming");
+    setEditRules(tournament.rules || "");
+    setIsEditingTournament(true);
+  };
+
+  const cancelEditingTournament = () => {
+    setIsEditingTournament(false);
   };
 
   // Loads tournament data from the backend.
@@ -189,6 +260,7 @@ export default function Tournaments({ user }) {
             description: rules.trim(),
             start_date: startDateTime,
             end_date: endDateTime,
+            game,
             format,
             ...(prizePool ? { prize_pool: Number(prizePool) } : {}),
           },
@@ -202,7 +274,15 @@ export default function Tournaments({ user }) {
 
       const payload = response.data;
       if (payload?.tournament) {
-        setTournaments((prev) => [normalizeTournament(payload.tournament), ...prev]);
+        const createdTournament = normalizeTournament({
+          ...payload.tournament,
+          organizer: organizer.trim() || "You",
+        });
+        const nextManagedIds = [...new Set([...managedTournamentIds, String(createdTournament.id)])];
+
+        setManagedTournamentIds(nextManagedIds);
+        writeManagedTournamentIds(user, nextManagedIds);
+        setTournaments((prev) => [createdTournament, ...prev]);
       }
     } catch (err) {
       setApiError(`Could not create tournament: ${err.message}`);
@@ -217,7 +297,7 @@ export default function Tournaments({ user }) {
     setOrganizer("");
     setStartDateTime("");
     setEndDateTime("");
-    setGame("Valorant");
+    setGame(defaultGame);
     setStatus("upcoming");
     setFormat("single elim");
     setRules("Standard competitive rules apply. All matches are Best of 3.");
@@ -252,8 +332,87 @@ export default function Tournaments({ user }) {
       }
 
       setTournaments((prev) => prev.filter((t) => String(t.id) !== String(id)));
+      const nextManagedIds = managedTournamentIds.filter(
+        (managedId) => managedId !== String(id)
+      );
+      setManagedTournamentIds(nextManagedIds);
+      writeManagedTournamentIds(user, nextManagedIds);
+      if (selectedTournament && String(selectedTournament.id) === String(id)) {
+        setSelectedTournament(null);
+        setActiveTab("overview");
+      }
     } catch (err) {
       setApiError(`Could not delete tournament: ${err.message}`);
+    }
+  };
+
+  const updateTournament = async () => {
+    if (!selectedTournament) return;
+    if (!backendUrl) {
+      setApiError("VITE_BACKEND_URL is missing.");
+      return;
+    }
+    if (!supabase) {
+      setApiError("Supabase auth is unavailable.");
+      return;
+    }
+    if (!editName.trim()) {
+      setApiError("Tournament name is required.");
+      return;
+    }
+    if (!editStartDateTime || !editEndDateTime) {
+      setApiError("Start and end dates are required.");
+      return;
+    }
+    if (new Date(editEndDateTime) < new Date(editStartDateTime)) {
+      setApiError("End date cannot be before the start date.");
+      return;
+    }
+
+    try {
+      setIsUpdatingTournament(true);
+      setApiError("");
+      const response = await requestBackendWithFallback(
+        [`/tournament/${selectedTournament.id}`],
+        {
+          method: "PUT",
+          requireAuth: true,
+          fallbackError: "Could not update tournament.",
+          body: {
+            name: editName.trim(),
+            description: editRules.trim(),
+            start_date: editStartDateTime,
+            end_date: editEndDateTime,
+            format: editFormat,
+            status: editStatus,
+          },
+        }
+      );
+
+      if (response.error) {
+        setApiError(response.error);
+        return;
+      }
+
+      const payload = response.data;
+      if (payload?.tournament) {
+        const updatedTournament = normalizeTournament({
+          ...selectedTournament,
+          ...payload.tournament,
+        });
+        const nextManagedIds = [
+          ...new Set([...managedTournamentIds, String(updatedTournament.id)]),
+        ];
+        setManagedTournamentIds(nextManagedIds);
+        writeManagedTournamentIds(user, nextManagedIds);
+        updateSelectedTournament(updatedTournament);
+      }
+
+      setIsEditingTournament(false);
+    } catch (err) {
+      setApiError(`Could not update tournament: ${err.message}`);
+    } finally {
+      setIsUpdatingTournament(false);
     }
   };
 
@@ -313,7 +472,9 @@ export default function Tournaments({ user }) {
     const updatedTournament = {
       ...selectedTournament,
       participants: updatedParticipants,
-      standings: selectedTournament.standings.filter((item) => item.team !== user),
+      standings: selectedTournament.standings.filter(
+        (item) => item.team !== registrationIdentity && item.team !== user
+      ),
     };
 
     updateSelectedTournament(updatedTournament);
@@ -406,6 +567,15 @@ export default function Tournaments({ user }) {
   }, []);
 
   useEffect(() => {
+    if (!user) {
+      setManagedTournamentIds([]);
+      return;
+    }
+
+    setManagedTournamentIds(readManagedTournamentIds(user));
+  }, [user]);
+
+  useEffect(() => {
     let active = true;
 
     // Load the user's team profile so the page can decide whether registration is allowed.
@@ -417,14 +587,19 @@ export default function Tournaments({ user }) {
         return;
       }
 
+      const cachedTeam = getCachedTeamProfileForCurrentUser(user);
+      if (cachedTeam) {
+        setTeamProfile(cachedTeam);
+      }
+
       setTeamProfileLoading(true);
       setTeamProfileError("");
       const { teamProfile: loadedTeamProfile, error } =
         await fetchCurrentUserTeamProfile(user);
       if (!active) return;
 
-      setTeamProfile(loadedTeamProfile);
-      setTeamProfileError(error || "");
+      setTeamProfile(loadedTeamProfile || cachedTeam || null);
+      setTeamProfileError(loadedTeamProfile ? "" : error || "");
       setTeamProfileLoading(false);
     };
 
@@ -434,6 +609,24 @@ export default function Tournaments({ user }) {
       active = false;
     };
   }, [user]);
+
+  useEffect(() => {
+    if (!selectedTournament) {
+      setIsEditingTournament(false);
+      return;
+    }
+
+    setEditName(selectedTournament.name || "");
+    setEditStartDateTime(
+      selectedTournament.startDateTime ? selectedTournament.startDateTime.slice(0, 10) : ""
+    );
+    setEditEndDateTime(
+      selectedTournament.endDateTime ? selectedTournament.endDateTime.slice(0, 10) : ""
+    );
+    setEditFormat(selectedTournament.format || "single elim");
+    setEditStatus(selectedTournament.status || "upcoming");
+    setEditRules(selectedTournament.rules || "");
+  }, [selectedTournament]);
 
   return (
     <div className="tournaments">
@@ -483,17 +676,129 @@ export default function Tournaments({ user }) {
 
           <div className="tournament-content">
             {activeTab === "overview" && (
-              <div className="detail-grid">
-                <p><strong>Organizer:</strong> {selectedTournament.organizer}</p>
-                <p><strong>Start:</strong> {formatDateTimeLabel(selectedTournament.startDateTime)}</p>
-                <p><strong>End:</strong> {formatDateTimeLabel(selectedTournament.endDateTime)}</p>
-                <p><strong>Teams:</strong> {selectedTournament.teams}</p>
-                <p><strong>Registered:</strong> {selectedTournament.participants.length}/{selectedTournament.teams}</p>
-                <p><strong>Prize Pool:</strong> {formatPrizePoolLabel(selectedTournament.prizePool)}</p>
-                <p><strong>Game:</strong> {selectedTournament.game}</p>
-                <p><strong>Status:</strong> {selectedTournament.status}</p>
-                <p><strong>Format:</strong> {formatTournamentFormatLabel(selectedTournament.format)}</p>
-              </div>
+              <>
+                <div className="detail-grid">
+                  <p><strong>Organizer:</strong> {selectedTournament.organizer}</p>
+                  <p><strong>Start:</strong> {formatDateTimeLabel(selectedTournament.startDateTime)}</p>
+                  <p><strong>End:</strong> {formatDateTimeLabel(selectedTournament.endDateTime)}</p>
+                  <p><strong>Teams:</strong> {selectedTournament.teams}</p>
+                  <p><strong>Registered:</strong> {selectedTournament.participants.length}/{selectedTournament.teams}</p>
+                  <p><strong>Prize Pool:</strong> {formatPrizePoolLabel(selectedTournament.prizePool)}</p>
+                  <p><strong>Game:</strong> {selectedTournament.game}</p>
+                  <p><strong>Status:</strong> {selectedTournament.status}</p>
+                  <p><strong>Format:</strong> {formatTournamentFormatLabel(selectedTournament.format)}</p>
+                </div>
+
+                {canAttemptManageTournament(selectedTournament) && (
+                  <div className="tournament-admin-panel">
+                    <div className="tournament-admin-header">
+                      <div>
+                        <h3>Tournament Admin</h3>
+                        <p>
+                          Edit requests are sent to the backend. If you are the owner/admin,
+                          the changes will save.
+                        </p>
+                      </div>
+                      {!isEditingTournament && (
+                        <button type="button" className="join-btn" onClick={() => beginEditingTournament(selectedTournament)}>
+                          Edit Tournament
+                        </button>
+                      )}
+                    </div>
+
+                    {isEditingTournament && (
+                      <div className="tournament-admin-form">
+                        <div className="input-group">
+                          <label htmlFor="edit-tournament-name">Tournament Name</label>
+                          <input
+                            id="edit-tournament-name"
+                            type="text"
+                            value={editName}
+                            onChange={(event) => setEditName(event.target.value)}
+                          />
+                        </div>
+
+                        <div className="input-group">
+                          <label htmlFor="edit-tournament-start-date">Start Date</label>
+                          <input
+                            id="edit-tournament-start-date"
+                            type="date"
+                            value={editStartDateTime}
+                            onChange={(event) => setEditStartDateTime(event.target.value)}
+                          />
+                        </div>
+
+                        <div className="input-group">
+                          <label htmlFor="edit-tournament-end-date">End Date</label>
+                          <input
+                            id="edit-tournament-end-date"
+                            type="date"
+                            value={editEndDateTime}
+                            onChange={(event) => setEditEndDateTime(event.target.value)}
+                          />
+                        </div>
+
+                        <div className="input-group">
+                          <label htmlFor="edit-tournament-format">Format</label>
+                          <select
+                            id="edit-tournament-format"
+                            value={editFormat}
+                            onChange={(event) => setEditFormat(event.target.value)}
+                          >
+                            {formatOptions.map((option) => (
+                              <option key={option.value} value={option.value}>
+                                {option.label}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div className="input-group">
+                          <label htmlFor="edit-tournament-status">Status</label>
+                          <select
+                            id="edit-tournament-status"
+                            value={editStatus}
+                            onChange={(event) => setEditStatus(event.target.value)}
+                          >
+                            <option value="upcoming">Upcoming</option>
+                            <option value="live">Live</option>
+                            <option value="complete">Completed</option>
+                          </select>
+                        </div>
+
+                        <div className="input-group">
+                          <label htmlFor="edit-tournament-rules">Rules</label>
+                          <input
+                            id="edit-tournament-rules"
+                            type="text"
+                            value={editRules}
+                            onChange={(event) => setEditRules(event.target.value)}
+                          />
+                        </div>
+
+                        <div className="tournament-admin-actions">
+                          <button
+                            type="button"
+                            className="join-btn"
+                            onClick={updateTournament}
+                            disabled={isUpdatingTournament}
+                          >
+                            {isUpdatingTournament ? "Saving..." : "Save Changes"}
+                          </button>
+                          <button
+                            type="button"
+                            className="leave-btn"
+                            onClick={cancelEditingTournament}
+                            disabled={isUpdatingTournament}
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </>
             )}
 
             {activeTab === "rules" && (
@@ -766,7 +1071,13 @@ export default function Tournaments({ user }) {
               >
                 {/* Placeholder image block until real tournament images are added. */}
                 <div className="tournament-image">
-                  Image
+                  <img
+                    src={tournament.imageUrl || defaultTournamentImage}
+                    alt={`${tournament.name} cover`}
+                    onError={(event) => {
+                      event.currentTarget.src = defaultTournamentImage;
+                    }}
+                  />
                 </div>
 
                 <div className="tournament-info">

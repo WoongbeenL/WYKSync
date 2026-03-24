@@ -269,6 +269,14 @@ export default function TeamProfile({ user, onProfileUpdated }) {
 
     if (createError) {
       if (createError === "You are already a member of a team") {
+        const cachedTeam = getCachedTeamProfileForCurrentUser(user);
+        if (cachedTeam) {
+          setTeamProfile(cachedTeam);
+          setTeamName(cachedTeam.teamName || "");
+          setSuccess("Loaded your existing team profile.");
+          return;
+        }
+
         const { teamProfile: existingTeam } = await fetchCurrentUserTeamProfile(user);
         if (existingTeam) {
           setTeamProfile(existingTeam);
@@ -276,6 +284,9 @@ export default function TeamProfile({ user, onProfileUpdated }) {
           setSuccess("Loaded your existing team profile.");
           return;
         }
+
+        setError("You are already a member of a team.");
+        return;
       }
       setError(createError);
       if (createdTeam) setTeamProfile(createdTeam);
@@ -343,9 +354,11 @@ export default function TeamProfile({ user, onProfileUpdated }) {
     setSuccess("Team disbanded.");
   };
 
-  // Lets the user test a join code before a full join flow exists.
+  // Uses the join code flow and switches the page into the joined team view on success.
   const handlePreviewJoin = async (event) => {
     event.preventDefault();
+    setError("");
+    setSuccess("");
     setJoinPreview(null);
     setJoinPreviewError("");
 
@@ -355,7 +368,12 @@ export default function TeamProfile({ user, onProfileUpdated }) {
     }
 
     setIsPreviewingJoin(true);
-    const { preview, error: previewError } = await previewTeamJoin({
+    const {
+      preview,
+      teamProfile: joinedTeam,
+      didJoin,
+      error: previewError,
+    } = await previewTeamJoin({
       joinCode: joinPreviewCode,
       userIdentifier: user,
     });
@@ -363,6 +381,19 @@ export default function TeamProfile({ user, onProfileUpdated }) {
 
     if (previewError) {
       setJoinPreviewError(previewError);
+      return;
+    }
+
+    if (didJoin) {
+      if (joinedTeam) {
+        setTeamProfile(joinedTeam);
+        setTeamName(joinedTeam.teamName || "");
+        setJoinPreviewCode("");
+        setSuccess(`Joined ${joinedTeam.teamName}.`);
+        return;
+      }
+
+      setSuccess("Joined the team.");
       return;
     }
 
@@ -494,7 +525,7 @@ export default function TeamProfile({ user, onProfileUpdated }) {
               onChange={(event) => setJoinPreviewCode(event.target.value)}
             />
             <button type="submit" disabled={isPreviewingJoin}>
-              {isPreviewingJoin ? "Checking Team..." : "Find Team"}
+              {isPreviewingJoin ? "Joining Team..." : "Join Team"}
             </button>
             {joinPreviewError && <p className="team-profile-error">{joinPreviewError}</p>}
             {joinPreview && (

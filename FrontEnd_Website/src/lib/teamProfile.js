@@ -69,6 +69,26 @@ const normalizeJoinPreview = (payload) => {
   };
 };
 
+const fetchTeamByJoinCode = async ({ joinCode, role }) => {
+  const result = await requestBackend(
+    `/team?join_code=${encodeURIComponent(String(joinCode || "").trim().toUpperCase())}`,
+    {
+      requireAuth: true,
+      fallbackError: "Could not load team details.",
+    },
+  );
+
+  const normalizedTeam = normalizeTeamProfile({
+    ...result.data,
+    role,
+  });
+
+  return {
+    teamProfile: normalizedTeam,
+    error: result.error,
+  };
+};
+
 // Loads the current logged-in user's team profile.
 export const fetchCurrentUserTeamProfile = async (userIdentifier) => {
   if (!userIdentifier) {
@@ -191,7 +211,7 @@ export const disbandTeamForCurrentUser = async ({
   return { error: result.error };
 };
 
-// Checks a join code and returns preview info before a real join is confirmed.
+// Uses the backend join route and, when successful, loads the joined team's details.
 export const previewTeamJoin = async ({ joinCode, userIdentifier }) => {
   if (!userIdentifier) {
     return { preview: null, error: "You must be logged in." };
@@ -212,8 +232,29 @@ export const previewTeamJoin = async ({ joinCode, userIdentifier }) => {
     },
   });
 
+  const joinedMember = result.data?.member;
+  if (joinedMember) {
+    const joinedTeamResult = await fetchTeamByJoinCode({
+      joinCode: normalizedJoinCode,
+      role: joinedMember.role || "player",
+    });
+
+    if (joinedTeamResult.teamProfile) {
+      writeCachedTeamProfile(userIdentifier, joinedTeamResult.teamProfile);
+    }
+
+    return {
+      preview: joinedTeamResult.teamProfile,
+      teamProfile: joinedTeamResult.teamProfile,
+      didJoin: true,
+      error: joinedTeamResult.error || result.error,
+    };
+  }
+
   return {
     preview: normalizeJoinPreview(result.data),
+    teamProfile: null,
+    didJoin: false,
     error: result.error,
   };
 };
