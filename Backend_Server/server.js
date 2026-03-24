@@ -14,6 +14,8 @@ const cors = require("cors");
 const meRoutes = require("./routes/me");
 const teamRoutes = require("./routes/team");
 const tournamentRoutes = require("./routes/tournament");
+const matchRoutes = require("./routes/match");
+const vetoRoutes = require("./routes/veto");
 
 const app = express();
 
@@ -61,6 +63,10 @@ app.use("/me", meRoutes);
 app.use("/team", teamRoutes);
 // /tournament Route of API
 app.use("/tournament", tournamentRoutes);
+// /match Route of API
+app.use("/match", matchRoutes);
+// /veto Route of API
+app.use("/veto", vetoRoutes);
 
 // Error handler
 app.use((err, req, res, next) => {

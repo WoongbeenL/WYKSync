@@ -28,6 +28,16 @@ export class Application {
       });
       return true;
     });
+
+    // IPC: renderer sends map pool config → broadcast to overlay via WS
+    ipcMain.handle('send-map-pool-config', (_event, config) => {
+      this.webSocketService.broadcast({
+        type: 'map-pool-config',
+        timestamp: Date.now(),
+        config
+      });
+      return true;
+    });
   }
 
   public shutdown(): void {
