@@ -42,6 +42,34 @@ const writeManagedTournamentIds = (userIdentifier, ids) => {
   }
 };
 
+const TOURNAMENT_META_STORAGE_KEY = "tournament-meta-overrides";
+
+const readTournamentMetaOverrides = () => {
+  if (typeof window === "undefined") return {};
+
+  try {
+    const stored = window.localStorage.getItem(TOURNAMENT_META_STORAGE_KEY);
+    const parsed = stored ? JSON.parse(stored) : {};
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+};
+
+const writeTournamentMetaOverrides = (state) => {
+  if (typeof window === "undefined") return;
+
+  try {
+    window.localStorage.setItem(
+      TOURNAMENT_META_STORAGE_KEY,
+      JSON.stringify(state)
+    );
+  } catch {
+    // Ignore storage failures.
+  }
+};
+
+
 // This page has a lot going on, so helper functions keep the JSX from getting too messy.
 export default function Tournaments({ user }) {
   const defaultGame = "Valorant";
@@ -91,6 +119,7 @@ export default function Tournaments({ user }) {
   const [editFormat, setEditFormat] = useState("single elim");
   const [editStatus, setEditStatus] = useState("upcoming");
   const [editRules, setEditRules] = useState("");
+  const [tournamentMetaOverrides, setTournamentMetaOverrides] = useState({});
 
   const pageSize = 6;
 
@@ -115,26 +144,36 @@ export default function Tournaments({ user }) {
   };
 
   // Normalizes backend tournament data so the rest of the page can use one shape.
-  const normalizeTournament = (tournament) => ({
-    ...tournament,
-    id: tournament.id ?? tournament.tournament_id,
-    teams: tournament.teams ?? tournament.team_limit ?? 0,
-    prizePool: tournament.prizePool ?? tournament.prize_pool ?? "",
-    organizer: tournament.organizer ?? "TBD",
-    startDateTime: tournament.startDateTime ?? tournament.start_date ?? "",
-    endDateTime: tournament.endDateTime ?? tournament.end_date ?? "",
-    game: tournament.game ?? defaultGame,
-    imageUrl:
-      tournament.imageUrl ??
-      tournament.image_url ??
-      tournament.banner_url ??
-      defaultTournamentImage,
-    status: tournament.status ?? "upcoming",
-    format: tournament.format ?? "single elim",
-    rules: tournament.rules ?? tournament.description ?? "No rules provided.",
-    participants: Array.isArray(tournament.participants) ? tournament.participants : [],
-    standings: Array.isArray(tournament.standings) ? tournament.standings : [],
-  });
+  const normalizeTournament = (tournament) => {
+    const normalizedId = String(tournament.id ?? tournament.tournament_id ?? "");
+    const metaOverride = tournamentMetaOverrides[normalizedId] || {};
+
+    return {
+      ...tournament,
+      id: tournament.id ?? tournament.tournament_id,
+      teams: tournament.teams ?? tournament.team_limit ?? metaOverride.teams ?? 0,
+      prizePool:
+        tournament.prizePool ?? tournament.prize_pool ?? metaOverride.prizePool ?? "",
+      organizer: tournament.organizer ?? metaOverride.organizer ?? "TBD",
+      startDateTime: tournament.startDateTime ?? tournament.start_date ?? "",
+      endDateTime: tournament.endDateTime ?? tournament.end_date ?? "",
+      game: tournament.game ?? metaOverride.game ?? defaultGame,
+      imageUrl:
+        tournament.imageUrl ??
+        tournament.image_url ??
+        tournament.banner_url ??
+        defaultTournamentImage,
+      status: tournament.status ?? metaOverride.status ?? "upcoming",
+      format: tournament.format ?? metaOverride.format ?? "single elim",
+      rules:
+        tournament.rules ??
+        tournament.description ??
+        metaOverride.rules ??
+        "No rules provided.",
+      participants: Array.isArray(tournament.participants) ? tournament.participants : [],
+      standings: Array.isArray(tournament.standings) ? tournament.standings : [],
+    };
+  };
 
   // Validates the create-tournament form before we try to submit it.
   const validateTournamentForm = () => {
@@ -180,6 +219,22 @@ export default function Tournaments({ user }) {
     });
   };
 
+  const saveTournamentMetaOverride = (tournamentId, patch) => {
+    const key = String(tournamentId);
+    const currentOverrides = readTournamentMetaOverrides();
+    const nextOverrides = {
+      ...currentOverrides,
+      [key]: {
+        ...(currentOverrides[key] || {}),
+        ...patch,
+      },
+    };
+
+    setTournamentMetaOverrides(nextOverrides);
+    writeTournamentMetaOverrides(nextOverrides);
+    return nextOverrides[key];
+  };
+
   const canManageTournament = (tournament) =>
     Boolean(tournament && user && managedTournamentIds.includes(String(tournament.id)));
 
@@ -209,6 +264,8 @@ export default function Tournaments({ user }) {
     }
 
     setApiError("");
+    const currentMetaOverrides = readTournamentMetaOverrides();
+    setTournamentMetaOverrides(currentMetaOverrides);
     const result = await requestBackendWithFallback(
       ["/tournament"],
       {
@@ -225,7 +282,7 @@ export default function Tournaments({ user }) {
 
     setTournaments(
       Array.isArray(result.data?.tournaments)
-        ? result.data.tournaments.map(normalizeTournament)
+        ? result.data.tournaments.map((tournament) => normalizeTournament(tournament))
         : []
     );
   };
@@ -274,9 +331,24 @@ export default function Tournaments({ user }) {
 
       const payload = response.data;
       if (payload?.tournament) {
+        saveTournamentMetaOverride(payload.tournament.tournament_id ?? payload.tournament.id, {
+          teams: Number(teams) || 0,
+          prizePool: prizePool ? Number(prizePool) : "",
+          organizer: organizer.trim() || "You",
+          status,
+          game,
+          format,
+          rules: rules.trim(),
+        });
         const createdTournament = normalizeTournament({
           ...payload.tournament,
+          teams: Number(teams) || payload.tournament.teams || payload.tournament.team_limit || 0,
+          prizePool: prizePool ? Number(prizePool) : payload.tournament.prizePool ?? payload.tournament.prize_pool ?? "",
           organizer: organizer.trim() || "You",
+          status,
+          game,
+          format,
+          rules: rules.trim(),
         });
         const nextManagedIds = [...new Set([...managedTournamentIds, String(createdTournament.id)])];
 
@@ -332,6 +404,11 @@ export default function Tournaments({ user }) {
       }
 
       setTournaments((prev) => prev.filter((t) => String(t.id) !== String(id)));
+      const currentMetaOverrides = readTournamentMetaOverrides();
+      const nextMetaOverrides = { ...currentMetaOverrides };
+      delete nextMetaOverrides[String(id)];
+      setTournamentMetaOverrides(nextMetaOverrides);
+      writeTournamentMetaOverrides(nextMetaOverrides);
       const nextManagedIds = managedTournamentIds.filter(
         (managedId) => managedId !== String(id)
       );
@@ -396,6 +473,15 @@ export default function Tournaments({ user }) {
 
       const payload = response.data;
       if (payload?.tournament) {
+        saveTournamentMetaOverride(selectedTournament.id, {
+          teams: selectedTournament.teams,
+          prizePool: selectedTournament.prizePool,
+          organizer: selectedTournament.organizer,
+          game: selectedTournament.game,
+          status: editStatus,
+          format: editFormat,
+          rules: editRules.trim(),
+        });
         const updatedTournament = normalizeTournament({
           ...selectedTournament,
           ...payload.tournament,
@@ -567,6 +653,10 @@ export default function Tournaments({ user }) {
   }, []);
 
   useEffect(() => {
+    setTournamentMetaOverrides(readTournamentMetaOverrides());
+  }, []);
+
+  useEffect(() => {
     if (!user) {
       setManagedTournamentIds([]);
       return;
@@ -632,7 +722,6 @@ export default function Tournaments({ user }) {
     <div className="tournaments">
       <h1>Tournaments</h1>
       {apiError && hasCheckedSession && <p className="team-required-error">{apiError}</p>}
-
       {selectedTournament ? (
         <div className="tournament-details">
           {/* Detail view replaces the grid when one tournament is selected. */}
@@ -1031,7 +1120,7 @@ export default function Tournaments({ user }) {
               <option value="all">All Statuses</option>
               <option value="upcoming">Upcoming</option>
               <option value="live">Live</option>
-              <option value="complete">Completed</option>
+              <option value="completed">Completed</option>
             </select>
 
             <select value={gameFilter} onChange={(e) => setGameFilter(e.target.value)}>
