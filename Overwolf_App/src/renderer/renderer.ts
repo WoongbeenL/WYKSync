@@ -7,18 +7,15 @@ declare const wyksync: {
     teamA?: { name?: string; logo?: string };
     teamB?: { name?: string; logo?: string };
   }) => Promise<boolean>;
-<<<<<<< HEAD
   fetchMatchConfig: (matchCode: string, apiUrl: string) => Promise<{
     success: boolean;
     match?: any;
     error?: string;
   }>;
-=======
   sendMapPoolConfig: (config: {
     format: number;
     maps: Array<{ name: string; scoreA: number; scoreB: number; isCurrent: boolean }>;
   }) => Promise<boolean>;
->>>>>>> 28eeceefd66ffa61e20b67d5c4c02a49a71ef862
 };
 
 const statusEl = document.getElementById('status') as HTMLDivElement;
@@ -78,7 +75,6 @@ function showConfirm(msg: string): void {
 wyksync.onStatusUpdate(updateStatus);
 wyksync.onLogMessage(addLog);
 
-<<<<<<< HEAD
 // ── Match Code Fetch ─────────────────────────────────────────
 function setFetchStatus(msg: string, type: 'success' | 'error' | 'loading'): void {
   fetchStatus.textContent = msg;
@@ -148,8 +144,6 @@ matchCodeInput.addEventListener('keydown', (e: KeyboardEvent) => {
   if (e.key === 'Enter') btnFetch.click();
 });
 
-// Apply button — push team config to overlay via WS
-=======
 // --- Best-of format handling ---
 const boFormatEl = document.getElementById('bo-format') as HTMLSelectElement;
 
@@ -186,9 +180,6 @@ function collectMapPool(): { format: number; maps: Array<{ name: string; scoreA:
   }
   return { format: count, maps };
 }
-
-// Apply button — push team config + map pool to overlay via WS
->>>>>>> 28eeceefd66ffa61e20b67d5c4c02a49a71ef862
 btnApply.addEventListener('click', async () => {
   const nameA = (document.getElementById('name-a') as HTMLInputElement).value.trim();
   const logoA = (document.getElementById('logo-a') as HTMLInputElement).value.trim();

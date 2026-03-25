@@ -29,7 +29,6 @@ export class Application {
       return true;
     });
 
-<<<<<<< HEAD
     // Render Request for match info
     ipcMain.handle('fetch-match-config', async (_event, matchCode: string, apiUrl: string) => {
       try {
@@ -80,7 +79,8 @@ export class Application {
         console.error('[Match] Fetch error:', err);
         return { success: false, error: err.message || 'Unknown error' };
       }
-=======
+    });
+
     // IPC: renderer sends map pool config → broadcast to overlay via WS
     ipcMain.handle('send-map-pool-config', (_event, config) => {
       this.webSocketService.broadcast({
@@ -89,7 +89,6 @@ export class Application {
         config
       });
       return true;
->>>>>>> 28eeceefd66ffa61e20b67d5c4c02a49a71ef862
     });
   }
 
