@@ -1,5 +1,5 @@
 // Team profile helpers keep the page components from getting overloaded with API details.
-import { requestBackend } from "./backendApi";
+import { requestBackend, requestBackendWithFallback } from "./backendApi";
 
 const getTeamProfileStorageKey = (userIdentifier) =>
   `team-profile:${String(userIdentifier || "").trim().toLowerCase()}`;
@@ -51,7 +51,7 @@ const normalizeTeamProfile = (payload) => {
     teamId: team.teamId || team.team_id || team.id || null,
     teamName,
     joinCode: String(team.joinCode || team.join_code || "").trim(),
-    role: String(team.role || "captain"),
+    role: String(payload?.role || team.role || "captain"),
     members: Array.isArray(team.members) ? team.members : [],
   };
 };
@@ -95,7 +95,7 @@ export const fetchCurrentUserTeamProfile = async (userIdentifier) => {
     return { teamProfile: null, error: "You must be logged in." };
   }
 
-  const result = await requestBackend("/team/current", {
+  const result = await requestBackendWithFallback(["/me/team", "/team/current"], {
     requireAuth: true,
     fallbackError: "Could not load team profile.",
     allowNotFound: true,
@@ -106,6 +106,14 @@ export const fetchCurrentUserTeamProfile = async (userIdentifier) => {
     writeCachedTeamProfile(userIdentifier, normalizedTeam);
     return {
       teamProfile: normalizedTeam,
+      error: result.error,
+    };
+  }
+
+  if (result.data && result.data.team === null) {
+    writeCachedTeamProfile(userIdentifier, null);
+    return {
+      teamProfile: null,
       error: result.error,
     };
   }
@@ -137,9 +145,17 @@ export const createTeamForCurrentUser = async ({ teamName, userIdentifier }) => 
     },
   });
 
-  const normalizedTeam = normalizeTeamProfile(result.data);
-  if (normalizedTeam) {
-    writeCachedTeamProfile(userIdentifier, normalizedTeam);
+  let normalizedTeam = normalizeTeamProfile(result.data);
+
+  // Newer backend flows assign the creator as coach, but the create response may not
+  // include that membership role yet. Reloading current-team state keeps the UI in sync.
+  if (!result.error) {
+    const currentTeamResult = await fetchCurrentUserTeamProfile(userIdentifier);
+    if (currentTeamResult.teamProfile) {
+      normalizedTeam = currentTeamResult.teamProfile;
+    } else if (normalizedTeam) {
+      writeCachedTeamProfile(userIdentifier, normalizedTeam);
+    }
   }
 
   return {
