@@ -43,6 +43,7 @@ const writeManagedTournamentIds = (userIdentifier, ids) => {
 };
 
 const TOURNAMENT_META_STORAGE_KEY = "tournament-meta-overrides";
+const TOURNAMENT_REGISTRATION_STORAGE_KEY = "tournament-registration-overrides";
 
 const readTournamentMetaOverrides = () => {
   if (typeof window === "undefined") return {};
@@ -62,6 +63,31 @@ const writeTournamentMetaOverrides = (state) => {
   try {
     window.localStorage.setItem(
       TOURNAMENT_META_STORAGE_KEY,
+      JSON.stringify(state)
+    );
+  } catch {
+    // Ignore storage failures.
+  }
+};
+
+const readTournamentRegistrationOverrides = () => {
+  if (typeof window === "undefined") return {};
+
+  try {
+    const stored = window.localStorage.getItem(TOURNAMENT_REGISTRATION_STORAGE_KEY);
+    const parsed = stored ? JSON.parse(stored) : {};
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+};
+
+const writeTournamentRegistrationOverrides = (state) => {
+  if (typeof window === "undefined") return;
+
+  try {
+    window.localStorage.setItem(
+      TOURNAMENT_REGISTRATION_STORAGE_KEY,
       JSON.stringify(state)
     );
   } catch {
@@ -120,6 +146,7 @@ export default function Tournaments({ user }) {
   const [editStatus, setEditStatus] = useState("upcoming");
   const [editRules, setEditRules] = useState("");
   const [tournamentMetaOverrides, setTournamentMetaOverrides] = useState({});
+  const [tournamentRegistrationOverrides, setTournamentRegistrationOverrides] = useState({});
 
   const pageSize = 6;
 
@@ -144,9 +171,14 @@ export default function Tournaments({ user }) {
   };
 
   // Normalizes backend tournament data so the rest of the page can use one shape.
-  const normalizeTournament = (tournament) => {
+  const normalizeTournament = (tournament, metaOverrides = tournamentMetaOverrides) => {
     const normalizedId = String(tournament.id ?? tournament.tournament_id ?? "");
-    const metaOverride = tournamentMetaOverrides[normalizedId] || {};
+    const metaOverride = metaOverrides[normalizedId] || {};
+    const registrationOverride = tournamentRegistrationOverrides[normalizedId] || [];
+    const backendParticipants = Array.isArray(tournament.participants)
+      ? tournament.participants
+      : [];
+    const participants = [...new Set([...backendParticipants, ...registrationOverride])];
 
     return {
       ...tournament,
@@ -170,7 +202,7 @@ export default function Tournaments({ user }) {
         tournament.description ??
         metaOverride.rules ??
         "No rules provided.",
-      participants: Array.isArray(tournament.participants) ? tournament.participants : [],
+      participants,
       standings: Array.isArray(tournament.standings) ? tournament.standings : [],
     };
   };
@@ -235,6 +267,19 @@ export default function Tournaments({ user }) {
     return nextOverrides[key];
   };
 
+  const saveTournamentRegistrationOverride = (tournamentId, participants) => {
+    const key = String(tournamentId);
+    const currentOverrides = readTournamentRegistrationOverrides();
+    const nextOverrides = {
+      ...currentOverrides,
+      [key]: [...new Set((participants || []).filter(Boolean))],
+    };
+
+    setTournamentRegistrationOverrides(nextOverrides);
+    writeTournamentRegistrationOverrides(nextOverrides);
+    return nextOverrides[key];
+  };
+
   const canManageTournament = (tournament) =>
     Boolean(tournament && user && managedTournamentIds.includes(String(tournament.id)));
 
@@ -266,6 +311,8 @@ export default function Tournaments({ user }) {
     setApiError("");
     const currentMetaOverrides = readTournamentMetaOverrides();
     setTournamentMetaOverrides(currentMetaOverrides);
+    const currentRegistrationOverrides = readTournamentRegistrationOverrides();
+    setTournamentRegistrationOverrides(currentRegistrationOverrides);
     const result = await requestBackendWithFallback(
       ["/tournament"],
       {
@@ -280,11 +327,35 @@ export default function Tournaments({ user }) {
       return;
     }
 
+    const normalizedTournaments = Array.isArray(result.data?.tournaments)
+      ? result.data.tournaments.map((tournament) =>
+          normalizeTournament(
+            {
+              ...tournament,
+              participants: [
+                ...new Set([
+                  ...(Array.isArray(tournament.participants) ? tournament.participants : []),
+                  ...(currentRegistrationOverrides[String(tournament.id ?? tournament.tournament_id)] || []),
+                ]),
+              ],
+            },
+            currentMetaOverrides
+          )
+        )
+      : [];
+
     setTournaments(
-      Array.isArray(result.data?.tournaments)
-        ? result.data.tournaments.map((tournament) => normalizeTournament(tournament))
-        : []
+      normalizedTournaments
     );
+
+    if (selectedTournament) {
+      const refreshedSelectedTournament = normalizedTournaments.find(
+        (tournament) => String(tournament.id) === String(selectedTournament.id)
+      );
+      setSelectedTournament(refreshedSelectedTournament || null);
+    }
+
+    return normalizedTournaments;
   };
 
   // Creates a new tournament from the form values.
@@ -516,9 +587,13 @@ export default function Tournaments({ user }) {
   const getRegistrationIdentity = () => teamProfile?.teamName || user;
 
   // Adds the current user's team to the selected tournament.
-  const joinTournament = () => {
+  const joinTournament = async () => {
     if (!selectedTournament || !user) return;
     if (!teamProfile) return;
+    if (!backendUrl) {
+      setApiError("VITE_BACKEND_URL is missing.");
+      return;
+    }
 
     const capacity = Number(selectedTournament.teams);
     const participants = selectedTournament.participants || [];
@@ -528,7 +603,24 @@ export default function Tournaments({ user }) {
 
     if (alreadyRegistered || participants.length >= capacity) return;
 
-    const updatedParticipants = [...participants, registrationIdentity];
+    setApiError("");
+    const response = await requestBackendWithFallback(
+      [`/tournament/${selectedTournament.id}/teams`],
+      {
+        method: "POST",
+        requireAuth: true,
+        fallbackError: "Could not register team for tournament.",
+      }
+    );
+
+    if (response.error && response.status !== 409) {
+      setApiError(response.error);
+      return;
+    }
+
+    const updatedParticipants = [...new Set([...participants, registrationIdentity])];
+    saveTournamentRegistrationOverride(selectedTournament.id, updatedParticipants);
+
     const updatedTournament = {
       ...selectedTournament,
       participants: updatedParticipants,
@@ -545,16 +637,37 @@ export default function Tournaments({ user }) {
   };
 
   // Removes the current user's team from the selected tournament.
-  const leaveTournament = () => {
+  const leaveTournament = async () => {
     if (!selectedTournament || !user) return;
+    if (!backendUrl) {
+      setApiError("VITE_BACKEND_URL is missing.");
+      return;
+    }
     const registrationIdentity = getRegistrationIdentity();
 
     const participants = selectedTournament.participants || [];
     if (!participants.includes(registrationIdentity) && !participants.includes(user)) return;
 
+    setApiError("");
+    const response = await requestBackendWithFallback(
+      [`/tournament/${selectedTournament.id}/teams`],
+      {
+        method: "DELETE",
+        requireAuth: true,
+        fallbackError: "Could not withdraw team from tournament.",
+      }
+    );
+
+    if (response.error) {
+      setApiError(response.error);
+      return;
+    }
+
     const updatedParticipants = participants.filter(
       (participant) => participant !== registrationIdentity && participant !== user
     );
+    saveTournamentRegistrationOverride(selectedTournament.id, updatedParticipants);
+
     const updatedTournament = {
       ...selectedTournament,
       participants: updatedParticipants,
@@ -654,6 +767,10 @@ export default function Tournaments({ user }) {
 
   useEffect(() => {
     setTournamentMetaOverrides(readTournamentMetaOverrides());
+  }, []);
+
+  useEffect(() => {
+    setTournamentRegistrationOverrides(readTournamentRegistrationOverrides());
   }, []);
 
   useEffect(() => {
