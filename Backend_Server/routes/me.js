@@ -55,6 +55,42 @@ router.get("/search", async (req, res) => {
 });
 
 /*
+   Route Name   : GET /me/team
+   Parameter    : Request object with current user id
+   Return       : Json response
+                  team: Object. The user's team membership.
+                  role: String. The user's role on the team.
+   Purpose      : Returns the current user's team membership if they have one and
+                  null if they are teamless.
+*/
+router.get("/team", async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const { data: membership, error } = await supabase
+      .from("team_members")
+      .select("role, teams(*)")
+      .eq("id", userId)
+      .maybeSingle();
+
+    if (error) throw error;
+
+    // User is not on a team
+    if (!membership) {
+      return res.json({ team: null });
+    }
+
+    res.json({
+      team: membership.teams,
+      role: membership.role,
+    });
+  } catch (err) {
+    console.error("GET /me/team error: ", err);
+    res.status(500).json({ error: "Server Error" });
+  }
+});
+
+/*
    Route Name   : GET /me
    Parameter    : Request object with current user id
    Return       : Json response

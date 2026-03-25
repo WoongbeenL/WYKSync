@@ -54,9 +54,6 @@ const getCoachTeam = async (userId) => {
 };
 
 /*
-  Returns the user's role in a tournament, or null.
-*/
-/*
    Function Name   : getTournamentRole
    Parameter    : N/A
    Return       : userId: INT. Id of user to check for
@@ -161,6 +158,24 @@ router.post("/", async (req, res) => {
         return res.status(400).json({ error: "Invalid tournament format" });
       }
       throw error;
+    }
+
+    // Manually assign the creator as owner
+    const { error: ownerError } = await supabase
+      .from("user_tournament")
+      .insert({
+        id: userId,
+        tournament_id: tournament.tournament_id,
+        role: "owner",
+      });
+
+    if (ownerError) {
+      // Delete the tournament if owner assignment fails
+      await supabase
+        .from("tournaments")
+        .delete()
+        .eq("tournament_id", tournament.tournament_id);
+      throw ownerError;
     }
 
     res.status(201).json({ tournament });

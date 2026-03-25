@@ -1,5 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import "./tournaments.css";
+import { fetchCurrentUserTeamProfile } from "../lib/teamProfile";
+import { supabase } from "../lib/supabaseClient";
+import {
+  backendUrl,
+  requestBackendWithFallback,
+} from "../lib/backendApi";
 
 export default function Tournaments({ user }) {
   const [tournaments, setTournaments] = useState([]);
@@ -22,6 +28,12 @@ export default function Tournaments({ user }) {
   const [dateFilter, setDateFilter] = useState("");
   const [sortBy, setSortBy] = useState("date-desc");
   const [currentPage, setCurrentPage] = useState(1);
+  const [formErrors, setFormErrors] = useState({});
+  const [teamProfile, setTeamProfile] = useState(null);
+  const [teamProfileLoading, setTeamProfileLoading] = useState(false);
+  const [teamProfileError, setTeamProfileError] = useState("");
+  const [apiError, setApiError] = useState("");
+  const [isSavingTournament, setIsSavingTournament] = useState(false);
 
   const pageSize = 6;
 
@@ -30,28 +42,121 @@ export default function Tournaments({ user }) {
     return new Date(value).toLocaleString();
   };
 
-  const addTournament = () => {
-    if (!name || !teams || !prizePool || !organizer || !startDateTime) return;
+  const validateTournamentForm = () => {
+    const errors = {};
+    const trimmedName = name.trim();
+    const trimmedRules = rules.trim();
+    const teamCount = Number(teams);
+    const prize = Number(prizePool);
 
-    const participants = [];
-    const standings = [];
+    if (!trimmedName) {
+      errors.name = "Tournament name is required.";
+    }
+    if (!teams) {
+      errors.teams = "Number of teams is required.";
+    } else if (!Number.isInteger(teamCount) || teamCount < 2) {
+      errors.teams = "Team count must be a whole number of at least 2.";
+    }
+    if (!prizePool) {
+      errors.prizePool = "Prize pool is required.";
+    } else if (!Number.isFinite(prize) || prize < 0) {
+      errors.prizePool = "Prize pool must be a valid number 0 or greater.";
+    }
+    if (!startDateTime) {
+      errors.startDateTime = "Start date and time is required.";
+    }
+    if (!trimmedRules) {
+      errors.rules = "Rules summary is required.";
+    }
 
-    const newTournament = {
-      id: Date.now(),
-      name,
-      teams,
-      prizePool,
-      organizer,
-      startDateTime,
-      game,
-      status,
-      format,
-      rules,
-      participants,
-      standings,
-    };
+    return errors;
+  };
 
-    setTournaments([...tournaments, newTournament]);
+  const clearFieldError = (fieldName) => {
+    if (!formErrors[fieldName]) return;
+    setFormErrors((prev) => {
+      const next = { ...prev };
+      delete next[fieldName];
+      return next;
+    });
+  };
+
+  const fetchTournaments = async () => {
+    if (!backendUrl) {
+      setApiError("VITE_BACKEND_URL is missing.");
+      return;
+    }
+
+    setApiError("");
+    const result = await requestBackendWithFallback(
+      ["/tournaments", "/tournament"],
+      {
+        fallbackError: "Could not load tournaments.",
+        allowNotFound: true,
+      }
+    );
+
+    if (result.error) {
+      setApiError(result.error);
+      return;
+    }
+
+    setTournaments(Array.isArray(result.data?.tournaments) ? result.data.tournaments : []);
+  };
+
+  const addTournament = async () => {
+    const errors = validateTournamentForm();
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      return;
+    }
+    if (!backendUrl) {
+      setApiError("VITE_BACKEND_URL is missing.");
+      return;
+    }
+    if (!supabase) {
+      setApiError("Supabase auth is unavailable.");
+      return;
+    }
+
+    try {
+      setIsSavingTournament(true);
+      setApiError("");
+      const response = await requestBackendWithFallback(
+        ["/tournaments", "/tournament"],
+        {
+          method: "POST",
+          requireAuth: true,
+          fallbackError: "Could not create tournament.",
+          body: {
+          name: name.trim(),
+          teams: Number(teams),
+          prizePool: Number(prizePool),
+          organizer: organizer.trim() || "TBD",
+          startDateTime,
+          game,
+          status,
+          format,
+          rules: rules.trim(),
+          },
+        }
+      );
+
+      if (response.error) {
+        setApiError(response.error);
+        return;
+      }
+
+      const payload = response.data;
+      if (payload?.tournament) {
+        setTournaments((prev) => [payload.tournament, ...prev]);
+      }
+    } catch (err) {
+      setApiError(`Could not create tournament: ${err.message}`);
+      return;
+    } finally {
+      setIsSavingTournament(false);
+    }
 
     setName("");
     setTeams("");
@@ -62,10 +167,39 @@ export default function Tournaments({ user }) {
     setStatus("upcoming");
     setFormat("Single Elimination");
     setRules("Standard competitive rules apply. All matches are Best of 3.");
+    setFormErrors({});
   };
 
-  const deleteTournament = (id) => {
-    setTournaments(tournaments.filter((t) => t.id !== id));
+  const deleteTournament = async (id) => {
+    if (!backendUrl) {
+      setApiError("VITE_BACKEND_URL is missing.");
+      return;
+    }
+    if (!supabase) {
+      setApiError("Supabase auth is unavailable.");
+      return;
+    }
+
+    try {
+      setApiError("");
+      const response = await requestBackendWithFallback(
+        [`/tournaments/${id}`, `/tournament/${id}`],
+        {
+          method: "DELETE",
+          requireAuth: true,
+          fallbackError: `Could not delete tournament ${id}.`,
+        }
+      );
+
+      if (response.error) {
+        setApiError(response.error);
+        return;
+      }
+
+      setTournaments((prev) => prev.filter((t) => String(t.id) !== String(id)));
+    } catch (err) {
+      setApiError(`Could not delete tournament: ${err.message}`);
+    }
   };
 
   const updateSelectedTournament = (updatedTournament) => {
@@ -77,15 +211,21 @@ export default function Tournaments({ user }) {
     );
   };
 
+  const getRegistrationIdentity = () => teamProfile?.teamName || user;
+
   const joinTournament = () => {
     if (!selectedTournament || !user) return;
+    if (!teamProfile) return;
 
     const capacity = Number(selectedTournament.teams);
     const participants = selectedTournament.participants || [];
+    const registrationIdentity = getRegistrationIdentity();
+    const alreadyRegistered =
+      participants.includes(registrationIdentity) || participants.includes(user);
 
-    if (participants.includes(user) || participants.length >= capacity) return;
+    if (alreadyRegistered || participants.length >= capacity) return;
 
-    const updatedParticipants = [...participants, user];
+    const updatedParticipants = [...participants, registrationIdentity];
     const updatedTournament = {
       ...selectedTournament,
       participants: updatedParticipants,
@@ -103,11 +243,14 @@ export default function Tournaments({ user }) {
 
   const leaveTournament = () => {
     if (!selectedTournament || !user) return;
+    const registrationIdentity = getRegistrationIdentity();
 
     const participants = selectedTournament.participants || [];
-    if (!participants.includes(user)) return;
+    if (!participants.includes(registrationIdentity) && !participants.includes(user)) return;
 
-    const updatedParticipants = participants.filter((participant) => participant !== user);
+    const updatedParticipants = participants.filter(
+      (participant) => participant !== registrationIdentity && participant !== user
+    );
     const updatedTournament = {
       ...selectedTournament,
       participants: updatedParticipants,
@@ -175,9 +318,43 @@ export default function Tournaments({ user }) {
     setCurrentPage(1);
   }, [searchTerm, statusFilter, gameFilter, dateFilter, sortBy]);
 
+  useEffect(() => {
+    fetchTournaments();
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    const loadTeamProfile = async () => {
+      if (!user) {
+        setTeamProfile(null);
+        setTeamProfileError("");
+        setTeamProfileLoading(false);
+        return;
+      }
+
+      setTeamProfileLoading(true);
+      setTeamProfileError("");
+      const { teamProfile: loadedTeamProfile, error } =
+        await fetchCurrentUserTeamProfile(user);
+      if (!active) return;
+
+      setTeamProfile(loadedTeamProfile);
+      setTeamProfileError(error || "");
+      setTeamProfileLoading(false);
+    };
+
+    loadTeamProfile();
+
+    return () => {
+      active = false;
+    };
+  }, [user]);
+
   return (
     <div className="tournaments">
       <h1>Tournaments</h1>
+      {apiError && <p className="team-required-error">{apiError}</p>}
 
       {selectedTournament ? (
         <div className="tournament-details">
@@ -247,10 +424,19 @@ export default function Tournaments({ user }) {
                   Registered: {selectedTournament.participants.length}/{selectedTournament.teams}
                 </p>
                 {user ? (
+                  selectedTournament.participants.includes(getRegistrationIdentity()) ||
                   selectedTournament.participants.includes(user) ? (
                     <button className="leave-btn" onClick={leaveTournament}>
                       Leave Tournament
                     </button>
+                  ) : teamProfileLoading ? (
+                    <p>Checking team profile...</p>
+                  ) : !teamProfile ? (
+                    <div className="team-required-cta">
+                      <p>You need a team profile before registering.</p>
+                      <a href="/team-profile">Create Team Profile</a>
+                      {teamProfileError && <p className="team-required-error">{teamProfileError}</p>}
+                    </div>
                   ) : (
                     <button
                       className="join-btn"
@@ -312,68 +498,117 @@ export default function Tournaments({ user }) {
         <>
           {user ? (
             <div className="tournament-input">
-              <input
-                type="text"
-                placeholder="Tournament Name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
+              <div className="input-group">
+                <input
+                  className={formErrors.name ? "field-error" : ""}
+                  type="text"
+                  placeholder="Tournament Name"
+                  value={name}
+                  onChange={(e) => {
+                    setName(e.target.value);
+                    clearFieldError("name");
+                  }}
+                />
+                {formErrors.name && <p className="input-error-text">{formErrors.name}</p>}
+              </div>
 
-              <input
-                type="number"
-                placeholder="Number of Teams"
-                value={teams}
-                onChange={(e) => setTeams(e.target.value)}
-              />
+              <div className="input-group">
+                <input
+                  className={formErrors.teams ? "field-error" : ""}
+                  type="number"
+                  placeholder="Number of Teams"
+                  value={teams}
+                  onChange={(e) => {
+                    setTeams(e.target.value);
+                    clearFieldError("teams");
+                  }}
+                />
+                {formErrors.teams && <p className="input-error-text">{formErrors.teams}</p>}
+              </div>
 
-              <input
-                type="number"
-                placeholder="Prize Pool ($)"
-                value={prizePool}
-                onChange={(e) => setPrizePool(e.target.value)}
-              />
+              <div className="input-group">
+                <input
+                  className={formErrors.prizePool ? "field-error" : ""}
+                  type="number"
+                  placeholder="Prize Pool ($)"
+                  value={prizePool}
+                  onChange={(e) => {
+                    setPrizePool(e.target.value);
+                    clearFieldError("prizePool");
+                  }}
+                />
+                {formErrors.prizePool && (
+                  <p className="input-error-text">{formErrors.prizePool}</p>
+                )}
+              </div>
 
-              <input
-                type="text"
-                placeholder="Organizer"
-                value={organizer}
-                onChange={(e) => setOrganizer(e.target.value)}
-              />
+              <div className="input-group">
+                <input
+                  type="text"
+                  placeholder="Organizer"
+                  value={organizer}
+                  onChange={(e) => {
+                    setOrganizer(e.target.value);
+                  }}
+                />
+              </div>
 
-              <input
-                type="datetime-local"
-                value={startDateTime}
-                onChange={(e) => setStartDateTime(e.target.value)}
-              />
+              <div className="input-group">
+                <input
+                  className={formErrors.startDateTime ? "field-error" : ""}
+                  type="datetime-local"
+                  value={startDateTime}
+                  onChange={(e) => {
+                    setStartDateTime(e.target.value);
+                    clearFieldError("startDateTime");
+                  }}
+                />
+                {formErrors.startDateTime && (
+                  <p className="input-error-text">{formErrors.startDateTime}</p>
+                )}
+              </div>
 
-              <select value={game} onChange={(e) => setGame(e.target.value)}>
-                <option value="Valorant">Valorant</option>
-                <option value="League of Legends">League of Legends</option>
-                <option value="CS2">CS2</option>
-                <option value="Rocket League">Rocket League</option>
-              </select>
+              <div className="input-group">
+                <select value={game} onChange={(e) => setGame(e.target.value)}>
+                  <option value="Valorant">Valorant</option>
+                  <option value="League of Legends">League of Legends</option>
+                  <option value="CS2">CS2</option>
+                  <option value="Rocket League">Rocket League</option>
+                </select>
+              </div>
 
-              <select value={status} onChange={(e) => setStatus(e.target.value)}>
-                <option value="upcoming">Upcoming</option>
-                <option value="live">Live</option>
-                <option value="completed">Completed</option>
-              </select>
+              <div className="input-group">
+                <select value={status} onChange={(e) => setStatus(e.target.value)}>
+                  <option value="upcoming">Upcoming</option>
+                  <option value="live">Live</option>
+                  <option value="completed">Completed</option>
+                </select>
+              </div>
 
-              <select value={format} onChange={(e) => setFormat(e.target.value)}>
-                <option value="Single Elimination">Single Elimination</option>
-                <option value="Double Elimination">Double Elimination</option>
-                <option value="Round Robin">Round Robin</option>
-              </select>
+              <div className="input-group">
+                <select value={format} onChange={(e) => setFormat(e.target.value)}>
+                  <option value="Single Elimination">Single Elimination</option>
+                  <option value="Double Elimination">Double Elimination</option>
+                  <option value="Round Robin">Round Robin</option>
+                </select>
+              </div>
 
-              <input
-                type="text"
-                placeholder="Rules summary"
-                value={rules}
-                onChange={(e) => setRules(e.target.value)}
-              />
+              <div className="input-group">
+                <input
+                  className={formErrors.rules ? "field-error" : ""}
+                  type="text"
+                  placeholder="Rules summary"
+                  value={rules}
+                  onChange={(e) => {
+                    setRules(e.target.value);
+                    clearFieldError("rules");
+                  }}
+                />
+                {formErrors.rules && <p className="input-error-text">{formErrors.rules}</p>}
+              </div>
 
-              <button onClick={addTournament}>
-                Add Tournament
+              <button onClick={addTournament} disabled={isSavingTournament}>
+                {isSavingTournament ? "Saving..." : "Add Tournament"}
               </button>
             </div>
           ) : (

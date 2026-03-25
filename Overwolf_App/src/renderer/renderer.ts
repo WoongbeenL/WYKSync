@@ -7,11 +7,18 @@ declare const wyksync: {
     teamA?: { name?: string; logo?: string };
     teamB?: { name?: string; logo?: string };
   }) => Promise<boolean>;
+<<<<<<< HEAD
   fetchMatchConfig: (matchCode: string, apiUrl: string) => Promise<{
     success: boolean;
     match?: any;
     error?: string;
   }>;
+=======
+  sendMapPoolConfig: (config: {
+    format: number;
+    maps: Array<{ name: string; scoreA: number; scoreB: number; isCurrent: boolean }>;
+  }) => Promise<boolean>;
+>>>>>>> 28eeceefd66ffa61e20b67d5c4c02a49a71ef862
 };
 
 const statusEl = document.getElementById('status') as HTMLDivElement;
@@ -71,6 +78,7 @@ function showConfirm(msg: string): void {
 wyksync.onStatusUpdate(updateStatus);
 wyksync.onLogMessage(addLog);
 
+<<<<<<< HEAD
 // ── Match Code Fetch ─────────────────────────────────────────
 function setFetchStatus(msg: string, type: 'success' | 'error' | 'loading'): void {
   fetchStatus.textContent = msg;
@@ -141,24 +149,68 @@ matchCodeInput.addEventListener('keydown', (e: KeyboardEvent) => {
 });
 
 // Apply button — push team config to overlay via WS
+=======
+// --- Best-of format handling ---
+const boFormatEl = document.getElementById('bo-format') as HTMLSelectElement;
+
+function getBoCount(): number {
+  return parseInt(boFormatEl.value, 10) || 3;
+}
+
+function updateMapVisibility(): void {
+  const count = getBoCount();
+  for (let i = 1; i <= 5; i++) {
+    const col = document.getElementById(`map-col-${i}`);
+    if (!col) continue;
+    if (i <= count) {
+      col.classList.remove('map-col-hidden');
+    } else {
+      col.classList.add('map-col-hidden');
+    }
+  }
+}
+
+boFormatEl.addEventListener('change', updateMapVisibility);
+updateMapVisibility(); // init on load
+
+// Collect map pool data from the UI
+function collectMapPool(): { format: number; maps: Array<{ name: string; scoreA: number; scoreB: number; isCurrent: boolean }> } {
+  const count = getBoCount();
+  const maps: Array<{ name: string; scoreA: number; scoreB: number; isCurrent: boolean }> = [];
+  for (let i = 1; i <= count; i++) {
+    const name = (document.getElementById(`map-${i}`) as HTMLSelectElement).value;
+    const scoreA = parseInt((document.getElementById(`map-${i}-score-a`) as HTMLInputElement).value, 10) || 0;
+    const scoreB = parseInt((document.getElementById(`map-${i}-score-b`) as HTMLInputElement).value, 10) || 0;
+    const isCurrent = (document.getElementById(`map-${i}-current`) as HTMLInputElement).checked;
+    maps.push({ name, scoreA, scoreB, isCurrent });
+  }
+  return { format: count, maps };
+}
+
+// Apply button — push team config + map pool to overlay via WS
+>>>>>>> 28eeceefd66ffa61e20b67d5c4c02a49a71ef862
 btnApply.addEventListener('click', async () => {
   const nameA = (document.getElementById('name-a') as HTMLInputElement).value.trim();
   const logoA = (document.getElementById('logo-a') as HTMLInputElement).value.trim();
   const nameB = (document.getElementById('name-b') as HTMLInputElement).value.trim();
   const logoB = (document.getElementById('logo-b') as HTMLInputElement).value.trim();
 
-  const config = {
+  const teamConfig = {
     teamA: { name: nameA || undefined, logo: logoA || undefined },
     teamB: { name: nameB || undefined, logo: logoB || undefined },
   };
 
+  const mapPoolConfig = collectMapPool();
+
   try {
-    await wyksync.sendTeamConfig(config);
+    await wyksync.sendTeamConfig(teamConfig);
+    await wyksync.sendMapPoolConfig(mapPoolConfig);
     showConfirm('✓ Applied to overlay');
-    addLog('Team config sent', config);
+    addLog('Team config sent', teamConfig);
+    addLog('Map pool sent', mapPoolConfig);
   } catch (e) {
     showConfirm('✕ Failed — is the app running?');
-    addLog('Error sending team config:', e);
+    addLog('Error sending config:', e);
   }
 });
 
@@ -167,7 +219,18 @@ btnReset.addEventListener('click', async () => {
   ['name-a', 'logo-a', 'name-b', 'logo-b'].forEach(id => {
     (document.getElementById(id) as HTMLInputElement).value = '';
   });
+  // Clear all 5 map pool inputs
+  for (let i = 1; i <= 5; i++) {
+    (document.getElementById(`map-${i}`) as HTMLSelectElement).value = '';
+    (document.getElementById(`map-${i}-score-a`) as HTMLInputElement).value = '0';
+    (document.getElementById(`map-${i}-score-b`) as HTMLInputElement).value = '0';
+    (document.getElementById(`map-${i}-current`) as HTMLInputElement).checked = false;
+  }
+  // Reset BO format to BO3
+  boFormatEl.value = '3';
+  updateMapVisibility();
   await wyksync.sendTeamConfig({ teamA: { name: '', logo: '' }, teamB: { name: '', logo: '' } });
+  await wyksync.sendMapPoolConfig({ format: 3, maps: [] });
   showConfirm('✓ Reset to defaults');
 });
 

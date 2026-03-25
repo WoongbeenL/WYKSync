@@ -191,6 +191,144 @@
       min-height: 16px;
     }
 
+    /* Series Map Pool */
+    .format-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .format-label {
+      font-size: 0.55rem;
+      font-weight: 700;
+      color: #C9A84C;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+    }
+
+    .format-select {
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(201, 168, 76, 0.3);
+      border-radius: 4px;
+      color: #fff;
+      font-size: 0.72rem;
+      padding: 5px 10px;
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .format-select:focus {
+      border-color: #C9A84C;
+    }
+
+    .format-select option {
+      background: #111827;
+    }
+
+    .series-grid {
+      display: flex;
+      gap: 10px;
+    }
+
+    .map-col {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .map-col-hidden {
+      display: none !important;
+    }
+
+    .map-col-title {
+      font-size: 0.55rem;
+      font-weight: 700;
+      color: #C9A84C;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      text-align: center;
+    }
+
+    .map-col select {
+      width: 100%;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+      color: #fff;
+      font-size: 0.68rem;
+      padding: 5px 6px;
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .map-col select:focus {
+      border-color: #C9A84C;
+    }
+
+    .map-col select option {
+      background: #111827;
+    }
+
+    .score-row {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .score-row input[type="number"] {
+      width: 36px;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+      color: #fff;
+      font-size: 0.72rem;
+      padding: 4px 2px;
+      text-align: center;
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      outline: none;
+      -moz-appearance: textfield;
+      appearance: textfield;
+    }
+
+    .score-row input[type="number"]::-webkit-outer-spin-button,
+    .score-row input[type="number"]::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    .score-row input[type="number"]:focus {
+      border-color: #C9A84C;
+    }
+
+    .score-row .score-sep {
+      color: #555;
+      font-size: 0.6rem;
+      font-weight: 700;
+    }
+
+    .current-radio {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      font-size: 0.5rem;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      cursor: pointer;
+    }
+
+    .current-radio input[type="radio"] {
+      accent-color: #C9A84C;
+      cursor: pointer;
+    }
+
     .section-title {
       font-size: 0.6rem;
       color: #666;
@@ -407,6 +545,146 @@
     <button class="apply-btn" id="btn-apply">▶ Apply to Overlay</button>
     <button class="reset-btn" id="btn-reset">Reset</button>
     <div class="confirm-msg" id="confirm-msg"></div>
+  </div>
+
+  <!-- Series Map Pool -->
+  <div class="card card-gold">
+    <div class="card-title">🗺 Series Map Pool</div>
+    <div class="format-row">
+      <label class="format-label">Format</label>
+      <select id="bo-format" class="format-select">
+        <option value="1">Best of 1</option>
+        <option value="3" selected>Best of 3</option>
+        <option value="5">Best of 5</option>
+      </select>
+    </div>
+    <div class="series-grid" id="series-grid">
+      <div class="map-col" id="map-col-1">
+        <div class="map-col-title">Map 1</div>
+        <select id="map-1">
+          <option value="">— Select —</option>
+          <option value="Ascent">Ascent</option>
+          <option value="Bind">Bind</option>
+          <option value="Breeze">Breeze</option>
+          <option value="Fracture">Fracture</option>
+          <option value="Haven">Haven</option>
+          <option value="Icebox">Icebox</option>
+          <option value="Lotus">Lotus</option>
+          <option value="Pearl">Pearl</option>
+          <option value="Split">Split</option>
+          <option value="Sunset">Sunset</option>
+          <option value="Abyss">Abyss</option>
+        </select>
+        <div class="score-row">
+          <input type="number" id="map-1-score-a" min="0" max="13" value="0">
+          <span class="score-sep">vs</span>
+          <input type="number" id="map-1-score-b" min="0" max="13" value="0">
+        </div>
+        <label class="current-radio">
+          <input type="radio" name="current-map" id="map-1-current" value="1"> Current
+        </label>
+      </div>
+      <div class="map-col" id="map-col-2">
+        <div class="map-col-title">Map 2</div>
+        <select id="map-2">
+          <option value="">— Select —</option>
+          <option value="Ascent">Ascent</option>
+          <option value="Bind">Bind</option>
+          <option value="Breeze">Breeze</option>
+          <option value="Fracture">Fracture</option>
+          <option value="Haven">Haven</option>
+          <option value="Icebox">Icebox</option>
+          <option value="Lotus">Lotus</option>
+          <option value="Pearl">Pearl</option>
+          <option value="Split">Split</option>
+          <option value="Sunset">Sunset</option>
+          <option value="Abyss">Abyss</option>
+        </select>
+        <div class="score-row">
+          <input type="number" id="map-2-score-a" min="0" max="13" value="0">
+          <span class="score-sep">vs</span>
+          <input type="number" id="map-2-score-b" min="0" max="13" value="0">
+        </div>
+        <label class="current-radio">
+          <input type="radio" name="current-map" id="map-2-current" value="2"> Current
+        </label>
+      </div>
+      <div class="map-col" id="map-col-3">
+        <div class="map-col-title">Map 3</div>
+        <select id="map-3">
+          <option value="">— Select —</option>
+          <option value="Ascent">Ascent</option>
+          <option value="Bind">Bind</option>
+          <option value="Breeze">Breeze</option>
+          <option value="Fracture">Fracture</option>
+          <option value="Haven">Haven</option>
+          <option value="Icebox">Icebox</option>
+          <option value="Lotus">Lotus</option>
+          <option value="Pearl">Pearl</option>
+          <option value="Split">Split</option>
+          <option value="Sunset">Sunset</option>
+          <option value="Abyss">Abyss</option>
+        </select>
+        <div class="score-row">
+          <input type="number" id="map-3-score-a" min="0" max="13" value="0">
+          <span class="score-sep">vs</span>
+          <input type="number" id="map-3-score-b" min="0" max="13" value="0">
+        </div>
+        <label class="current-radio">
+          <input type="radio" name="current-map" id="map-3-current" value="3"> Current
+        </label>
+      </div>
+      <div class="map-col map-col-hidden" id="map-col-4">
+        <div class="map-col-title">Map 4</div>
+        <select id="map-4">
+          <option value="">— Select —</option>
+          <option value="Ascent">Ascent</option>
+          <option value="Bind">Bind</option>
+          <option value="Breeze">Breeze</option>
+          <option value="Fracture">Fracture</option>
+          <option value="Haven">Haven</option>
+          <option value="Icebox">Icebox</option>
+          <option value="Lotus">Lotus</option>
+          <option value="Pearl">Pearl</option>
+          <option value="Split">Split</option>
+          <option value="Sunset">Sunset</option>
+          <option value="Abyss">Abyss</option>
+        </select>
+        <div class="score-row">
+          <input type="number" id="map-4-score-a" min="0" max="13" value="0">
+          <span class="score-sep">vs</span>
+          <input type="number" id="map-4-score-b" min="0" max="13" value="0">
+        </div>
+        <label class="current-radio">
+          <input type="radio" name="current-map" id="map-4-current" value="4"> Current
+        </label>
+      </div>
+      <div class="map-col map-col-hidden" id="map-col-5">
+        <div class="map-col-title">Map 5</div>
+        <select id="map-5">
+          <option value="">— Select —</option>
+          <option value="Ascent">Ascent</option>
+          <option value="Bind">Bind</option>
+          <option value="Breeze">Breeze</option>
+          <option value="Fracture">Fracture</option>
+          <option value="Haven">Haven</option>
+          <option value="Icebox">Icebox</option>
+          <option value="Lotus">Lotus</option>
+          <option value="Pearl">Pearl</option>
+          <option value="Split">Split</option>
+          <option value="Sunset">Sunset</option>
+          <option value="Abyss">Abyss</option>
+        </select>
+        <div class="score-row">
+          <input type="number" id="map-5-score-a" min="0" max="13" value="0">
+          <span class="score-sep">vs</span>
+          <input type="number" id="map-5-score-b" min="0" max="13" value="0">
+        </div>
+        <label class="current-radio">
+          <input type="radio" name="current-map" id="map-5-current" value="5"> Current
+        </label>
+      </div>
+    </div>
   </div>
 
   <!-- Debug log -->

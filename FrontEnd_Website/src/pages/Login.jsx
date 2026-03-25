@@ -8,7 +8,7 @@ const backendUrl = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, "");
 
 // builds a clearer fetch error message for backend calls
 const buildBackendFetchError = (action, err) =>
-  `${action} failed: ${err.message}. Check VITE_BACKEND_URL, backend status, and CORS allowlist for http://localhost:5173 and https://wyksync.vercel.app.`;
+  `${action} failed: ${err.message}. Check VITE_BACKEND_URL, backend status, and CORS allowlist for your frontend domain.`;
 
 // parses error whether backend returns text or json
 const parseBackendError = async (response, fallback) => {
