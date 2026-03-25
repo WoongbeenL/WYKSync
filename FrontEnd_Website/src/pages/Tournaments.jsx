@@ -837,21 +837,124 @@ export default function Tournaments({ user }) {
 
   return (
     <div className="tournaments">
-      <h1>Tournaments</h1>
+      {!selectedTournament && <h1>Tournaments</h1>}
       {apiError && hasCheckedSession && <p className="team-required-error">{apiError}</p>}
       {selectedTournament ? (
         <div className="tournament-details">
           {/* Detail view replaces the grid when one tournament is selected. */}
-          <button
-            className="back-btn"
-            onClick={() => {
-              setSelectedTournament(null);
-              setActiveTab("overview");
-            }}
-          >
-            Back to Tournaments
-          </button>
+          <div className="tournament-topbar">
+            <button
+              className="back-btn"
+              onClick={() => {
+                setSelectedTournament(null);
+                setActiveTab("overview");
+              }}
+            >
+              Back to Tournaments
+            </button>
+            {canManageTournament(selectedTournament) && !isEditingTournament && (
+              <button
+                type="button"
+                className="join-btn tournament-edit-btn"
+                onClick={() => beginEditingTournament(selectedTournament)}
+              >
+                Edit Tournament
+              </button>
+            )}
+          </div>
           <h2>{selectedTournament.name}</h2>
+          {canManageTournament(selectedTournament) && isEditingTournament && (
+            <div className="tournament-admin-panel">
+              <div className="tournament-admin-form">
+                <div className="input-group">
+                  <label htmlFor="edit-tournament-name">Tournament Name</label>
+                  <input
+                    id="edit-tournament-name"
+                    type="text"
+                    value={editName}
+                    onChange={(event) => setEditName(event.target.value)}
+                  />
+                </div>
+
+                <div className="input-group">
+                  <label htmlFor="edit-tournament-start-date">Start Date</label>
+                  <input
+                    id="edit-tournament-start-date"
+                    type="date"
+                    value={editStartDateTime}
+                    onChange={(event) => setEditStartDateTime(event.target.value)}
+                  />
+                </div>
+
+                <div className="input-group">
+                  <label htmlFor="edit-tournament-end-date">End Date</label>
+                  <input
+                    id="edit-tournament-end-date"
+                    type="date"
+                    value={editEndDateTime}
+                    onChange={(event) => setEditEndDateTime(event.target.value)}
+                  />
+                </div>
+
+                <div className="input-group">
+                  <label htmlFor="edit-tournament-format">Format</label>
+                  <select
+                    id="edit-tournament-format"
+                    value={editFormat}
+                    onChange={(event) => setEditFormat(event.target.value)}
+                  >
+                    {formatOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="input-group">
+                  <label htmlFor="edit-tournament-status">Status</label>
+                  <select
+                    id="edit-tournament-status"
+                    value={editStatus}
+                    onChange={(event) => setEditStatus(event.target.value)}
+                  >
+                    <option value="upcoming">Upcoming</option>
+                    <option value="live">Live</option>
+                    <option value="complete">Completed</option>
+                  </select>
+                </div>
+
+                <div className="input-group">
+                  <label htmlFor="edit-tournament-rules">Rules</label>
+                  <input
+                    id="edit-tournament-rules"
+                    type="text"
+                    value={editRules}
+                    onChange={(event) => setEditRules(event.target.value)}
+                  />
+                </div>
+
+                <div className="tournament-admin-actions">
+                  <button
+                    type="button"
+                    className="join-btn"
+                    onClick={updateTournament}
+                    disabled={isUpdatingTournament}
+                  >
+                    {isUpdatingTournament ? "Saving..." : "Save Changes"}
+                  </button>
+                  <button
+                    type="button"
+                    className="leave-btn"
+                    onClick={cancelEditingTournament}
+                    disabled={isUpdatingTournament}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="tournament-tabs">
             <button
@@ -894,116 +997,6 @@ export default function Tournaments({ user }) {
                   <p><strong>Status:</strong> {selectedTournament.status}</p>
                   <p><strong>Format:</strong> {formatTournamentFormatLabel(selectedTournament.format)}</p>
                 </div>
-
-                {canAttemptManageTournament(selectedTournament) && (
-                  <div className="tournament-admin-panel">
-                    <div className="tournament-admin-header">
-                      <div>
-                        <h3>Tournament Admin</h3>
-                        <p>
-                          Edit requests are sent to the backend. If you are the owner/admin,
-                          the changes will save.
-                        </p>
-                      </div>
-                      {!isEditingTournament && (
-                        <button type="button" className="join-btn" onClick={() => beginEditingTournament(selectedTournament)}>
-                          Edit Tournament
-                        </button>
-                      )}
-                    </div>
-
-                    {isEditingTournament && (
-                      <div className="tournament-admin-form">
-                        <div className="input-group">
-                          <label htmlFor="edit-tournament-name">Tournament Name</label>
-                          <input
-                            id="edit-tournament-name"
-                            type="text"
-                            value={editName}
-                            onChange={(event) => setEditName(event.target.value)}
-                          />
-                        </div>
-
-                        <div className="input-group">
-                          <label htmlFor="edit-tournament-start-date">Start Date</label>
-                          <input
-                            id="edit-tournament-start-date"
-                            type="date"
-                            value={editStartDateTime}
-                            onChange={(event) => setEditStartDateTime(event.target.value)}
-                          />
-                        </div>
-
-                        <div className="input-group">
-                          <label htmlFor="edit-tournament-end-date">End Date</label>
-                          <input
-                            id="edit-tournament-end-date"
-                            type="date"
-                            value={editEndDateTime}
-                            onChange={(event) => setEditEndDateTime(event.target.value)}
-                          />
-                        </div>
-
-                        <div className="input-group">
-                          <label htmlFor="edit-tournament-format">Format</label>
-                          <select
-                            id="edit-tournament-format"
-                            value={editFormat}
-                            onChange={(event) => setEditFormat(event.target.value)}
-                          >
-                            {formatOptions.map((option) => (
-                              <option key={option.value} value={option.value}>
-                                {option.label}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-
-                        <div className="input-group">
-                          <label htmlFor="edit-tournament-status">Status</label>
-                          <select
-                            id="edit-tournament-status"
-                            value={editStatus}
-                            onChange={(event) => setEditStatus(event.target.value)}
-                          >
-                            <option value="upcoming">Upcoming</option>
-                            <option value="live">Live</option>
-                            <option value="complete">Completed</option>
-                          </select>
-                        </div>
-
-                        <div className="input-group">
-                          <label htmlFor="edit-tournament-rules">Rules</label>
-                          <input
-                            id="edit-tournament-rules"
-                            type="text"
-                            value={editRules}
-                            onChange={(event) => setEditRules(event.target.value)}
-                          />
-                        </div>
-
-                        <div className="tournament-admin-actions">
-                          <button
-                            type="button"
-                            className="join-btn"
-                            onClick={updateTournament}
-                            disabled={isUpdatingTournament}
-                          >
-                            {isUpdatingTournament ? "Saving..." : "Save Changes"}
-                          </button>
-                          <button
-                            type="button"
-                            className="leave-btn"
-                            onClick={cancelEditingTournament}
-                            disabled={isUpdatingTournament}
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
               </>
             )}
 

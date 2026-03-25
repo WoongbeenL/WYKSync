@@ -251,6 +251,14 @@
   color: #f1f1f1;
 }
 
+.tournament-topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
 .back-btn {
   background: #2a2a2a;
   border: 1px solid #444;
@@ -300,23 +308,6 @@
   border: 1px solid #2f2f2f;
   border-radius: 8px;
   background: #121212;
-}
-
-.tournament-admin-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 1rem;
-  margin-bottom: 1rem;
-}
-
-.tournament-admin-header h3 {
-  margin: 0 0 0.35rem;
-}
-
-.tournament-admin-header p {
-  margin: 0;
-  color: #cfcfcf;
 }
 
 .tournament-admin-form {
@@ -381,6 +372,10 @@
 .join-btn:disabled {
   background: #555;
   cursor: not-allowed;
+}
+
+.tournament-edit-btn {
+  margin-bottom: 0;
 }
 
 .leave-btn {
