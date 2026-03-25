@@ -7,6 +7,11 @@ declare const wyksync: {
     teamA?: { name?: string; logo?: string };
     teamB?: { name?: string; logo?: string };
   }) => Promise<boolean>;
+  fetchMatchConfig: (matchCode: string, apiUrl: string) => Promise<{
+    success: boolean;
+    match?: any;
+    error?: string;
+  }>;
 };
 
 const statusEl = document.getElementById('status') as HTMLDivElement;
@@ -17,6 +22,14 @@ const btnClear = document.getElementById('btn-clear') as HTMLButtonElement;
 const btnApply = document.getElementById('btn-apply') as HTMLButtonElement;
 const btnReset = document.getElementById('btn-reset') as HTMLButtonElement;
 const confirmMsg = document.getElementById('confirm-msg') as HTMLDivElement;
+
+// Match Code Fetch elements
+const matchCodeInput = document.getElementById('match-code') as HTMLInputElement;
+const apiUrlInput = document.getElementById('api-url') as HTMLInputElement;
+const btnFetch = document.getElementById('btn-fetch') as HTMLButtonElement;
+const fetchStatus = document.getElementById('fetch-status') as HTMLDivElement;
+const mapPoolArea = document.getElementById('map-pool-area') as HTMLDivElement;
+const mapPoolList = document.getElementById('map-pool-list') as HTMLDivElement;
 
 function updateStatus(status: string): void {
   statusEl.textContent = status;
@@ -57,6 +70,75 @@ function showConfirm(msg: string): void {
 
 wyksync.onStatusUpdate(updateStatus);
 wyksync.onLogMessage(addLog);
+
+// ── Match Code Fetch ─────────────────────────────────────────
+function setFetchStatus(msg: string, type: 'success' | 'error' | 'loading'): void {
+  fetchStatus.textContent = msg;
+  fetchStatus.className = 'fetch-status ' + type;
+}
+
+btnFetch.addEventListener('click', async () => {
+  const matchCode = matchCodeInput.value.trim().toUpperCase();
+  const apiUrl = apiUrlInput.value.trim();
+
+  if (!matchCode) {
+    setFetchStatus('Enter a match code', 'error');
+    return;
+  }
+  if (!apiUrl) {
+    setFetchStatus('Enter an API URL', 'error');
+    return;
+  }
+
+  btnFetch.disabled = true;
+  setFetchStatus('Fetching...', 'loading');
+  mapPoolArea.style.display = 'none';
+
+  try {
+    const result = await wyksync.fetchMatchConfig(matchCode, apiUrl);
+
+    if (!result.success) {
+      setFetchStatus('✕ ' + (result.error || 'Fetch failed'), 'error');
+      addLog('Match fetch failed:', result.error);
+      btnFetch.disabled = false;
+      return;
+    }
+
+    const match = result.match;
+    setFetchStatus('✓ Match loaded — applied to overlay', 'success');
+    addLog('Match config fetched:', match);
+
+    // Auto-populate the manual team fields so user can see/tweak
+    if (match.teamA) {
+      if (match.teamA.name) (document.getElementById('name-a') as HTMLInputElement).value = match.teamA.name;
+      if (match.teamA.logo) (document.getElementById('logo-a') as HTMLInputElement).value = match.teamA.logo;
+    }
+    if (match.teamB) {
+      if (match.teamB.name) (document.getElementById('name-b') as HTMLInputElement).value = match.teamB.name;
+      if (match.teamB.logo) (document.getElementById('logo-b') as HTMLInputElement).value = match.teamB.logo;
+    }
+
+    // Display map pool if present
+    if (match.mapPool && Array.isArray(match.mapPool) && match.mapPool.length > 0) {
+      mapPoolArea.style.display = 'block';
+      let html = match.mapPool.map((m: string) => `<span class="map-tag">${m}</span>`).join('');
+      if (match.bestOf) {
+        html += `<span class="best-of-tag">Bo${match.bestOf}</span>`;
+      }
+      mapPoolList.innerHTML = html;
+    }
+  } catch (e: any) {
+    setFetchStatus('✕ ' + (e.message || 'Unknown error'), 'error');
+    addLog('Match fetch error:', e);
+  }
+
+  btnFetch.disabled = false;
+});
+
+// Allow Enter key to trigger fetch
+matchCodeInput.addEventListener('keydown', (e: KeyboardEvent) => {
+  if (e.key === 'Enter') btnFetch.click();
+});
 
 // Apply button — push team config to overlay via WS
 btnApply.addEventListener('click', async () => {

@@ -1,6 +1,3 @@
-Overwolf_App/.gitignore
-FrontEnd_Website/.gitignore
-
 # Node.js dependencies
 /node_modules/
 

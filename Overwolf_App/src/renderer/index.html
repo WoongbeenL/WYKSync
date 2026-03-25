@@ -240,6 +240,100 @@
     .btn:hover {
       background: rgba(255, 255, 255, 0.12);
     }
+
+    /* Match Code Fetch */
+    .match-code-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .match-code-row input {
+      flex: 1;
+    }
+
+    .fetch-btn {
+      background: #C9A84C;
+      color: #000;
+      border: none;
+      border-radius: 4px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 5px 14px;
+      cursor: pointer;
+      letter-spacing: 1px;
+      white-space: nowrap;
+    }
+
+    .fetch-btn:hover {
+      background: #E2CA7A;
+    }
+
+    .fetch-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .fetch-status {
+      font-size: 0.6rem;
+      min-height: 16px;
+      margin-top: 6px;
+      text-align: center;
+    }
+
+    .fetch-status.success {
+      color: #4ade80;
+    }
+
+    .fetch-status.error {
+      color: #ef4444;
+    }
+
+    .fetch-status.loading {
+      color: #fbbf24;
+    }
+
+    .map-pool-area {
+      margin-top: 10px;
+      padding-top: 8px;
+      border-top: 1px solid rgba(201, 168, 76, 0.15);
+    }
+
+    .map-pool-label {
+      font-size: 0.5rem;
+      font-weight: 700;
+      color: #C9A84C;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-bottom: 6px;
+    }
+
+    .map-pool-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .map-tag {
+      background: rgba(201, 168, 76, 0.12);
+      border: 1px solid rgba(201, 168, 76, 0.3);
+      border-radius: 4px;
+      padding: 3px 8px;
+      font-size: 0.6rem;
+      font-weight: 600;
+      color: #C9A84C;
+      letter-spacing: 0.5px;
+    }
+
+    .best-of-tag {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 4px;
+      padding: 3px 8px;
+      font-size: 0.6rem;
+      font-weight: 600;
+      color: #aaa;
+      letter-spacing: 0.5px;
+    }
   </style>
 </head>
 
@@ -260,9 +354,32 @@
     <div class="websocket-url">ws://localhost:8765</div>
   </div>
 
-  <!-- Match Setup -->
+  <!-- Match Code Fetch -->
   <div class="card card-gold">
-    <div class="card-title">⚙ Match Setup — Team Logos &amp; Names</div>
+    <div class="card-title">⚡ Match Code — Fetch from Website</div>
+    <div class="field">
+      <label>API Endpoint URL</label>
+      <input type="text" id="api-url" placeholder="https://wyksync.onrender.com/match"
+        value="https://wyksync.onrender.com/match">
+    </div>
+    <div class="field">
+      <label>Match Code</label>
+      <div class="match-code-row">
+        <input type="text" id="match-code" placeholder="e.g. ABC123" maxlength="12"
+          style="text-transform:uppercase; letter-spacing:2px; font-weight:700; font-size:0.9rem;">
+        <button class="fetch-btn" id="btn-fetch">FETCH</button>
+      </div>
+    </div>
+    <div class="fetch-status" id="fetch-status"></div>
+    <div class="map-pool-area" id="map-pool-area" style="display:none;">
+      <div class="map-pool-label">MAP POOL</div>
+      <div class="map-pool-list" id="map-pool-list"></div>
+    </div>
+  </div>
+
+  <!-- Match Setup (Manual) -->
+  <div class="card card-gold">
+    <div class="card-title">⚙ Match Setup — Team Logos & Names</div>
     <div class="teams-grid">
       <div class="team-block">
         <div class="team-block-title">Team A (Left)</div>

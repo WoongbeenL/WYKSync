@@ -16,6 +16,10 @@ contextBridge.exposeInMainWorld('wyksync', {
   // Send team logo/name config to overlay via WebSocket broadcast
   sendTeamConfig: (config: { teamA?: { name?: string; logo?: string }; teamB?: { name?: string; logo?: string } }) =>
     ipcRenderer.invoke('send-team-config', config),
+
+  // Fetch match config from website API using a match code
+  fetchMatchConfig: (matchCode: string, apiUrl: string) =>
+    ipcRenderer.invoke('fetch-match-config', matchCode, apiUrl),
 });
 
 console.log('[Preload] WYKSync bridge ready');

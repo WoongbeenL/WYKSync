@@ -289,6 +289,34 @@
       color: var(--gold-light);
     }
 
+    .series-maps {
+      display: flex;
+      gap: 6px;
+      margin-top: 6px;
+      flex-wrap: wrap;
+    }
+
+    .series-map-tag {
+      background: rgba(201, 168, 76, 0.15);
+      border: 1px solid var(--border-gold);
+      padding: 2px 8px;
+      font-size: 0.55rem;
+      color: var(--gold-light);
+      border-radius: 2px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .series-bo {
+      background: var(--gold);
+      color: #000;
+      padding: 2px 6px;
+      font-size: 0.55rem;
+      font-weight: 900;
+      border-radius: 2px;
+      letter-spacing: 0.5px;
+    }
+
     .map-decider {
       color: var(--text-muted);
       font-size: 0.55rem;
