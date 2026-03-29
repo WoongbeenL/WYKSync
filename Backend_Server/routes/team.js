@@ -261,7 +261,7 @@ router.patch("/:team_id", async (req, res) => {
     const { team_id } = req.params;
     const { name, logo_url } = req.body;
 
-    const isCoach = await isCoachOfTeam(userId, team_id);
+    const isCoach = await isTeamCoach(userId, team_id);
     if (!isCoach) {
       return res.status(403).json({ error: "Forbidden" });
     }
@@ -315,7 +315,7 @@ router.delete("/:team_id", async (req, res) => {
     const userId = req.user.id;
     const { team_id } = req.params;
 
-    const isCoach = await isCoachOfTeam(userId, team_id);
+    const isCoach = await isTeamCoach(userId, team_id);
     if (!isCoach) {
       return res.status(403).json({ error: "Forbidden" });
     }
