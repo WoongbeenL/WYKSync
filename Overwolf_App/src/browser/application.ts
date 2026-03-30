@@ -29,6 +29,58 @@ export class Application {
       return true;
     });
 
+    // Render Request for match info
+    ipcMain.handle('fetch-match-config', async (_event, matchCode: string, apiUrl: string) => {
+      try {
+        const url = `${apiUrl}?match_code=${encodeURIComponent(matchCode)}`;
+        console.log(`[Match] Fetching match config from: ${url}`);
+
+        const response = await fetch(url);
+
+        if (!response.ok) {
+          const errBody = await response.text();
+          console.error(`[Match] API error ${response.status}:`, errBody);
+          return { success: false, error: `API returned ${response.status}: ${errBody}` };
+        }
+
+        const data = await response.json();
+        console.log('[Match] Received match data:', JSON.stringify(data));
+
+        const match = data.match || data;
+
+        const config: any = {};
+        if (match.teamA) {
+          config.teamA = {
+            name: match.teamA.name || undefined,
+            logo: match.teamA.logo || undefined,
+          };
+        }
+        if (match.teamB) {
+          config.teamB = {
+            name: match.teamB.name || undefined,
+            logo: match.teamB.logo || undefined,
+          };
+        }
+        if (match.mapPool) {
+          config.mapPool = match.mapPool;
+        }
+        if (match.bestOf !== undefined) {
+          config.bestOf = match.bestOf;
+        }
+
+        this.webSocketService.broadcast({
+          type: 'team-config',
+          timestamp: Date.now(),
+          config
+        });
+
+        return { success: true, match: match };
+      } catch (err: any) {
+        console.error('[Match] Fetch error:', err);
+        return { success: false, error: err.message || 'Unknown error' };
+      }
+    });
+
     // IPC: renderer sends map pool config → broadcast to overlay via WS
     ipcMain.handle('send-map-pool-config', (_event, config) => {
       this.webSocketService.broadcast({

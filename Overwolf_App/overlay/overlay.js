@@ -220,6 +220,18 @@ function applyTeamConfig(cfg) {
       setLogo('b', cfg.teamB.logo);
     }
   }
+  // Map pool / series info
+  if (cfg.mapPool && Array.isArray(cfg.mapPool) && cfg.mapPool.length > 0) {
+    const seriesEl = document.getElementById('series-maps');
+    if (seriesEl) {
+      const bestOfLabel = cfg.bestOf ? `<span class="series-bo">Bo${cfg.bestOf}</span>` : '';
+      const mapTags = cfg.mapPool.map(m =>
+        `<span class="series-map-tag">${m}</span>`
+      ).join('');
+      seriesEl.innerHTML = bestOfLabel + mapTags;
+      seriesEl.style.display = 'flex';
+    }
+  }
 }
 
 function setLogo(team, url) {
