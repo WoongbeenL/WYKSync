@@ -24,6 +24,7 @@ export default function TeamProfile({ user, onProfileUpdated }) {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [isDisbandDialogOpen, setIsDisbandDialogOpen] = useState(false);
   const [currentEmail, setCurrentEmail] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [newEmail, setNewEmail] = useState("");
@@ -32,6 +33,7 @@ export default function TeamProfile({ user, onProfileUpdated }) {
   const [isAccountLoading, setIsAccountLoading] = useState(false);
   const [isSavingDisplayName, setIsSavingDisplayName] = useState(false);
   const [isSavingEmail, setIsSavingEmail] = useState(false);
+  const isCoach = teamProfile?.role === "coach";
 
   useEffect(() => {
     let active = true;
@@ -328,12 +330,20 @@ export default function TeamProfile({ user, onProfileUpdated }) {
     setSuccess("Team profile updated.");
   };
 
-  // Deletes the current team after a confirmation prompt.
+  const openDisbandDialog = () => {
+    setError("");
+    setSuccess("");
+    setIsDisbandDialogOpen(true);
+  };
+
+  const closeDisbandDialog = () => {
+    if (isSaving) return;
+    setIsDisbandDialogOpen(false);
+  };
+
+  // Deletes the current team after an in-app confirmation step.
   const handleDisbandTeam = async () => {
     if (!user || !teamProfile) return;
-
-    const confirmed = window.confirm(`Disband "${teamProfile.teamName}"?`);
-    if (!confirmed) return;
 
     setError("");
     setSuccess("");
@@ -351,6 +361,7 @@ export default function TeamProfile({ user, onProfileUpdated }) {
 
     setTeamProfile(null);
     setTeamName("");
+    setIsDisbandDialogOpen(false);
     setSuccess("Team disbanded.");
   };
 
@@ -485,14 +496,20 @@ export default function TeamProfile({ user, onProfileUpdated }) {
               {isSaving ? "Saving Team..." : "Update Team"}
             </button>
           </form>
-          <button
-            type="button"
-            className="team-profile-disband-btn"
-            onClick={handleDisbandTeam}
-            disabled={isSaving}
-          >
-            {isSaving ? "Disbanding..." : "Disband Team"}
-          </button>
+          {isCoach ? (
+            <button
+              type="button"
+              className="team-profile-disband-btn"
+              onClick={openDisbandDialog}
+              disabled={isSaving}
+            >
+              Disband Team
+            </button>
+          ) : (
+            <p className="team-profile-note">
+              Only the coach can disband this team.
+            </p>
+          )}
           {error && <p className="team-profile-error">{error}</p>}
           {success && <p className="team-profile-success">{success}</p>}
         </div>
@@ -540,6 +557,46 @@ export default function TeamProfile({ user, onProfileUpdated }) {
             )}
           </form>
         </>
+      )}
+
+      {isDisbandDialogOpen && teamProfile && (
+        <div className="team-profile-dialog-backdrop" onClick={closeDisbandDialog}>
+          <div
+            className="team-profile-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="disband-team-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <h3 id="disband-team-title">Disband team?</h3>
+            <p>
+              This will permanently remove <strong>{teamProfile.teamName}</strong> and disconnect
+              every member from it.
+            </p>
+            <p className="team-profile-note">
+              This action cannot be undone.
+            </p>
+            {error && <p className="team-profile-error">{error}</p>}
+            <div className="team-profile-dialog-actions">
+              <button
+                type="button"
+                className="team-profile-dialog-cancel-btn"
+                onClick={closeDisbandDialog}
+                disabled={isSaving}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="team-profile-dialog-confirm-btn"
+                onClick={handleDisbandTeam}
+                disabled={isSaving}
+              >
+                {isSaving ? "Disbanding..." : "Yes, Disband Team"}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {user && !isLoading && teamProfile && error && <p className="team-profile-error">{error}</p>}
