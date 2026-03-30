@@ -332,6 +332,41 @@ router.delete("/:id", async (req, res) => {
 });
 
 /*
+   Route Name   : GET /tournaments/:id/teams
+   Parameter    : id: Int. Tournament ID.
+   Return       : Json response
+                  teams: Array. Returns all registered teams in the tournament.
+   Purpose      : Returns a list of all participating teams in the tournament.
+*/
+router.get("/:id/teams", async (req, res) => {
+  try {
+    const { id: tournament_id } = req.params;
+
+    const { data: tournament, error: tournamentError } = await supabase
+      .from("tournaments")
+      .select("tournament_id")
+      .eq("tournament_id", tournament_id)
+      .maybeSingle();
+
+    if (tournamentError || !tournament) {
+      return res.status(404).json({ error: "Tournament not found" });
+    }
+
+    const { data: teams, error } = await supabase
+      .from("team_tournament")
+      .select("teams(*)")
+      .eq("tournament_id", tournament_id);
+
+    if (error) throw error;
+
+    res.json({ teams: teams.map((t) => t.teams) });
+  } catch (err) {
+    console.error("GET /tournaments/:id/teams error: ", err);
+    res.status(500).json({ error: "Server Error" });
+  }
+});
+
+/*
    Route Name   : POST /tournaments/:id/teams
    Parameter    : Request object with current user id
                   id: Int. Tournament ID.
