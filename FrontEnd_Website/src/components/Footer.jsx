@@ -1,10 +1,6 @@
 // Footer shows extra project links and the social icons at the bottom of the page.
 import React from "react";
 import './footer.css';
-import fb from '../assets/fb.png';
-import twitter from '../assets/twitter.png';
-import linkedin from '../assets/linkedin.webp';
-import instagram from '../assets/insta.webp';
 
 // Keeping this as a small reusable footer component makes the layout cleaner.
 const Footer=()=>{
@@ -66,16 +62,6 @@ const Footer=()=>{
                          <a href="/contact">
                             <p>Contact Us</p>
                         </a>
-                    </div>
-                    <div className="sb__footer-links-div">
-                        <h4>Follow Us</h4>
-                        <div className="socialmedia">
-                            {/* Right now these are just icons, but they can be turned into real links later. */}
-                            <p><img src={fb} alt=""/></p>
-                            <p><img src={twitter} alt=""/></p>
-                            <p><img src={linkedin} alt=""/></p>
-                            <p><img src={instagram} alt=""/></p>
-                        </div>
                     </div>
                 </div>
                 <hr></hr>

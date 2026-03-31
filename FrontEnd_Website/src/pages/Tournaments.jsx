@@ -408,8 +408,17 @@ export default function Tournaments({ user }) {
       ...tournament,
       id: tournament.id ?? tournament.tournament_id,
       minTeams:
-        tournament.minTeams ?? tournament.min_teams ?? metaOverride.minTeams ?? 4,
-      teams: tournament.teams ?? tournament.team_limit ?? metaOverride.teams ?? 0,
+        tournament.minTeams ??
+        tournament.min_teams ??
+        tournament.team_min_limit ??
+        metaOverride.minTeams ??
+        4,
+      teams:
+        tournament.teams ??
+        tournament.team_limit ??
+        tournament.team_max_limit ??
+        metaOverride.teams ??
+        0,
       prizePool:
         tournament.prizePool ?? tournament.prize_pool ?? metaOverride.prizePool ?? "",
       organizer: tournament.organizer ?? metaOverride.organizer ?? "TBD",
@@ -646,8 +655,8 @@ export default function Tournaments({ user }) {
             end_date: endDateTime,
             game,
             format,
-            min_teams: Number(minTeams),
-            team_limit: Number(maxTeams),
+            team_min_limit: Number(minTeams),
+            team_max_limit: Number(maxTeams),
             ...(prizePool ? { prize_pool: Number(prizePool) } : {}),
           },
         }
@@ -673,8 +682,17 @@ export default function Tournaments({ user }) {
         const createdTournament = normalizeTournament({
           ...payload.tournament,
           minTeams:
-            Number(minTeams) || payload.tournament.minTeams || payload.tournament.min_teams || 4,
-          teams: Number(maxTeams) || payload.tournament.teams || payload.tournament.team_limit || 0,
+            Number(minTeams) ||
+            payload.tournament.minTeams ||
+            payload.tournament.min_teams ||
+            payload.tournament.team_min_limit ||
+            4,
+          teams:
+            Number(maxTeams) ||
+            payload.tournament.teams ||
+            payload.tournament.team_limit ||
+            payload.tournament.team_max_limit ||
+            0,
           prizePool: prizePool ? Number(prizePool) : payload.tournament.prizePool ?? payload.tournament.prize_pool ?? "",
           organizer: organizer.trim() || "You",
           status,

@@ -97,7 +97,6 @@ export default function Home() {
       <h2>Ready to start broadcasting smarter?</h2>
       <div className="hero-buttons">
         <button onClick={() => (window.location.href = "/overlay")}>Open Overlay Demo</button>
-        <button>Contact Us</button>
       </div>
     </section>
   </div>
