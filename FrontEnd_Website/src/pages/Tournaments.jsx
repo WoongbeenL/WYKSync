@@ -43,7 +43,6 @@ const writeManagedTournamentIds = (userIdentifier, ids) => {
 };
 
 const TOURNAMENT_META_STORAGE_KEY = "tournament-meta-overrides";
-const TOURNAMENT_REGISTRATION_STORAGE_KEY = "tournament-registration-overrides";
 
 const readTournamentMetaOverrides = () => {
   if (typeof window === "undefined") return {};
@@ -70,35 +69,264 @@ const writeTournamentMetaOverrides = (state) => {
   }
 };
 
-const readTournamentRegistrationOverrides = () => {
-  if (typeof window === "undefined") return {};
+const hashString = (value) => {
+  let hash = 0;
 
-  try {
-    const stored = window.localStorage.getItem(TOURNAMENT_REGISTRATION_STORAGE_KEY);
-    const parsed = stored ? JSON.parse(stored) : {};
-    return parsed && typeof parsed === "object" ? parsed : {};
-  } catch {
-    return {};
+  for (let index = 0; index < value.length; index += 1) {
+    hash = (hash * 31 + value.charCodeAt(index)) >>> 0;
   }
+
+  return hash;
 };
 
-const writeTournamentRegistrationOverrides = (state) => {
-  if (typeof window === "undefined") return;
-
-  try {
-    window.localStorage.setItem(
-      TOURNAMENT_REGISTRATION_STORAGE_KEY,
-      JSON.stringify(state)
-    );
-  } catch {
-    // Ignore storage failures.
-  }
+const getBracketSize = (maxTeams) => {
+  if (maxTeams <= 4) return 4;
+  return 8;
 };
 
+const getSingleElimSeedOrder = (size) => {
+  if (size <= 4) {
+    return [1, 4, 2, 3];
+  }
+
+  return [1, 8, 4, 5, 3, 6, 2, 7];
+};
+
+const buildSingleElimRounds = (participants, maxTeams, tournamentId) => {
+  const bracketSize = getBracketSize(Math.max(4, Number(maxTeams) || 4));
+  const seedOrder = getSingleElimSeedOrder(bracketSize);
+  const stableTeams = [...participants].sort(
+    (teamA, teamB) =>
+      hashString(`${tournamentId}:${teamA}`) - hashString(`${tournamentId}:${teamB}`)
+  );
+  const seededTeams = Array.from({ length: bracketSize }, (_, index) => {
+    const teamName = stableTeams[index] || "";
+    return {
+      seed: seedOrder[index],
+      name: teamName,
+      status: teamName ? "team" : index < Number(maxTeams) ? "open" : "bye",
+    };
+  });
+  const rounds = [];
+  let currentRound = seededTeams;
+  let roundLabelIndex = 1;
+
+  while (currentRound.length > 1) {
+    const matches = [];
+
+    for (let index = 0; index < currentRound.length; index += 2) {
+      const topEntry = currentRound[index];
+      const bottomEntry = currentRound[index + 1];
+
+      matches.push({
+        id: `round-${roundLabelIndex}-match-${index / 2}`,
+        topEntry,
+        bottomEntry,
+      });
+    }
+
+    rounds.push(matches);
+    currentRound = matches.map((match, index) => ({
+      seed: `R${roundLabelIndex + 1}-${index + 1}`,
+      name: "",
+      status: "pending",
+    }));
+    roundLabelIndex += 1;
+  }
+
+  return rounds;
+};
+
+const getSwissRoundCount = (maxTeams) => {
+  if (Number(maxTeams) <= 4) return 2;
+  return 3;
+};
+
+const buildSwissData = (participants, maxTeams, tournamentId) => {
+  const activeTeams = [...participants].sort(
+    (teamA, teamB) =>
+      hashString(`${tournamentId}:${teamA}`) - hashString(`${tournamentId}:${teamB}`)
+  );
+  const totalSlots = Math.max(4, Number(maxTeams) || 4);
+  const paddedTeams = Array.from({ length: totalSlots }, (_, index) => activeTeams[index] || "");
+  const roundCount = getSwissRoundCount(maxTeams);
+  const rounds = [];
+
+  for (let roundIndex = 0; roundIndex < roundCount; roundIndex += 1) {
+    const rotatedTeams =
+      roundIndex === 0
+        ? paddedTeams
+        : paddedTeams.map(
+            (_, index) => paddedTeams[(index + roundIndex) % paddedTeams.length]
+          );
+    const matches = [];
+
+    for (let index = 0; index < rotatedTeams.length; index += 2) {
+      matches.push({
+        id: `swiss-round-${roundIndex + 1}-match-${index / 2}`,
+        leftTeam: rotatedTeams[index] || "",
+        rightTeam: rotatedTeams[index + 1] || "",
+      });
+    }
+
+    rounds.push({
+      id: `round-${roundIndex + 1}`,
+      label: `R${roundIndex + 1}`,
+      title: `Round ${roundIndex + 1}`,
+      matches,
+    });
+  }
+
+  const leaderboard = activeTeams.map((team, index) => {
+    return {
+      rank: index + 1,
+      team,
+      wins: 0,
+      losses: 0,
+      points: 0,
+      gameDiff: 0,
+      buchholz: 0,
+    };
+  });
+
+  return { rounds, leaderboard };
+};
+
+const buildDoubleElimData = (participants, maxTeams, tournamentId) => {
+  const bracketSize = getBracketSize(Math.max(4, Number(maxTeams) || 4));
+  const seedOrder = getSingleElimSeedOrder(bracketSize);
+  const stableTeams = [...participants].sort(
+    (teamA, teamB) =>
+      hashString(`${tournamentId}:${teamA}`) - hashString(`${tournamentId}:${teamB}`)
+  );
+  const seededTeams = Array.from({ length: bracketSize }, (_, index) => ({
+    seed: seedOrder[index],
+    name: stableTeams[index] || "",
+    status: stableTeams[index]
+      ? "team"
+      : index < Number(maxTeams)
+        ? "open"
+        : "bye",
+  }));
+
+  const winnerRounds = [];
+  let currentWinnerRound = seededTeams;
+  let winnerRoundIndex = 1;
+
+  while (currentWinnerRound.length > 1) {
+    const matches = [];
+
+    for (let index = 0; index < currentWinnerRound.length; index += 2) {
+      matches.push({
+        id: `winner-round-${winnerRoundIndex}-match-${index / 2}`,
+        topEntry: currentWinnerRound[index],
+        bottomEntry: currentWinnerRound[index + 1],
+      });
+    }
+
+    winnerRounds.push({
+      id: `winner-round-${winnerRoundIndex}`,
+      title:
+        currentWinnerRound.length === 2
+          ? "Winner Final"
+          : `Winner Round ${winnerRoundIndex}`,
+      matches,
+    });
+
+    currentWinnerRound = matches.map((_, index) => ({
+      seed: `W${winnerRoundIndex + 1}-${index + 1}`,
+      name: "",
+      status: "pending",
+    }));
+    winnerRoundIndex += 1;
+  }
+
+  const loserRoundSizes =
+    bracketSize === 8 ? [2, 2, 2, 1] : [1, 1];
+  const loserRounds = loserRoundSizes.map((matchCount, roundIndex) => ({
+    id: `loser-round-${roundIndex + 1}`,
+    title:
+      roundIndex === loserRoundSizes.length - 1
+        ? "Loser Final"
+        : `Loser Round ${roundIndex + 1}`,
+    matches: Array.from({ length: matchCount }, (_, matchIndex) => ({
+      id: `loser-round-${roundIndex + 1}-match-${matchIndex + 1}`,
+      topEntry: {
+        seed: `L${roundIndex + 1}-${matchIndex * 2 + 1}`,
+        name: "",
+        status: "pending",
+      },
+      bottomEntry: {
+        seed: `L${roundIndex + 1}-${matchIndex * 2 + 2}`,
+        name: "",
+        status: "pending",
+      },
+    })),
+  }));
+
+  return { winnerRounds, loserRounds };
+};
+
+const buildRoundRobinData = (participants, maxTeams, tournamentId) => {
+  const activeTeams = [...participants].sort(
+    (teamA, teamB) =>
+      hashString(`${tournamentId}:${teamA}`) - hashString(`${tournamentId}:${teamB}`)
+  );
+  const totalSlots = Math.max(4, Number(maxTeams) || 4);
+  const paddedTeams = Array.from({ length: totalSlots }, (_, index) => ({
+    slot: index + 1,
+    name: activeTeams[index] || "",
+  }));
+  const rounds = [];
+
+  for (let roundIndex = 0; roundIndex < Math.max(totalSlots - 1, 1); roundIndex += 1) {
+    const rotated = [...paddedTeams];
+    if (roundIndex > 0) {
+      const anchor = rotated[0];
+      const rotating = rotated.slice(1);
+      const shift = roundIndex % rotating.length;
+      const nextRotating = [
+        ...rotating.slice(rotating.length - shift),
+        ...rotating.slice(0, rotating.length - shift),
+      ];
+      rotated.splice(0, rotated.length, anchor, ...nextRotating);
+    }
+
+    const matches = [];
+    for (let index = 0; index < totalSlots / 2; index += 1) {
+      const leftEntry = rotated[index];
+      const rightEntry = rotated[totalSlots - 1 - index];
+
+      matches.push({
+        id: `round-robin-round-${roundIndex + 1}-match-${index + 1}`,
+        leftSlot: leftEntry.slot,
+        leftTeam: leftEntry.name,
+        rightSlot: rightEntry.slot,
+        rightTeam: rightEntry.name,
+      });
+    }
+
+    rounds.push({
+      id: `round-robin-round-${roundIndex + 1}`,
+      title: `Round ${roundIndex + 1}`,
+      matches,
+    });
+  }
+
+  const standings = paddedTeams.map((entry) => ({
+    rank: entry.slot,
+    team: entry.name || `Open Slot ${entry.slot}`,
+    wins: 0,
+    losses: 0,
+  }));
+
+  return { rounds, standings };
+};
 
 // This page has a lot going on, so helper functions keep the JSX from getting too messy.
 export default function Tournaments({ user }) {
   const defaultGame = "Valorant";
+  const teamSizeOptions = [4, 5, 6, 7, 8];
 
   // Dropdown options for tournament format.
   const formatOptions = [
@@ -110,7 +338,8 @@ export default function Tournaments({ user }) {
 
   const [tournaments, setTournaments] = useState([]);
   const [name, setName] = useState("");
-  const [teams, setTeams] = useState("");
+  const [minTeams, setMinTeams] = useState("4");
+  const [maxTeams, setMaxTeams] = useState("8");
   const [prizePool, setPrizePool] = useState("");
   const [organizer, setOrganizer] = useState("");
   const [startDateTime, setStartDateTime] = useState("");
@@ -123,11 +352,7 @@ export default function Tournaments({ user }) {
   );
   const [selectedTournament, setSelectedTournament] = useState(null);
   const [activeTab, setActiveTab] = useState("overview");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [gameFilter, setGameFilter] = useState("all");
   const [dateFilter, setDateFilter] = useState("");
-  const [sortBy, setSortBy] = useState("date-desc");
   const [currentPage, setCurrentPage] = useState(1);
   const [formErrors, setFormErrors] = useState({});
   const [teamProfile, setTeamProfile] = useState(null);
@@ -146,7 +371,8 @@ export default function Tournaments({ user }) {
   const [editStatus, setEditStatus] = useState("upcoming");
   const [editRules, setEditRules] = useState("");
   const [tournamentMetaOverrides, setTournamentMetaOverrides] = useState({});
-  const [tournamentRegistrationOverrides, setTournamentRegistrationOverrides] = useState({});
+  const [activeSwissRound, setActiveSwissRound] = useState(0);
+  const [activeRoundRobinRound, setActiveRoundRobinRound] = useState(0);
 
   const pageSize = 6;
 
@@ -174,15 +400,15 @@ export default function Tournaments({ user }) {
   const normalizeTournament = (tournament, metaOverrides = tournamentMetaOverrides) => {
     const normalizedId = String(tournament.id ?? tournament.tournament_id ?? "");
     const metaOverride = metaOverrides[normalizedId] || {};
-    const registrationOverride = tournamentRegistrationOverrides[normalizedId] || [];
-    const backendParticipants = Array.isArray(tournament.participants)
-      ? tournament.participants
+    const participants = Array.isArray(tournament.participants)
+      ? [...new Set(tournament.participants.filter(Boolean))]
       : [];
-    const participants = [...new Set([...backendParticipants, ...registrationOverride])];
 
     return {
       ...tournament,
       id: tournament.id ?? tournament.tournament_id,
+      minTeams:
+        tournament.minTeams ?? tournament.min_teams ?? metaOverride.minTeams ?? 4,
       teams: tournament.teams ?? tournament.team_limit ?? metaOverride.teams ?? 0,
       prizePool:
         tournament.prizePool ?? tournament.prize_pool ?? metaOverride.prizePool ?? "",
@@ -207,21 +433,39 @@ export default function Tournaments({ user }) {
     };
   };
 
+  const buildStandings = (participants, existingStandings = []) => {
+    if (Array.isArray(existingStandings) && existingStandings.length) {
+      return existingStandings;
+    }
+
+    return participants
+      .slice(0, Math.min(4, participants.length))
+      .map((team, index) => ({
+        rank: index + 1,
+        team,
+        record: "0-0",
+      }));
+  };
+
   // Validates the create-tournament form before we try to submit it.
   const validateTournamentForm = () => {
     const errors = {};
     const trimmedName = name.trim();
     const trimmedRules = rules.trim();
-    const teamCount = Number(teams);
+    const parsedMinTeams = Number(minTeams);
+    const parsedMaxTeams = Number(maxTeams);
     const prize = Number(prizePool);
 
     if (!trimmedName) {
       errors.name = "Tournament name is required.";
     }
-    if (!teams) {
-      errors.teams = "Number of teams is required.";
-    } else if (!Number.isInteger(teamCount) || teamCount < 2) {
-      errors.teams = "Team count must be a whole number of at least 2.";
+    if (!Number.isInteger(parsedMinTeams) || parsedMinTeams < 4 || parsedMinTeams > 8) {
+      errors.minTeams = "Minimum teams must be between 4 and 8.";
+    }
+    if (!Number.isInteger(parsedMaxTeams) || parsedMaxTeams < 4 || parsedMaxTeams > 8) {
+      errors.maxTeams = "Maximum teams must be between 4 and 8.";
+    } else if (parsedMaxTeams < parsedMinTeams) {
+      errors.maxTeams = "Maximum teams cannot be less than minimum teams.";
     }
     if (prizePool && (!Number.isFinite(prize) || prize < 0)) {
       errors.prizePool = "Prize pool must be a valid number 0 or greater.";
@@ -267,23 +511,8 @@ export default function Tournaments({ user }) {
     return nextOverrides[key];
   };
 
-  const saveTournamentRegistrationOverride = (tournamentId, participants) => {
-    const key = String(tournamentId);
-    const currentOverrides = readTournamentRegistrationOverrides();
-    const nextOverrides = {
-      ...currentOverrides,
-      [key]: [...new Set((participants || []).filter(Boolean))],
-    };
-
-    setTournamentRegistrationOverrides(nextOverrides);
-    writeTournamentRegistrationOverrides(nextOverrides);
-    return nextOverrides[key];
-  };
-
   const canManageTournament = (tournament) =>
     Boolean(tournament && user && managedTournamentIds.includes(String(tournament.id)));
-
-  const canAttemptManageTournament = (tournament) => Boolean(tournament && user);
 
   const beginEditingTournament = (tournament) => {
     if (!tournament) return;
@@ -301,6 +530,27 @@ export default function Tournaments({ user }) {
     setIsEditingTournament(false);
   };
 
+  const fetchTournamentParticipants = async (tournamentId) => {
+    const result = await requestBackendWithFallback(
+      [`/tournament/${tournamentId}/teams`],
+      {
+        requireAuth: true,
+        fallbackError: "Could not load tournament participants.",
+        allowNotFound: true,
+      }
+    );
+
+    if (result.error || result.status === 404) {
+      return [];
+    }
+
+    return Array.isArray(result.data?.teams)
+      ? result.data.teams
+          .map((team) => team?.name || "")
+          .filter(Boolean)
+      : [];
+  };
+
   // Loads tournament data from the backend.
   const fetchTournaments = async () => {
     if (!backendUrl) {
@@ -311,8 +561,6 @@ export default function Tournaments({ user }) {
     setApiError("");
     const currentMetaOverrides = readTournamentMetaOverrides();
     setTournamentMetaOverrides(currentMetaOverrides);
-    const currentRegistrationOverrides = readTournamentRegistrationOverrides();
-    setTournamentRegistrationOverrides(currentRegistrationOverrides);
     const result = await requestBackendWithFallback(
       ["/tournament"],
       {
@@ -327,22 +575,30 @@ export default function Tournaments({ user }) {
       return;
     }
 
-    const normalizedTournaments = Array.isArray(result.data?.tournaments)
-      ? result.data.tournaments.map((tournament) =>
-          normalizeTournament(
-            {
+    const tournamentsWithParticipants = Array.isArray(result.data?.tournaments)
+      ? await Promise.all(
+          result.data.tournaments.map(async (tournament) => {
+            const participants = await fetchTournamentParticipants(
+              tournament.id ?? tournament.tournament_id
+            );
+
+            return {
               ...tournament,
-              participants: [
-                ...new Set([
-                  ...(Array.isArray(tournament.participants) ? tournament.participants : []),
-                  ...(currentRegistrationOverrides[String(tournament.id ?? tournament.tournament_id)] || []),
-                ]),
-              ],
-            },
-            currentMetaOverrides
-          )
+              participants,
+            };
+          })
         )
       : [];
+
+    const normalizedTournaments = tournamentsWithParticipants.map((tournament) =>
+      normalizeTournament(
+        {
+          ...tournament,
+          standings: buildStandings(tournament.participants, tournament.standings),
+        },
+        currentMetaOverrides
+      )
+    );
 
     setTournaments(
       normalizedTournaments
@@ -390,6 +646,8 @@ export default function Tournaments({ user }) {
             end_date: endDateTime,
             game,
             format,
+            min_teams: Number(minTeams),
+            team_limit: Number(maxTeams),
             ...(prizePool ? { prize_pool: Number(prizePool) } : {}),
           },
         }
@@ -403,7 +661,8 @@ export default function Tournaments({ user }) {
       const payload = response.data;
       if (payload?.tournament) {
         saveTournamentMetaOverride(payload.tournament.tournament_id ?? payload.tournament.id, {
-          teams: Number(teams) || 0,
+          minTeams: Number(minTeams) || 4,
+          teams: Number(maxTeams) || 8,
           prizePool: prizePool ? Number(prizePool) : "",
           organizer: organizer.trim() || "You",
           status,
@@ -413,13 +672,16 @@ export default function Tournaments({ user }) {
         });
         const createdTournament = normalizeTournament({
           ...payload.tournament,
-          teams: Number(teams) || payload.tournament.teams || payload.tournament.team_limit || 0,
+          minTeams:
+            Number(minTeams) || payload.tournament.minTeams || payload.tournament.min_teams || 4,
+          teams: Number(maxTeams) || payload.tournament.teams || payload.tournament.team_limit || 0,
           prizePool: prizePool ? Number(prizePool) : payload.tournament.prizePool ?? payload.tournament.prize_pool ?? "",
           organizer: organizer.trim() || "You",
           status,
           game,
           format,
           rules: rules.trim(),
+          participants: [],
         });
         const nextManagedIds = [...new Set([...managedTournamentIds, String(createdTournament.id)])];
 
@@ -435,7 +697,8 @@ export default function Tournaments({ user }) {
     }
 
     setName("");
-    setTeams("");
+    setMinTeams("4");
+    setMaxTeams("8");
     setPrizePool("");
     setOrganizer("");
     setStartDateTime("");
@@ -618,19 +881,11 @@ export default function Tournaments({ user }) {
       return;
     }
 
-    const updatedParticipants = [...new Set([...participants, registrationIdentity])];
-    saveTournamentRegistrationOverride(selectedTournament.id, updatedParticipants);
-
+    const updatedParticipants = await fetchTournamentParticipants(selectedTournament.id);
     const updatedTournament = {
       ...selectedTournament,
       participants: updatedParticipants,
-      standings: selectedTournament.standings.length
-        ? selectedTournament.standings
-        : updatedParticipants.slice(0, Math.min(4, updatedParticipants.length)).map((team, index) => ({
-            rank: index + 1,
-            team,
-            record: "0-0",
-          })),
+      standings: buildStandings(updatedParticipants, selectedTournament.standings),
     };
 
     updateSelectedTournament(updatedTournament);
@@ -663,11 +918,7 @@ export default function Tournaments({ user }) {
       return;
     }
 
-    const updatedParticipants = participants.filter(
-      (participant) => participant !== registrationIdentity && participant !== user
-    );
-    saveTournamentRegistrationOverride(selectedTournament.id, updatedParticipants);
-
+    const updatedParticipants = await fetchTournamentParticipants(selectedTournament.id);
     const updatedTournament = {
       ...selectedTournament,
       participants: updatedParticipants,
@@ -679,65 +930,77 @@ export default function Tournaments({ user }) {
     updateSelectedTournament(updatedTournament);
   };
 
-  // Memo keeps the filter/sort work from re-running unless the inputs actually change.
-  const filteredAndSortedTournaments = useMemo(() => {
-    const normalizedSearch = searchTerm.trim().toLowerCase();
+  const filteredTournaments = useMemo(() => {
+    const filtered = tournaments.filter(
+      (tournament) =>
+        !dateFilter || tournament.startDateTime?.slice(0, 10) === dateFilter
+    );
 
-    const filtered = tournaments.filter((tournament) => {
-      const matchesSearch =
-        !normalizedSearch ||
-        tournament.name.toLowerCase().includes(normalizedSearch) ||
-        tournament.organizer.toLowerCase().includes(normalizedSearch) ||
-        tournament.game.toLowerCase().includes(normalizedSearch);
-
-      const matchesStatus =
-        statusFilter === "all" || tournament.status === statusFilter;
-
-      const matchesGame = gameFilter === "all" || tournament.game === gameFilter;
-
-      const matchesDate =
-        !dateFilter || tournament.startDateTime?.slice(0, 10) === dateFilter;
-
-      return matchesSearch && matchesStatus && matchesGame && matchesDate;
-    });
-
-    filtered.sort((a, b) => {
-      if (sortBy === "date-asc") {
-        return new Date(a.startDateTime) - new Date(b.startDateTime);
-      }
-      if (sortBy === "date-desc") {
-        return new Date(b.startDateTime) - new Date(a.startDateTime);
-      }
-      if (sortBy === "name-asc") {
-        return a.name.localeCompare(b.name);
-      }
-      if (sortBy === "prize-desc") {
-        return Number(b.prizePool) - Number(a.prizePool);
-      }
-      if (sortBy === "prize-asc") {
-        return Number(a.prizePool) - Number(b.prizePool);
-      }
-      return 0;
-    });
+    filtered.sort(
+      (a, b) => new Date(b.startDateTime) - new Date(a.startDateTime)
+    );
 
     return filtered;
-  }, [tournaments, searchTerm, statusFilter, gameFilter, dateFilter, sortBy]);
+  }, [tournaments, dateFilter]);
 
   const totalPages = Math.max(
     1,
-    Math.ceil(filteredAndSortedTournaments.length / pageSize)
+    Math.ceil(filteredTournaments.length / pageSize)
   );
   const safeCurrentPage = Math.min(currentPage, totalPages);
-  const paginatedTournaments = filteredAndSortedTournaments.slice(
+  const paginatedTournaments = filteredTournaments.slice(
     (safeCurrentPage - 1) * pageSize,
     safeCurrentPage * pageSize
   );
-  const availableGames = [...new Set(tournaments.map((t) => t.game))];
+  const bracketRounds = useMemo(() => {
+    if (!selectedTournament || selectedTournament.format !== "single elim") {
+      return [];
+    }
+
+    return buildSingleElimRounds(
+      selectedTournament.participants || [],
+      selectedTournament.teams,
+      selectedTournament.id
+    );
+  }, [selectedTournament]);
+  const swissData = useMemo(() => {
+    if (!selectedTournament || selectedTournament.format !== "swiss") {
+      return { rounds: [], leaderboard: [] };
+    }
+
+    return buildSwissData(
+      selectedTournament.participants || [],
+      selectedTournament.teams,
+      selectedTournament.id
+    );
+  }, [selectedTournament]);
+  const doubleElimData = useMemo(() => {
+    if (!selectedTournament || selectedTournament.format !== "double elim") {
+      return { winnerRounds: [], loserRounds: [] };
+    }
+
+    return buildDoubleElimData(
+      selectedTournament.participants || [],
+      selectedTournament.teams,
+      selectedTournament.id
+    );
+  }, [selectedTournament]);
+  const roundRobinData = useMemo(() => {
+    if (!selectedTournament || selectedTournament.format !== "round robin") {
+      return { rounds: [], standings: [] };
+    }
+
+    return buildRoundRobinData(
+      selectedTournament.participants || [],
+      selectedTournament.teams,
+      selectedTournament.id
+    );
+  }, [selectedTournament]);
 
   useEffect(() => {
     // Changing filter controls should reset the list back to page 1.
     setCurrentPage(1);
-  }, [searchTerm, statusFilter, gameFilter, dateFilter, sortBy]);
+  }, [dateFilter]);
 
   useEffect(() => {
     let active = true;
@@ -767,10 +1030,6 @@ export default function Tournaments({ user }) {
 
   useEffect(() => {
     setTournamentMetaOverrides(readTournamentMetaOverrides());
-  }, []);
-
-  useEffect(() => {
-    setTournamentRegistrationOverrides(readTournamentRegistrationOverrides());
   }, []);
 
   useEffect(() => {
@@ -833,6 +1092,8 @@ export default function Tournaments({ user }) {
     setEditFormat(selectedTournament.format || "single elim");
     setEditStatus(selectedTournament.status || "upcoming");
     setEditRules(selectedTournament.rules || "");
+    setActiveSwissRound(0);
+    setActiveRoundRobinRound(0);
   }, [selectedTournament]);
 
   return (
@@ -976,10 +1237,10 @@ export default function Tournaments({ user }) {
               Participants
             </button>
             <button
-              className={activeTab === "standings" ? "active" : ""}
-              onClick={() => setActiveTab("standings")}
+              className={activeTab === "bracket" ? "active" : ""}
+              onClick={() => setActiveTab("bracket")}
             >
-              Bracket/Standings
+              Bracket
             </button>
           </div>
 
@@ -990,7 +1251,7 @@ export default function Tournaments({ user }) {
                   <p><strong>Organizer:</strong> {selectedTournament.organizer}</p>
                   <p><strong>Start:</strong> {formatDateTimeLabel(selectedTournament.startDateTime)}</p>
                   <p><strong>End:</strong> {formatDateTimeLabel(selectedTournament.endDateTime)}</p>
-                  <p><strong>Teams:</strong> {selectedTournament.teams}</p>
+                  <p><strong>Teams:</strong> {selectedTournament.minTeams === selectedTournament.teams ? selectedTournament.teams : `${selectedTournament.minTeams}-${selectedTournament.teams}`}</p>
                   <p><strong>Registered:</strong> {selectedTournament.participants.length}/{selectedTournament.teams}</p>
                   <p><strong>Prize Pool:</strong> {formatPrizePoolLabel(selectedTournament.prizePool)}</p>
                   <p><strong>Game:</strong> {selectedTournament.game}</p>
@@ -1014,6 +1275,30 @@ export default function Tournaments({ user }) {
                 <p>
                   Registered: {selectedTournament.participants.length}/{selectedTournament.teams}
                 </p>
+                <div className="participants-table-wrap">
+                  <table className="standings-table">
+                    <thead>
+                      <tr>
+                        <th>#</th>
+                        <th>Team</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {selectedTournament.participants.length === 0 ? (
+                        <tr>
+                          <td colSpan="2">No participants yet.</td>
+                        </tr>
+                      ) : (
+                        selectedTournament.participants.map((team, index) => (
+                          <tr key={team}>
+                            <td>{index + 1}</td>
+                            <td>{team}</td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
                 {user ? (
                   selectedTournament.participants.includes(getRegistrationIdentity()) ||
                   selectedTournament.participants.includes(user) ? (
@@ -1044,45 +1329,317 @@ export default function Tournaments({ user }) {
                     <a href="/login">Log in</a> to sign up for this tournament.
                   </p>
                 )}
-                <ul className="participants-list">
-                  {selectedTournament.participants.length === 0 && (
-                    <li>No participants yet.</li>
-                  )}
-                  {selectedTournament.participants.map((team) => (
-                    <li key={team}>{team}</li>
-                  ))}
-                </ul>
               </div>
             )}
 
-            {activeTab === "standings" && (
+            {activeTab === "bracket" && (
               <div className="detail-section">
-                <h3>Current Standings</h3>
-                <table className="standings-table">
-                  <thead>
-                    <tr>
-                      <th>Rank</th>
-                      <th>Team</th>
-                      <th>Record</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {selectedTournament.standings.length === 0 && (
-                      <tr>
-                        <td colSpan="3">Standings will appear after teams sign up.</td>
-                      </tr>
-                    )}
-                    {selectedTournament.standings.map((item) => (
-                      <tr key={`${item.rank}-${item.team}`}>
-                        <td>{item.rank}</td>
-                        <td>{item.team}</td>
-                        <td>{item.record}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                <h3>Bracket</h3>
+                {selectedTournament.format === "single elim" ? (
+                  <div className="bracket-view">
+                    <p className="bracket-summary">
+                      Single elimination bracket based on a maximum of{" "}
+                      {selectedTournament.teams} teams.
+                    </p>
+                    <div className="single-elim-bracket">
+                      {bracketRounds.map((round, roundIndex) => (
+                        <div className="bracket-round" key={`round-${roundIndex + 1}`}>
+                          <h4>
+                            {roundIndex === bracketRounds.length - 1
+                              ? "Final"
+                              : `Round ${roundIndex + 1}`}
+                          </h4>
+                          <div className="bracket-match-list">
+                            {round.map((match) => (
+                              <div className="bracket-match" key={match.id}>
+                                <div className="bracket-slot">
+                                  <span className="bracket-seed">
+                                    {match.topEntry.seed}
+                                  </span>
+                                  <span
+                                    className={`bracket-team bracket-team-${match.topEntry.status}`}
+                                  >
+                                    {match.topEntry.name ||
+                                      (match.topEntry.status === "bye"
+                                        ? "Bye"
+                                        : "Open Slot")}
+                                  </span>
+                                </div>
+                                <div className="bracket-slot">
+                                  <span className="bracket-seed">
+                                    {match.bottomEntry.seed}
+                                  </span>
+                                  <span
+                                    className={`bracket-team bracket-team-${match.bottomEntry.status}`}
+                                  >
+                                    {match.bottomEntry.name ||
+                                      (match.bottomEntry.status === "bye"
+                                        ? "Bye"
+                                        : "Open Slot")}
+                                  </span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : selectedTournament.format === "swiss" ? (
+                  <div className="swiss-view">
+                    <div className="swiss-topbar">
+                      <div className="swiss-round-tabs">
+                        {swissData.rounds.map((round, roundIndex) => (
+                          <button
+                            key={round.id}
+                            type="button"
+                            className={activeSwissRound === roundIndex ? "active" : ""}
+                            onClick={() => setActiveSwissRound(roundIndex)}
+                          >
+                            {round.label}
+                          </button>
+                        ))}
+                      </div>
+                      <div className="swiss-leaderboard-label">Leaderboard</div>
+                    </div>
+                    <div className="swiss-layout">
+                      <div className="swiss-round-panel">
+                        <h4>
+                          {swissData.rounds[activeSwissRound]?.title || "Round 1"}
+                        </h4>
+                        <div className="swiss-match-grid">
+                          {(swissData.rounds[activeSwissRound]?.matches || []).map(
+                            (match, matchIndex) => (
+                              <div className="swiss-match-card" key={match.id}>
+                                <div className="swiss-match-header">
+                                  <span>
+                                    {swissData.rounds[activeSwissRound]?.label} - Game{" "}
+                                    {matchIndex + 1}
+                                  </span>
+                                  <span>Set date & time</span>
+                                </div>
+                                <div className="swiss-match-body">
+                                  <div className="swiss-match-team">
+                                    <strong>Team 1</strong>
+                                    <span>{match.leftTeam || "Open Slot"}</span>
+                                  </div>
+                                  <div className="swiss-match-vs">VS</div>
+                                  <div className="swiss-match-team swiss-match-team-right">
+                                    <strong>Team 2</strong>
+                                    <span>{match.rightTeam || "Open Slot"}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            )
+                          )}
+                        </div>
+                      </div>
+                      <div className="swiss-leaderboard">
+                        <h4>Leaderboard</h4>
+                        <table className="standings-table">
+                          <thead>
+                            <tr>
+                              <th>#</th>
+                              <th>Team</th>
+                              <th>W-L</th>
+                              <th>GD</th>
+                              <th>BH</th>
+                              <th>P</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {swissData.leaderboard.length === 0 ? (
+                              <tr>
+                                <td colSpan="6">No teams registered yet.</td>
+                              </tr>
+                            ) : (
+                              swissData.leaderboard.map((entry) => (
+                                <tr key={entry.team}>
+                                  <td>{entry.rank}</td>
+                                  <td>{entry.team}</td>
+                                  <td>
+                                    {entry.wins}-{entry.losses}
+                                  </td>
+                                  <td>
+                                    {entry.gameDiff > 0 ? `+${entry.gameDiff}` : entry.gameDiff}
+                                  </td>
+                                  <td>{entry.buchholz}</td>
+                                  <td>{entry.points}</td>
+                                </tr>
+                              ))
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                ) : selectedTournament.format === "double elim" ? (
+                  <div className="bracket-view">
+                    <p className="bracket-summary">
+                      Double elimination bracket based on a maximum of{" "}
+                      {selectedTournament.teams} teams.
+                    </p>
+                    <div className="double-elim-layout">
+                      <section className="double-elim-section">
+                        <h4>Winner Bracket</h4>
+                        <div className="single-elim-bracket">
+                          {doubleElimData.winnerRounds.map((round) => (
+                            <div className="bracket-round" key={round.id}>
+                              <h4>{round.title}</h4>
+                              <div className="bracket-match-list">
+                                {round.matches.map((match) => (
+                                  <div className="bracket-match" key={match.id}>
+                                    <div className="bracket-slot">
+                                      <span className="bracket-seed">
+                                        {match.topEntry.seed}
+                                      </span>
+                                      <span
+                                        className={`bracket-team bracket-team-${match.topEntry.status}`}
+                                      >
+                                        {match.topEntry.name ||
+                                          (match.topEntry.status === "bye"
+                                            ? "Bye"
+                                            : "Open Slot")}
+                                      </span>
+                                    </div>
+                                    <div className="bracket-slot">
+                                      <span className="bracket-seed">
+                                        {match.bottomEntry.seed}
+                                      </span>
+                                      <span
+                                        className={`bracket-team bracket-team-${match.bottomEntry.status}`}
+                                      >
+                                        {match.bottomEntry.name ||
+                                          (match.bottomEntry.status === "bye"
+                                            ? "Bye"
+                                            : "Open Slot")}
+                                      </span>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </section>
+                      <section className="double-elim-section">
+                        <h4>Loser Bracket</h4>
+                        <div className="single-elim-bracket">
+                          {doubleElimData.loserRounds.map((round) => (
+                            <div className="bracket-round" key={round.id}>
+                              <h4>{round.title}</h4>
+                              <div className="bracket-match-list">
+                                {round.matches.map((match) => (
+                                  <div className="bracket-match" key={match.id}>
+                                    <div className="bracket-slot">
+                                      <span className="bracket-seed">
+                                        {match.topEntry.seed}
+                                      </span>
+                                      <span
+                                        className={`bracket-team bracket-team-${match.topEntry.status}`}
+                                      >
+                                        {match.topEntry.name || "Open Slot"}
+                                      </span>
+                                    </div>
+                                    <div className="bracket-slot">
+                                      <span className="bracket-seed">
+                                        {match.bottomEntry.seed}
+                                      </span>
+                                      <span
+                                        className={`bracket-team bracket-team-${match.bottomEntry.status}`}
+                                      >
+                                        {match.bottomEntry.name || "Open Slot"}
+                                      </span>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </section>
+                    </div>
+                  </div>
+                ) : selectedTournament.format === "round robin" ? (
+                  <div className="round-robin-view">
+                    <div className="swiss-topbar">
+                      <div className="swiss-round-tabs">
+                        {roundRobinData.rounds.map((round, roundIndex) => (
+                          <button
+                            key={round.id}
+                            type="button"
+                            className={activeRoundRobinRound === roundIndex ? "active" : ""}
+                            onClick={() => setActiveRoundRobinRound(roundIndex)}
+                          >
+                            R{roundIndex + 1}
+                          </button>
+                        ))}
+                      </div>
+                      <div className="swiss-leaderboard-label">Standings</div>
+                    </div>
+                    <div className="swiss-layout">
+                      <div className="swiss-round-panel">
+                        <h4>
+                          {roundRobinData.rounds[activeRoundRobinRound]?.title || "Round 1"}
+                        </h4>
+                        <div className="swiss-match-grid">
+                          {(roundRobinData.rounds[activeRoundRobinRound]?.matches || []).map(
+                            (match, matchIndex) => (
+                              <div className="swiss-match-card" key={match.id}>
+                                <div className="swiss-match-header">
+                                  <span>
+                                    R{activeRoundRobinRound + 1} - Match {matchIndex + 1}
+                                  </span>
+                                  <span>Scheduled</span>
+                                </div>
+                                <div className="swiss-match-body">
+                                  <div className="swiss-match-team">
+                                    <strong>Team 1</strong>
+                                    <span>{match.leftTeam || `Open Slot ${match.leftSlot}`}</span>
+                                  </div>
+                                  <div className="swiss-match-vs">VS</div>
+                                  <div className="swiss-match-team swiss-match-team-right">
+                                    <strong>Team 2</strong>
+                                    <span>{match.rightTeam || `Open Slot ${match.rightSlot}`}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            )
+                          )}
+                        </div>
+                      </div>
+                      <div className="swiss-leaderboard round-robin-standings-panel">
+                        <h4>{selectedTournament.teams} Team Round Robin</h4>
+                        <table className="standings-table">
+                          <thead>
+                            <tr>
+                              <th>Team</th>
+                              <th>Wins</th>
+                              <th>Losses</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {roundRobinData.standings.map((entry) => (
+                              <tr key={`rr-standing-${entry.rank}`}>
+                                <td>{entry.team}</td>
+                                <td>{entry.wins}</td>
+                                <td>{entry.losses}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <p>
+                    Bracket visual for {formatTournamentFormatLabel(selectedTournament.format)}{" "}
+                    has not been added yet.
+                  </p>
+                )}
               </div>
             )}
+
           </div>
         </div>
       ) : (
@@ -1091,10 +1648,11 @@ export default function Tournaments({ user }) {
             <div className="tournament-input">
               {/* Create form only shows for logged-in users. */}
               <div className="input-group">
+                <label htmlFor="tournament-name">Tournament Name</label>
                 <input
+                  id="tournament-name"
                   className={formErrors.name ? "field-error" : ""}
                   type="text"
-                  placeholder="Tournament Name"
                   value={name}
                   onChange={(e) => {
                     setName(e.target.value);
@@ -1105,24 +1663,58 @@ export default function Tournaments({ user }) {
               </div>
 
               <div className="input-group">
-                <input
-                  className={formErrors.teams ? "field-error" : ""}
-                  type="number"
-                  placeholder="Number of Teams"
-                  value={teams}
+                <label htmlFor="tournament-min-teams">Minimum Teams</label>
+                <select
+                  id="tournament-min-teams"
+                  className={formErrors.minTeams ? "field-error" : ""}
+                  value={minTeams}
                   onChange={(e) => {
-                    setTeams(e.target.value);
-                    clearFieldError("teams");
+                    const nextMinTeams = e.target.value;
+                    setMinTeams(nextMinTeams);
+                    clearFieldError("minTeams");
+                    if (Number(maxTeams) < Number(nextMinTeams)) {
+                      setMaxTeams(nextMinTeams);
+                      clearFieldError("maxTeams");
+                    }
                   }}
-                />
-                {formErrors.teams && <p className="input-error-text">{formErrors.teams}</p>}
+                >
+                  {teamSizeOptions.map((option) => (
+                    <option key={`min-${option}`} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+                {formErrors.minTeams && <p className="input-error-text">{formErrors.minTeams}</p>}
               </div>
 
               <div className="input-group">
+                <label htmlFor="tournament-max-teams">Maximum Teams</label>
+                <select
+                  id="tournament-max-teams"
+                  className={formErrors.maxTeams ? "field-error" : ""}
+                  value={maxTeams}
+                  onChange={(e) => {
+                    setMaxTeams(e.target.value);
+                    clearFieldError("maxTeams");
+                  }}
+                >
+                  {teamSizeOptions
+                    .filter((option) => option >= Number(minTeams))
+                    .map((option) => (
+                      <option key={`max-${option}`} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                </select>
+                {formErrors.maxTeams && <p className="input-error-text">{formErrors.maxTeams}</p>}
+              </div>
+
+              <div className="input-group">
+                <label htmlFor="tournament-prize-pool">Prize Pool ($)</label>
                 <input
+                  id="tournament-prize-pool"
                   className={formErrors.prizePool ? "field-error" : ""}
                   type="number"
-                  placeholder="Prize Pool ($)"
                   value={prizePool}
                   onChange={(e) => {
                     setPrizePool(e.target.value);
@@ -1135,9 +1727,10 @@ export default function Tournaments({ user }) {
               </div>
 
               <div className="input-group">
+                <label htmlFor="tournament-organizer">Organizer</label>
                 <input
+                  id="tournament-organizer"
                   type="text"
-                  placeholder="Organizer"
                   value={organizer}
                   onChange={(e) => {
                     setOrganizer(e.target.value);
@@ -1180,7 +1773,12 @@ export default function Tournaments({ user }) {
               </div>
 
               <div className="input-group">
-                <select value={format} onChange={(e) => setFormat(e.target.value)}>
+                <label htmlFor="tournament-format">Format</label>
+                <select
+                  id="tournament-format"
+                  value={format}
+                  onChange={(e) => setFormat(e.target.value)}
+                >
                   {formatOptions.map((option) => (
                     <option key={option.value} value={option.value}>
                       {option.label}
@@ -1190,10 +1788,11 @@ export default function Tournaments({ user }) {
               </div>
 
               <div className="input-group">
+                <label htmlFor="tournament-rules">Rules Summary</label>
                 <input
+                  id="tournament-rules"
                   className={formErrors.rules ? "field-error" : ""}
                   type="text"
-                  placeholder="Rules summary"
                   value={rules}
                   onChange={(e) => {
                     setRules(e.target.value);
@@ -1215,50 +1814,19 @@ export default function Tournaments({ user }) {
           )}
 
           <div className="listing-toolbar">
-            {/* These controls let users search and narrow down the tournament list. */}
-            <input
-              type="text"
-              placeholder="Search tournaments, organizer, game..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-            >
-              <option value="all">All Statuses</option>
-              <option value="upcoming">Upcoming</option>
-              <option value="live">Live</option>
-              <option value="completed">Completed</option>
-            </select>
-
-            <select value={gameFilter} onChange={(e) => setGameFilter(e.target.value)}>
-              <option value="all">All Games</option>
-              {availableGames.map((item) => (
-                <option key={item} value={item}>
-                  {item}
-                </option>
-              ))}
-            </select>
-
-            <input
-              type="date"
-              value={dateFilter}
-              onChange={(e) => setDateFilter(e.target.value)}
-            />
-
-            <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
-              <option value="date-desc">Date: Newest</option>
-              <option value="date-asc">Date: Oldest</option>
-              <option value="name-asc">Name: A-Z</option>
-              <option value="prize-desc">Prize: High to Low</option>
-              <option value="prize-asc">Prize: Low to High</option>
-            </select>
+            {/* Only the date filter remains for narrowing down the tournament list. */}
+            <label className="listing-filter-button">
+              <span>Filter</span>
+              <input
+                type="date"
+                value={dateFilter}
+                onChange={(e) => setDateFilter(e.target.value)}
+              />
+            </label>
           </div>
 
           <div className="tournament-grid">
-            {filteredAndSortedTournaments.length === 0 && (
+            {filteredTournaments.length === 0 && (
               <p>No tournaments match your filters.</p>
             )}
 

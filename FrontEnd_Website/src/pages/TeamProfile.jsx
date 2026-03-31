@@ -15,6 +15,7 @@ import "./team-profile.css";
 // This page has a few different forms, so there is a decent amount of state to track.
 export default function TeamProfile({ user, onProfileUpdated }) {
   const [teamName, setTeamName] = useState("");
+  const [teamTricode, setTeamTricode] = useState("");
   const [teamProfile, setTeamProfile] = useState(null);
   const [joinPreviewCode, setJoinPreviewCode] = useState("");
   const [joinPreview, setJoinPreview] = useState(null);
@@ -50,6 +51,7 @@ export default function TeamProfile({ user, onProfileUpdated }) {
       if (cachedTeam) {
         setTeamProfile(cachedTeam);
         setTeamName(cachedTeam.teamName || "");
+        setTeamTricode(cachedTeam.tricode || "");
       }
 
       setIsLoading(true);
@@ -63,6 +65,7 @@ export default function TeamProfile({ user, onProfileUpdated }) {
       }
       setTeamProfile(loadedProfile);
       setTeamName(loadedProfile?.teamName || "");
+      setTeamTricode(loadedProfile?.tricode || "");
       setIsLoading(false);
     };
 
@@ -261,10 +264,15 @@ export default function TeamProfile({ user, onProfileUpdated }) {
       setError("Team name is required.");
       return;
     }
+    if (teamTricode.trim().length < 2 || teamTricode.trim().length > 4) {
+      setError("Team tricode must be 2 to 4 characters.");
+      return;
+    }
 
     setIsSaving(true);
     const { teamProfile: createdTeam, error: createError } = await createTeamForCurrentUser({
       teamName,
+      tricode: teamTricode,
       userIdentifier: user,
     });
     setIsSaving(false);
@@ -275,6 +283,7 @@ export default function TeamProfile({ user, onProfileUpdated }) {
         if (cachedTeam) {
           setTeamProfile(cachedTeam);
           setTeamName(cachedTeam.teamName || "");
+          setTeamTricode(cachedTeam.tricode || "");
           setSuccess("Loaded your existing team profile.");
           return;
         }
@@ -283,6 +292,7 @@ export default function TeamProfile({ user, onProfileUpdated }) {
         if (existingTeam) {
           setTeamProfile(existingTeam);
           setTeamName(existingTeam.teamName || "");
+          setTeamTricode(existingTeam.tricode || "");
           setSuccess("Loaded your existing team profile.");
           return;
         }
@@ -297,6 +307,7 @@ export default function TeamProfile({ user, onProfileUpdated }) {
 
     setTeamProfile(createdTeam);
     setTeamName(createdTeam?.teamName || "");
+    setTeamTricode(createdTeam?.tricode || "");
     setSuccess("Team profile created.");
   };
 
@@ -310,12 +321,17 @@ export default function TeamProfile({ user, onProfileUpdated }) {
       setError("Team name is required.");
       return;
     }
+    if (teamTricode.trim().length < 2 || teamTricode.trim().length > 4) {
+      setError("Team tricode must be 2 to 4 characters.");
+      return;
+    }
 
     setIsSaving(true);
     const { teamProfile: updatedTeam, error: updateError } =
       await updateTeamForCurrentUser({
         teamId: teamProfile?.teamId,
         teamName,
+        tricode: teamTricode,
         userIdentifier: user,
       });
     setIsSaving(false);
@@ -327,6 +343,7 @@ export default function TeamProfile({ user, onProfileUpdated }) {
 
     setTeamProfile(updatedTeam);
     setTeamName(updatedTeam?.teamName || "");
+    setTeamTricode(updatedTeam?.tricode || "");
     setSuccess("Team profile updated.");
   };
 
@@ -361,6 +378,7 @@ export default function TeamProfile({ user, onProfileUpdated }) {
 
     setTeamProfile(null);
     setTeamName("");
+    setTeamTricode("");
     setIsDisbandDialogOpen(false);
     setSuccess("Team disbanded.");
   };
@@ -399,6 +417,7 @@ export default function TeamProfile({ user, onProfileUpdated }) {
       if (joinedTeam) {
         setTeamProfile(joinedTeam);
         setTeamName(joinedTeam.teamName || "");
+        setTeamTricode(joinedTeam.tricode || "");
         setJoinPreviewCode("");
         setSuccess(`Joined ${joinedTeam.teamName}.`);
         return;
@@ -480,6 +499,9 @@ export default function TeamProfile({ user, onProfileUpdated }) {
             <strong>Role:</strong> {teamProfile.role}
           </p>
           <p>
+            <strong>Tricode:</strong> {teamProfile.tricode || "Not set"}
+          </p>
+          <p>
             <strong>Join Code:</strong> {teamProfile.joinCode || "Not set"}
           </p>
           <p className="team-profile-ready">
@@ -491,6 +513,17 @@ export default function TeamProfile({ user, onProfileUpdated }) {
               placeholder="Team Name"
               value={teamName}
               onChange={(event) => setTeamName(event.target.value)}
+            />
+            <input
+              type="text"
+              placeholder="Tricode"
+              value={teamTricode}
+              maxLength={4}
+              onChange={(event) =>
+                setTeamTricode(
+                  event.target.value.replace(/[^a-zA-Z]/g, "").toUpperCase().slice(0, 4)
+                )
+              }
             />
             <button type="submit" disabled={isSaving}>
               {isSaving ? "Saving Team..." : "Update Team"}
@@ -525,6 +558,17 @@ export default function TeamProfile({ user, onProfileUpdated }) {
               placeholder="Team Name"
               value={teamName}
               onChange={(event) => setTeamName(event.target.value)}
+            />
+            <input
+              type="text"
+              placeholder="Tricode"
+              value={teamTricode}
+              maxLength={4}
+              onChange={(event) =>
+                setTeamTricode(
+                  event.target.value.replace(/[^a-zA-Z]/g, "").toUpperCase().slice(0, 4)
+                )
+              }
             />
             {error && <p className="team-profile-error">{error}</p>}
             {success && <p className="team-profile-success">{success}</p>}

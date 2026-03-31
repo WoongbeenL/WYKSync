@@ -133,29 +133,44 @@
 
 /* Filter/search toolbar above the card grid. */
 .listing-toolbar {
-  background: #111;
-  border: 1px solid #222;
-  border-radius: 10px;
-  padding: 1rem;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
   margin-bottom: 1.5rem;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-  gap: 0.8rem;
+  display: flex;
+  justify-content: flex-end;
+  grid-template-columns: minmax(180px, 220px);
+  gap: 0.6rem;
 }
 
-.listing-toolbar input,
-.listing-toolbar select {
-  background: #1c1c1c;
+.listing-filter-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  background: #1e1e1e;
   border: 1px solid #333;
-  color: #fff;
-  border-radius: 6px;
-  padding: 0.65rem;
+  color: #f1f1f1;
+  border-radius: 8px;
+  padding: 0.6rem 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
 }
 
-.listing-toolbar input:focus,
-.listing-toolbar select:focus {
-  outline: none;
+.listing-filter-button:hover {
   border-color: #ff4655;
+}
+
+.listing-filter-button input {
+  background: transparent;
+  border: none;
+  color: #fff;
+  padding: 0;
+  min-width: 0;
+}
+
+.listing-filter-button input:focus {
+  outline: none;
 }
 
 /* Individual tournament card styling. */
@@ -349,6 +364,247 @@
   margin-bottom: 0.7rem;
 }
 
+.bracket-view {
+  display: grid;
+  gap: 1rem;
+}
+
+.bracket-summary {
+  margin: 0;
+  color: #d2d2d2;
+}
+
+.single-elim-bracket {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+  align-items: start;
+}
+
+.swiss-view {
+  display: grid;
+  gap: 1rem;
+}
+
+.swiss-topbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.swiss-round-tabs {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.swiss-round-tabs button {
+  background: #1e1e1e;
+  border: 1px solid #333;
+  color: #f1f1f1;
+  border-radius: 6px;
+  padding: 0.5rem 0.85rem;
+  cursor: pointer;
+}
+
+.swiss-round-tabs button.active {
+  background: #ff4655;
+  border-color: #ff4655;
+}
+
+.swiss-leaderboard-label {
+  color: #d9d9d9;
+  font-weight: 700;
+}
+
+.swiss-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.swiss-round-panel,
+.swiss-leaderboard {
+  background: #111;
+  border: 1px solid #262626;
+  border-radius: 10px;
+  padding: 1rem;
+}
+
+.swiss-round-panel h4,
+.swiss-leaderboard h4 {
+  margin: 0 0 0.85rem;
+  color: #ffb3ba;
+}
+
+.swiss-match-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.swiss-match-card {
+  background: #dce3ee;
+  border: 1px solid #bcc5d1;
+  border-radius: 10px;
+  overflow: hidden;
+  color: #22344d;
+}
+
+.swiss-match-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.7rem 0.85rem;
+  background: #c9d2df;
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.swiss-match-body {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: stretch;
+  min-height: 150px;
+}
+
+.swiss-match-team {
+  padding: 1rem;
+  display: grid;
+  align-content: center;
+  gap: 0.45rem;
+}
+
+.swiss-match-team strong {
+  color: #55677f;
+  font-size: 0.88rem;
+}
+
+.swiss-match-team span {
+  font-size: 1.25rem;
+  font-weight: 600;
+  word-break: break-word;
+}
+
+.swiss-match-team-right {
+  text-align: right;
+}
+
+.swiss-match-vs {
+  display: grid;
+  place-items: center;
+  min-width: 72px;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #5f6f85;
+  background: linear-gradient(180deg, transparent 0%, transparent 45%, #ffffff 45%, #ffffff 55%, transparent 55%, transparent 100%);
+}
+
+.double-elim-layout {
+  display: grid;
+  gap: 1.2rem;
+}
+
+.double-elim-section {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.double-elim-section > h4 {
+  margin: 0;
+  color: #ffb3ba;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.82rem;
+}
+
+.round-robin-view {
+  display: grid;
+  gap: 1rem;
+}
+
+.round-robin-title {
+  margin: 0;
+  color: #ffb3ba;
+}
+
+.round-robin-view .swiss-layout {
+  grid-template-columns: minmax(0, 1.5fr) minmax(380px, 1.1fr);
+}
+
+.round-robin-standings-panel {
+  min-width: 380px;
+}
+
+.bracket-round {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.bracket-round h4 {
+  margin: 0;
+  color: #ffb3ba;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.82rem;
+}
+
+.bracket-match-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.bracket-match {
+  background: #141414;
+  border: 1px solid #2c2c2c;
+  border-radius: 10px;
+  padding: 0.8rem;
+  display: grid;
+  gap: 0.55rem;
+}
+
+.bracket-slot {
+  display: grid;
+  grid-template-columns: 58px 1fr;
+  gap: 0.55rem;
+  align-items: center;
+}
+
+.bracket-seed {
+  color: #8f8f8f;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.bracket-team {
+  display: inline-flex;
+  align-items: center;
+  min-height: 42px;
+  padding: 0.55rem 0.75rem;
+  border-radius: 8px;
+  font-weight: 600;
+}
+
+.bracket-team-team {
+  background: #c7dbf7;
+  color: #17304d;
+}
+
+.bracket-team-open,
+.bracket-team-pending {
+  background: #232323;
+  color: #bfbfbf;
+  border: 1px dashed #4a4a4a;
+}
+
+.bracket-team-bye {
+  background: #2a2234;
+  color: #f0d7ff;
+}
+
 /* Buttons used for joining and leaving tournaments. */
 .join-btn,
 .leave-btn {
@@ -420,6 +676,16 @@
   color: #ff9da7;
 }
 
+.participants-table-wrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 0.9rem;
+}
+
+.participants-table-wrap .standings-table {
+  width: min(100%, 520px);
+}
+
 .participants-list {
   margin: 0;
   padding-left: 1.1rem;
@@ -467,4 +733,14 @@
 .pagination button:disabled {
   background: #555;
   cursor: not-allowed;
+}
+
+@media (max-width: 700px) {
+  .single-elim-bracket {
+    grid-template-columns: 1fr;
+  }
+
+  .swiss-layout {
+    grid-template-columns: 1fr;
+  }
 }

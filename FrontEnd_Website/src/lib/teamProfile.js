@@ -50,6 +50,7 @@ const normalizeTeamProfile = (payload) => {
   return {
     teamId: team.teamId || team.team_id || team.id || null,
     teamName,
+    tricode: String(team.tricode || team.tri_code || "").trim().toUpperCase(),
     joinCode: String(team.joinCode || team.join_code || "").trim(),
     role: String(payload?.role || team.role || "captain"),
     members: Array.isArray(team.members) ? team.members : [],
@@ -126,14 +127,18 @@ export const fetchCurrentUserTeamProfile = async (userIdentifier) => {
 };
 
 // Creates a new team for the current user.
-export const createTeamForCurrentUser = async ({ teamName, userIdentifier }) => {
+export const createTeamForCurrentUser = async ({ teamName, tricode, userIdentifier }) => {
   if (!userIdentifier) {
     return { teamProfile: null, error: "You must be logged in." };
   }
 
   const normalizedName = String(teamName || "").trim();
+  const normalizedTricode = String(tricode || "").trim().toUpperCase();
   if (!normalizedName) {
     return { teamProfile: null, error: "Team name is required." };
+  }
+  if (normalizedTricode.length < 2 || normalizedTricode.length > 4) {
+    return { teamProfile: null, error: "Team tricode must be 2 to 4 characters." };
   }
 
   const result = await requestBackend("/team", {
@@ -142,6 +147,7 @@ export const createTeamForCurrentUser = async ({ teamName, userIdentifier }) => 
     fallbackError: "Could not create team.",
     body: {
       name: normalizedName,
+      tricode: normalizedTricode,
     },
   });
 
@@ -168,6 +174,7 @@ export const createTeamForCurrentUser = async ({ teamName, userIdentifier }) => 
 export const updateTeamForCurrentUser = async ({
   teamId,
   teamName,
+  tricode,
   userIdentifier,
 }) => {
   if (!userIdentifier) {
@@ -178,8 +185,12 @@ export const updateTeamForCurrentUser = async ({
   }
 
   const normalizedName = String(teamName || "").trim();
+  const normalizedTricode = String(tricode || "").trim().toUpperCase();
   if (!normalizedName) {
     return { teamProfile: null, error: "Team name is required." };
+  }
+  if (normalizedTricode.length < 2 || normalizedTricode.length > 4) {
+    return { teamProfile: null, error: "Team tricode must be 2 to 4 characters." };
   }
 
   const result = await requestBackend(`/team/${teamId}`, {
@@ -188,6 +199,7 @@ export const updateTeamForCurrentUser = async ({
     fallbackError: "Could not update team.",
     body: {
       name: normalizedName,
+      tricode: normalizedTricode,
     },
   });
 
