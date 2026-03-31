@@ -109,10 +109,22 @@ router.get("/", async (req, res) => {
 router.post("/", async (req, res) => {
   try {
     const userId = req.user.id;
-    const { name } = req.body;
+    const { name, tricode } = req.body;
 
     if (!name || !name.trim()) {
       return res.status(400).json({ error: "Team name is required" });
+    }
+
+    if (!tricode || !tricode.trim()) {
+      return res.status(400).json({ error: "Tricode is required" });
+    }
+
+    const trimmedTricode = tricode.trim().toUpperCase();
+
+    if (trimmedTricode.length > 5) {
+      return res
+        .status(400)
+        .json({ error: "Tricode must be 5 characters or fewer" });
     }
 
     // Check if the user is onboarded
@@ -145,7 +157,7 @@ router.post("/", async (req, res) => {
 
     const { data: team, error: teamError } = await supabase
       .from("teams")
-      .insert({ name: name.trim(), join_code })
+      .insert({ name: name.trim(), tricode: trimmedTricode, join_code })
       .select()
       .single();
 
@@ -251,6 +263,7 @@ router.post("/join", async (req, res) => {
                   team_id: Int. Team ID.
                   name: String. (optional) New team name.
                   logo_url: String. (optional) New logo URL.
+                  tricode: String. (optional) New tricode.
    Return       : Json response
                   team: Object. Returns the updated team.
    Purpose      : Updates a team's details. Coach only, enforced by RLS.
@@ -259,22 +272,37 @@ router.patch("/:team_id", async (req, res) => {
   try {
     const userId = req.user.id;
     const { team_id } = req.params;
-    const { name, logo_url } = req.body;
+    const { name, logo_url, tricode } = req.body;
 
     const isCoach = await isTeamCoach(userId, team_id);
     if (!isCoach) {
       return res.status(403).json({ error: "Forbidden" });
     }
 
-    if (!name && !logo_url) {
+    if (!name && !logo_url && !tricode) {
       return res
         .status(400)
-        .json({ error: "At least one field (name, logo_url) is required" });
+        .json({
+          error: "At least one field (name, logo_url, tricode) is required",
+        });
+    }
+
+    if (tricode !== undefined) {
+      const trimmedTricode = tricode.trim().toUpperCase();
+      if (!trimmedTricode) {
+        return res.status(400).json({ error: "Tricode cannot be empty" });
+      }
+      if (trimmedTricode.length > 5) {
+        return res
+          .status(400)
+          .json({ error: "Tricode must be 5 characters or fewer" });
+      }
     }
 
     const updates = {};
     if (name) updates.name = name.trim();
     if (logo_url) updates.logo_url = logo_url;
+    if (tricode) updates.tricode = tricode.trim().toUpperCase();
 
     const { data: team, error } = await supabase
       .from("teams")
