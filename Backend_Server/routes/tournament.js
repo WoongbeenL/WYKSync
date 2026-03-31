@@ -28,7 +28,7 @@ router.get("/:id/overlay", async (req, res) => {
     // Fetch tournament and its current streaming match
     const { data: tournament, error: tournamentError } = await supabase
       .from("tournaments")
-      .select("tournament_id, name, streaming_match_id")
+      .select("tournament_id, name, stream_match_id")
       .eq("tournament_id", tournament_id)
       .maybeSingle();
 
@@ -36,7 +36,7 @@ router.get("/:id/overlay", async (req, res) => {
       return res.status(404).json({ error: "Tournament not found" });
     }
 
-    if (!tournament.streaming_match_id) {
+    if (!tournament.stream_match_id) {
       return res
         .status(404)
         .json({ error: "No match is currently being streamed" });
@@ -55,7 +55,7 @@ router.get("/:id/overlay", async (req, res) => {
         teams_b:team_id2 ( name )
       `,
       )
-      .eq("match_id", tournament.streaming_match_id)
+      .eq("match_id", tournament.stream_match_id)
       .single();
 
     if (matchError || !match) {
@@ -81,7 +81,7 @@ router.get("/:id/overlay", async (req, res) => {
         maps ( name )
       `,
       )
-      .eq("match_id", tournament.streaming_match_id)
+      .eq("match_id", tournament.stream_match_id)
       .order("action_order", { ascending: true });
 
     if (vetoesError) throw vetoesError;
@@ -239,6 +239,8 @@ router.get("/", async (req, res) => {
    Parameter    : Request object with current user id
                   name: String. Tournament name.
                   description: String. (optional) Tournament description.
+                  team_min_limit: Int. Tournament minimum required team limit.
+                  team_max_limit: Int. Tournament maximum team limit.
                   start_date: Date. Tournament start date.
                   end_date: Date. Tournament end date.
                   format: String. Tournament format.
@@ -250,7 +252,15 @@ router.get("/", async (req, res) => {
 router.post("/", async (req, res) => {
   try {
     const userId = req.user.id;
-    const { name, description, start_date, end_date, format } = req.body;
+    const {
+      name,
+      description,
+      team_min_limit,
+      team_max_limit,
+      start_date,
+      end_date,
+      format,
+    } = req.body;
 
     const onboarded = await checkIsOnboarded(userId);
     if (!onboarded) {
@@ -261,6 +271,21 @@ router.post("/", async (req, res) => {
 
     if (!name || !name.trim()) {
       return res.status(400).json({ error: "Tournament name is required" });
+    }
+    if (!Number.isInteger(team_min_limit) || team_min_limit < 1) {
+      return res
+        .status(400)
+        .json({ error: "team_min_limit must be a positive integer" });
+    }
+    if (!Number.isInteger(team_max_limit) || team_max_limit < 1) {
+      return res
+        .status(400)
+        .json({ error: "team_max_limit must be a positive integer" });
+    }
+    if (team_min_limit > team_max_limit) {
+      return res
+        .status(400)
+        .json({ error: "team_min_limit cannot exceed team_max_limit" });
     }
     if (!start_date) {
       return res.status(400).json({ error: "start_date is required" });
@@ -282,6 +307,8 @@ router.post("/", async (req, res) => {
       .insert({
         name: name.trim(),
         description: description?.trim() || null,
+        team_min_limit,
+        team_max_limit,
         start_date,
         end_date,
         format,
@@ -358,6 +385,8 @@ router.get("/:id", async (req, res) => {
                   id: Int. Tournament ID.
                   name: String. (optional) New tournament name.
                   description: String. (optional) New description.
+                  team_min_limit: Int. (optional) New minimum team limit.
+                  team_max_limit: Int. (optional) New maximum team limit.
                   start_date: Date. (optional) New start date.
                   end_date: Date. (optional) New end date.
                   format: String. (optional) New format.
@@ -370,8 +399,16 @@ router.patch("/:id", async (req, res) => {
   try {
     const userId = req.user.id;
     const { id: tournament_id } = req.params;
-    const { name, description, start_date, end_date, format, status } =
-      req.body;
+    const {
+      name,
+      description,
+      team_min_limit,
+      team_max_limit,
+      start_date,
+      end_date,
+      format,
+      status,
+    } = req.body;
 
     const role = await getTournamentRole(userId, tournament_id);
     if (role !== "owner" && role !== "admin") {
@@ -389,6 +426,30 @@ router.patch("/:id", async (req, res) => {
       return res.status(400).json({ error: "At least one field is required" });
     }
 
+    if (team_min_limit !== undefined) {
+      if (!Number.isInteger(team_min_limit) || team_min_limit < 1) {
+        return res
+          .status(400)
+          .json({ error: "team_min_limit must be a positive integer" });
+      }
+    }
+    if (team_max_limit !== undefined) {
+      if (!Number.isInteger(team_max_limit) || team_max_limit < 1) {
+        return res
+          .status(400)
+          .json({ error: "team_max_limit must be a positive integer" });
+      }
+    }
+    if (
+      team_min_limit !== undefined &&
+      team_max_limit !== undefined &&
+      team_min_limit > team_max_limit
+    ) {
+      return res
+        .status(400)
+        .json({ error: "team_min_limit cannot exceed team_max_limit" });
+    }
+
     if (start_date && end_date && new Date(end_date) < new Date(start_date)) {
       return res
         .status(400)
@@ -399,6 +460,8 @@ router.patch("/:id", async (req, res) => {
     if (name) updates.name = name.trim();
     if (description !== undefined)
       updates.description = description?.trim() || null;
+    if (team_min_limit !== undefined) updates.team_min_limit = team_min_limit;
+    if (team_max_limit !== undefined) updates.team_max_limit = team_max_limit;
     if (start_date) updates.start_date = start_date;
     if (end_date) updates.end_date = end_date;
     if (format) updates.format = format;
@@ -525,7 +588,7 @@ router.post("/:id/teams", async (req, res) => {
 
     const { data: tournament, error: tournamentError } = await supabase
       .from("tournaments")
-      .select("tournament_id, status")
+      .select("tournament_id, status, team_max_limit")
       .eq("tournament_id", tournament_id)
       .single();
 
@@ -537,6 +600,20 @@ router.post("/:id/teams", async (req, res) => {
       return res
         .status(400)
         .json({ error: "Tournament is no longer accepting teams" });
+    }
+
+    // Add after the status check
+    const { count, error: countError } = await supabase
+      .from("team_tournament")
+      .select("*", { count: "exact", head: true })
+      .eq("tournament_id", tournament_id);
+
+    if (countError) throw countError;
+
+    if (count >= tournament.team_max_limit) {
+      return res
+        .status(400)
+        .json({ error: "Tournament has reached its maximum team limit" });
     }
 
     const { data: entry, error } = await supabase
