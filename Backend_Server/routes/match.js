@@ -12,7 +12,143 @@ const router = express.Router();
 const supabase = require("../lib/supabase");
 const requireUser = require("../middleware/requireUser");
 
-router.use(requireUser);
+/*
+   Route Name   : GET /tournaments/:id/overlay
+   Parameter    : id: Int. Tournament ID.
+   Return       : Json response
+                  overlay: Object. Returns formatted veto result for the overlay app.
+   Purpose      : Returns the completed veto result for the current streamed match
+                  in a format ready for the Valorant overlay app.
+                  No authentication required — read only public endpoint.
+*/
+router.get("/:id/overlay", async (req, res) => {
+  try {
+    const { id: tournament_id } = req.params;
+
+    // Fetch tournament and its current streaming match
+    const { data: tournament, error: tournamentError } = await supabase
+      .from("tournaments")
+      .select("tournament_id, name, streaming_match_id")
+      .eq("tournament_id", tournament_id)
+      .maybeSingle();
+
+    if (tournamentError || !tournament) {
+      return res.status(404).json({ error: "Tournament not found" });
+    }
+
+    if (!tournament.streaming_match_id) {
+      return res
+        .status(404)
+        .json({ error: "No match is currently being streamed" });
+    }
+
+    // Fetch the match with both teams
+    const { data: match, error: matchError } = await supabase
+      .from("matches")
+      .select(
+        `
+        match_id,
+        format,
+        team_id1,
+        team_id2,
+        teams_a:team_id1 ( name ),
+        teams_b:team_id2 ( name )
+      `,
+      )
+      .eq("match_id", tournament.streaming_match_id)
+      .single();
+
+    if (matchError || !match) {
+      return res.status(404).json({ error: "Streamed match not found" });
+    }
+
+    // Fetch all active maps for the map pool
+    const { data: activeMaps, error: mapsError } = await supabase
+      .from("maps")
+      .select("name")
+      .eq("is_active", true);
+
+    if (mapsError) throw mapsError;
+
+    // Fetch all veto actions for this match
+    const { data: vetoes, error: vetoesError } = await supabase
+      .from("vetoes")
+      .select(
+        `
+        action,
+        side,
+        team_id,
+        maps ( name )
+      `,
+      )
+      .eq("match_id", tournament.streaming_match_id)
+      .order("action_order", { ascending: true });
+
+    if (vetoesError) throw vetoesError;
+
+    // Helper: get team name by team_id
+    const getTeamName = (teamId) => {
+      if (teamId === match.team_id1) return match.teams_a.name;
+      if (teamId === match.team_id2) return match.teams_b.name;
+      return null;
+    };
+
+    // Build picks and bans from veto actions
+    const picks = [];
+    const bans = [];
+    const pendingPicks = [];
+
+    for (const veto of vetoes) {
+      if (veto.action === "ban") {
+        bans.push({
+          map: veto.maps.name,
+          banned_by: getTeamName(veto.team_id),
+        });
+      } else if (veto.action === "pick") {
+        pendingPicks.push({
+          map: veto.maps.name,
+          picked_by: getTeamName(veto.team_id),
+        });
+      } else if (veto.action === "pick_side") {
+        const matchedPick = pendingPicks.find((p) => p.map === veto.maps.name);
+
+        if (matchedPick) {
+          // Regular pick — attach side
+          picks.push({
+            map: matchedPick.map,
+            picked_by: matchedPick.picked_by,
+            side: veto.side,
+          });
+          pendingPicks.splice(pendingPicks.indexOf(matchedPick), 1);
+        } else {
+          // Decider — last remaining map
+          picks.push({
+            map: veto.maps.name,
+            picked_by: "decider",
+            side: veto.side,
+          });
+        }
+      }
+    }
+
+    res.json({
+      overlay: {
+        tournament: tournament.name,
+        team_a: match.teams_a.name,
+        team_b: match.teams_b.name,
+        format: match.format,
+        map_pool: activeMaps.map((m) => m.name),
+        bans,
+        picks,
+      },
+    });
+  } catch (err) {
+    console.error("GET /tournaments/:id/overlay error: ", err);
+    res.status(500).json({ error: "Server Error" });
+  }
+});
+
+router.use(requireUser); // Comes AFTER GET /tournaments/:id/overlay
 
 // -----------------------------------------------------------------
 // Helper functions
