@@ -353,7 +353,7 @@ router.get("/:id", async (req, res) => {
 });
 
 /*
-   Route Name   : PUT /tournaments/:id
+   Route Name   : PATCH /tournaments/:id
    Parameter    : Request object with current user id
                   id: Int. Tournament ID.
                   name: String. (optional) New tournament name.
@@ -366,7 +366,7 @@ router.get("/:id", async (req, res) => {
                   tournament: Object. Returns the updated tournament.
    Purpose      : Updates a tournament. Owner and admin only.
 */
-router.put("/:id", async (req, res) => {
+router.patch("/:id", async (req, res) => {
   try {
     const userId = req.user.id;
     const { id: tournament_id } = req.params;
@@ -425,7 +425,7 @@ router.put("/:id", async (req, res) => {
 
     res.json({ tournament });
   } catch (err) {
-    console.error("PUT /tournaments/:id error: ", err);
+    console.error("PATCH /tournaments/:id error: ", err);
     res.status(500).json({ error: "Server Error" });
   }
 });
