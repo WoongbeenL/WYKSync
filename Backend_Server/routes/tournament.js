@@ -272,21 +272,26 @@ router.post("/", async (req, res) => {
     if (!name || !name.trim()) {
       return res.status(400).json({ error: "Tournament name is required" });
     }
-    if (!Number.isInteger(team_min_limit) || team_min_limit < 1) {
+
+    const min = Number(team_min_limit);
+    const max = Number(team_max_limit);
+
+    if (!Number.isInteger(min) || min < 1) {
       return res
         .status(400)
         .json({ error: "team_min_limit must be a positive integer" });
     }
-    if (!Number.isInteger(team_max_limit) || team_max_limit < 1) {
+    if (!Number.isInteger(max) || max < 1) {
       return res
         .status(400)
         .json({ error: "team_max_limit must be a positive integer" });
     }
-    if (team_min_limit > team_max_limit) {
+    if (min > max) {
       return res
         .status(400)
         .json({ error: "team_min_limit cannot exceed team_max_limit" });
     }
+
     if (!start_date) {
       return res.status(400).json({ error: "start_date is required" });
     }
