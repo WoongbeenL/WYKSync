@@ -50,8 +50,8 @@ router.get("/:id/overlay", async (req, res) => {
         format,
         team_id1,
         team_id2,
-        teams_a:team_id1 ( name, tricode ),
-        teams_b:team_id2 ( name, tricode )
+        teams_a:team_id1 ( name, tricode, logo_url ),
+        teams_b:team_id2 ( name, tricode, logo_url )
       `,
       )
       .eq("match_id", tournament.stream_match_id)
@@ -127,10 +127,12 @@ router.get("/:id/overlay", async (req, res) => {
         team_a: {
           name: match.teams_a.name,
           tricode: match.teams_a.tricode,
+          logo_url: match.teams_a.logo_url,
         },
         team_b: {
           name: match.teams_b.name,
           tricode: match.teams_b.tricode,
+          logo_url: match.teams_b.logo_url,
         },
         bans,
         picks,
