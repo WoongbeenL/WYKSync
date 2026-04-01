@@ -10,12 +10,14 @@ const express = require("express");
 const router = express.Router();
 
 const supabase = require("../lib/supabase");
+const cloudinary = require("../lib/cloudinary");
 const requireUser = require("../middleware/requireUser");
+const upload = require("../middleware/upload");
 
 router.use(requireUser);
 
 // -----------------------------------------------------------------
-// Helper function
+// Helper functions
 
 /*
    Function Name   : generateJoinCode
@@ -43,10 +45,10 @@ const generateJoinCode = async () => {
 
 /*
    Function Name   : isTeamCoach
-   Parameter    : userId: INT. Id of the user to check for
+   Parameter    : userId: UUID. Id of the user to check for
                   teamId: INT. Id of the team to check for
    Return       : Boolean. Return true if data exists and error is false. Else, return false.
-   Purpose      : This function checks if the user is a coach of the team
+   Purpose      : This function checks if the user is a coach of the team.
 */
 const isTeamCoach = async (userId, teamId) => {
   const { data, error } = await supabase
@@ -58,6 +60,56 @@ const isTeamCoach = async (userId, teamId) => {
     .maybeSingle();
 
   return Boolean(data) && !error;
+};
+
+/*
+   Function Name   : uploadToCloudinary
+   Parameter    : fileBuffer: Buffer. Image file buffer from multer.
+                  folder: String. Cloudinary folder to upload to.
+   Return       : Object: { url, public_id }
+   Purpose      : Uploads an image buffer to Cloudinary and returns
+                  the secure URL and public_id.
+*/
+const uploadToCloudinary = (fileBuffer, folder) => {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      {
+        folder,
+        resource_type: "image",
+        transformation: [
+          { width: 256, height: 256, crop: "fill" },
+          { quality: "auto" },
+          { fetch_format: "auto" },
+        ],
+      },
+      (error, result) => {
+        if (error) return reject(error);
+        resolve({ url: result.secure_url, public_id: result.public_id });
+      },
+    );
+
+    stream.end(fileBuffer);
+  });
+};
+
+/*
+   Function Name   : deleteFromCloudinary
+   Parameter    : logoUrl: String. Cloudinary URL of the image to delete.
+   Return       : void
+   Purpose      : Deletes an image from Cloudinary by extracting its public_id
+                  from the URL. Logs but does not throw on failure.
+*/
+const deleteFromCloudinary = async (logoUrl) => {
+  try {
+    const parts = logoUrl.split("/");
+    const fileWithExt = parts[parts.length - 1];
+    const folder = parts[parts.length - 2];
+    const publicId = `${folder}/${fileWithExt.split(".")[0]}`;
+    await cloudinary.uploader.destroy(publicId);
+  } catch (err) {
+    // Log but don't throw — a failed delete shouldn't block the operation
+    console.error("Cloudinary delete error: ", err);
+  }
 };
 
 // -----------------------------------------------------------------
@@ -101,12 +153,14 @@ router.get("/", async (req, res) => {
    Route Name   : POST /team
    Parameter    : Request object with current user id
                   name: String. Team name.
+                  tricode: String. Team tricode. Max 5 characters.
+                  logo: File. (optional) Team logo image.
    Return       : Json response
                   team: Object. Returns the created team.
    Purpose      : Creates a new team and assigns the creator as coach
-                  in team_members.
+                  in team_members. Optionally uploads a logo to Cloudinary.
 */
-router.post("/", async (req, res) => {
+router.post("/", upload.single("logo"), async (req, res) => {
   try {
     const userId = req.user.id;
     const { name, tricode } = req.body;
@@ -155,13 +209,32 @@ router.post("/", async (req, res) => {
 
     const join_code = await generateJoinCode();
 
+    // Upload logo to Cloudinary if provided
+    let logo_url = null;
+    let logo_public_id = null;
+
+    if (req.file) {
+      const uploaded = await uploadToCloudinary(req.file.buffer, "team_logos");
+      logo_url = uploaded.url;
+      logo_public_id = uploaded.public_id;
+    }
+
     const { data: team, error: teamError } = await supabase
       .from("teams")
-      .insert({ name: name.trim(), tricode: trimmedTricode, join_code })
+      .insert({
+        name: name.trim(),
+        tricode: trimmedTricode,
+        join_code,
+        ...(logo_url && { logo_url }),
+      })
       .select()
       .single();
 
     if (teamError) {
+      // Delete uploaded logo if team creation fails
+      if (logo_public_id) {
+        await cloudinary.uploader.destroy(logo_public_id);
+      }
       if (teamError.code === "23505") {
         return res
           .status(409)
@@ -177,8 +250,11 @@ router.post("/", async (req, res) => {
     });
 
     if (memberError) {
-      // Delete the team if coach assignment fails
+      // Delete the team and logo if coach assignment fails
       await supabase.from("teams").delete().eq("team_id", team.team_id);
+      if (logo_public_id) {
+        await cloudinary.uploader.destroy(logo_public_id);
+      }
       throw memberError;
     }
 
@@ -262,26 +338,27 @@ router.post("/join", async (req, res) => {
    Parameter    : Request object with current user id
                   team_id: Int. Team ID.
                   name: String. (optional) New team name.
-                  logo_url: String. (optional) New logo URL.
                   tricode: String. (optional) New tricode.
+                  logo: File. (optional) New team logo image.
    Return       : Json response
                   team: Object. Returns the updated team.
-   Purpose      : Updates a team's details. Coach only, enforced by RLS.
+   Purpose      : Updates a team's details. If a new logo is uploaded,
+                  the old one is deleted from Cloudinary. Coach only.
 */
-router.patch("/:team_id", async (req, res) => {
+router.patch("/:team_id", upload.single("logo"), async (req, res) => {
   try {
     const userId = req.user.id;
     const { team_id } = req.params;
-    const { name, logo_url, tricode } = req.body;
+    const { name, tricode } = req.body;
 
     const isCoach = await isTeamCoach(userId, team_id);
     if (!isCoach) {
       return res.status(403).json({ error: "Forbidden" });
     }
 
-    if (!name && !logo_url && !tricode) {
+    if (!name && !tricode && !req.file) {
       return res.status(400).json({
-        error: "At least one field (name, logo_url, tricode) is required",
+        error: "At least one field (name, tricode, logo) is required",
       });
     }
 
@@ -297,9 +374,28 @@ router.patch("/:team_id", async (req, res) => {
       }
     }
 
+    // Fetch current team to get existing logo_url
+    const { data: currentTeam, error: fetchError } = await supabase
+      .from("teams")
+      .select("logo_url")
+      .eq("team_id", team_id)
+      .single();
+
+    if (fetchError || !currentTeam) {
+      return res.status(404).json({ error: "Team not found" });
+    }
+
+    // Upload new logo if provided
+    let logo_public_id = null;
     const updates = {};
+
+    if (req.file) {
+      const uploaded = await uploadToCloudinary(req.file.buffer, "team_logos");
+      updates.logo_url = uploaded.url;
+      logo_public_id = uploaded.public_id;
+    }
+
     if (name) updates.name = name.trim();
-    if (logo_url) updates.logo_url = logo_url;
     if (tricode) updates.tricode = tricode.trim().toUpperCase();
 
     const { data: team, error } = await supabase
@@ -310,15 +406,24 @@ router.patch("/:team_id", async (req, res) => {
       .single();
 
     if (error) {
+      // Delete newly uploaded logo if DB update fails
+      if (logo_public_id) {
+        await cloudinary.uploader.destroy(logo_public_id);
+      }
       if (error.code === "PGRST116") {
         return res.status(404).json({ error: "Team not found" });
+      }
+      if (error.code === "23505") {
+        return res
+          .status(409)
+          .json({ error: "A team with this name already exists" });
       }
       throw error;
     }
 
-    // RLS will return no rows if user is not the coach
-    if (!team) {
-      return res.status(403).json({ error: "Forbidden" });
+    // Delete old logo from Cloudinary after successful DB update
+    if (req.file && currentTeam.logo_url) {
+      await deleteFromCloudinary(currentTeam.logo_url);
     }
 
     res.json({ team });
@@ -334,16 +439,31 @@ router.patch("/:team_id", async (req, res) => {
                   team_id: Int. Team ID.
    Return       : Json response
                   message: String. Success message.
-   Purpose      : Deletes a team. Coach only, enforced by RLS.
+   Purpose      : Deletes a team and its logo from Cloudinary. Coach only.
 */
 router.delete("/:team_id", async (req, res) => {
   try {
     const userId = req.user.id;
-    const { team_id } = req.params;
+    const team_id = parseInt(req.params.team_id);
+
+    if (isNaN(team_id)) {
+      return res.status(400).json({ error: "Invalid team ID" });
+    }
 
     const isCoach = await isTeamCoach(userId, team_id);
     if (!isCoach) {
       return res.status(403).json({ error: "Forbidden" });
+    }
+
+    // Fetch logo_url before deleting
+    const { data: team, error: fetchError } = await supabase
+      .from("teams")
+      .select("logo_url")
+      .eq("team_id", team_id)
+      .single();
+
+    if (fetchError || !team) {
+      return res.status(404).json({ error: "Team not found" });
     }
 
     const { error } = await supabase
@@ -351,11 +471,11 @@ router.delete("/:team_id", async (req, res) => {
       .delete()
       .eq("team_id", team_id);
 
-    if (error) {
-      if (error.code === "PGRST116") {
-        return res.status(404).json({ error: "Team not found" });
-      }
-      throw error;
+    if (error) throw error;
+
+    // Delete logo from Cloudinary if it exists
+    if (team.logo_url) {
+      await deleteFromCloudinary(team.logo_url);
     }
 
     res.json({ message: "Team deleted successfully" });
