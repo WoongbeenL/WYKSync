@@ -55,7 +55,7 @@ const isTeamCoach = async (userId, teamId) => {
     .eq("id", userId)
     .eq("team_id", teamId)
     .eq("role", "coach")
-    .single();
+    .maybeSingle();
 
   return Boolean(data) && !error;
 };
@@ -280,11 +280,9 @@ router.patch("/:team_id", async (req, res) => {
     }
 
     if (!name && !logo_url && !tricode) {
-      return res
-        .status(400)
-        .json({
-          error: "At least one field (name, logo_url, tricode) is required",
-        });
+      return res.status(400).json({
+        error: "At least one field (name, logo_url, tricode) is required",
+      });
     }
 
     if (tricode !== undefined) {
