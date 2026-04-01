@@ -17,8 +17,7 @@ const requireUser = require("../middleware/requireUser");
    Parameter    : id: Int. Tournament ID.
    Return       : Json response
                   overlay: Object. Returns formatted veto result for the overlay app.
-   Purpose      : Returns the completed veto result for the current streamed match
-                  in a format ready for the Valorant overlay app.
+   Purpose      : Return the   veto result for the current streamed match as json
                   No authentication required — read only public endpoint.
 */
 router.get("/:id/overlay", async (req, res) => {
@@ -42,7 +41,7 @@ router.get("/:id/overlay", async (req, res) => {
         .json({ error: "No match is currently being streamed" });
     }
 
-    // Fetch the match with both teams
+    // Fetch the match with both teams including tricode
     const { data: match, error: matchError } = await supabase
       .from("matches")
       .select(
@@ -51,8 +50,8 @@ router.get("/:id/overlay", async (req, res) => {
         format,
         team_id1,
         team_id2,
-        teams_a:team_id1 ( name ),
-        teams_b:team_id2 ( name )
+        teams_a:team_id1 ( name, tricode ),
+        teams_b:team_id2 ( name, tricode )
       `,
       )
       .eq("match_id", tournament.stream_match_id)
@@ -61,14 +60,6 @@ router.get("/:id/overlay", async (req, res) => {
     if (matchError || !match) {
       return res.status(404).json({ error: "Streamed match not found" });
     }
-
-    // Fetch all active maps for the map pool
-    const { data: activeMaps, error: mapsError } = await supabase
-      .from("maps")
-      .select("name")
-      .eq("is_active", true);
-
-    if (mapsError) throw mapsError;
 
     // Fetch all veto actions for this match
     const { data: vetoes, error: vetoesError } = await supabase
@@ -86,10 +77,10 @@ router.get("/:id/overlay", async (req, res) => {
 
     if (vetoesError) throw vetoesError;
 
-    // Helper: get team name by team_id
-    const getTeamName = (teamId) => {
-      if (teamId === match.team_id1) return match.teams_a.name;
-      if (teamId === match.team_id2) return match.teams_b.name;
+    // Helper: get tricode by team_id
+    const getTricode = (teamId) => {
+      if (teamId === match.team_id1) return match.teams_a.tricode;
+      if (teamId === match.team_id2) return match.teams_b.tricode;
       return null;
     };
 
@@ -102,12 +93,12 @@ router.get("/:id/overlay", async (req, res) => {
       if (veto.action === "ban") {
         bans.push({
           map: veto.maps.name,
-          banned_by: getTeamName(veto.team_id),
+          banned_by: getTricode(veto.team_id),
         });
       } else if (veto.action === "pick") {
         pendingPicks.push({
           map: veto.maps.name,
-          picked_by: getTeamName(veto.team_id),
+          picked_by: getTricode(veto.team_id),
         });
       } else if (veto.action === "pick_side") {
         const matchedPick = pendingPicks.find((p) => p.map === veto.maps.name);
@@ -133,11 +124,14 @@ router.get("/:id/overlay", async (req, res) => {
 
     res.json({
       overlay: {
-        tournament: tournament.name,
-        team_a: match.teams_a.name,
-        team_b: match.teams_b.name,
-        format: match.format,
-        map_pool: activeMaps.map((m) => m.name),
+        team_a: {
+          name: match.teams_a.name,
+          tricode: match.teams_a.tricode,
+        },
+        team_b: {
+          name: match.teams_b.name,
+          tricode: match.teams_b.tricode,
+        },
         bans,
         picks,
       },
