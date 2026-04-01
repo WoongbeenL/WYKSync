@@ -13,7 +13,7 @@ const supabase = require("../lib/supabase");
 const requireUser = require("../middleware/requireUser");
 
 /*
-   Route Name   : GET /tournaments/:id/overlay
+   Route Name   : GET /tournament/:id/overlay
    Parameter    : id: Int. Tournament ID.
    Return       : Json response
                   overlay: Object. Returns formatted veto result for the overlay app.
@@ -143,12 +143,12 @@ router.get("/:id/overlay", async (req, res) => {
       },
     });
   } catch (err) {
-    console.error("GET /tournaments/:id/overlay error: ", err);
+    console.error("GET /tournament/:id/overlay error: ", err);
     res.status(500).json({ error: "Server Error" });
   }
 });
 
-router.use(requireUser); // Comes AFTER GET /tournaments/:id/overlay
+router.use(requireUser); // Comes AFTER GET /tournament/:id/overlay
 
 // -----------------------------------------------------------------
 // Helper function
@@ -212,7 +212,7 @@ const getTournamentRole = async (userId, tournamentId) => {
 // Routes
 
 /*
-   Route Name   : GET /tournaments
+   Route Name   : GET /tournament
    Parameter    : None
    Return       : Json response
                   tournaments: Array. Returns all tournaments.
@@ -229,13 +229,13 @@ router.get("/", async (req, res) => {
 
     res.json({ tournaments });
   } catch (err) {
-    console.error("GET /tournaments error: ", err);
+    console.error("GET /tournament error: ", err);
     res.status(500).json({ error: "Server Error" });
   }
 });
 
 /*
-   Route Name   : POST /tournaments
+   Route Name   : POST /tournament
    Parameter    : Request object with current user id
                   name: String. Tournament name.
                   description: String. (optional) Tournament description.
@@ -348,13 +348,13 @@ router.post("/", async (req, res) => {
 
     res.status(201).json({ tournament });
   } catch (err) {
-    console.error("POST /tournaments error: ", err);
+    console.error("POST /tournament error: ", err);
     res.status(500).json({ error: "Server Error" });
   }
 });
 
 /*
-   Route Name   : GET /tournaments/:id
+   Route Name   : GET /tournament/:id
    Parameter    : id: Int. Tournament ID.
    Return       : Json response
                   tournament: Object. Returns tournament data.
@@ -379,13 +379,13 @@ router.get("/:id", async (req, res) => {
 
     res.json({ tournament });
   } catch (err) {
-    console.error("GET /tournaments/:id error: ", err);
+    console.error("GET /tournament/:id error: ", err);
     res.status(500).json({ error: "Server Error" });
   }
 });
 
 /*
-   Route Name   : PATCH /tournaments/:id
+   Route Name   : PATCH /tournament/:id
    Parameter    : Request object with current user id
                   id: Int. Tournament ID.
                   name: String. (optional) New tournament name.
@@ -493,13 +493,13 @@ router.patch("/:id", async (req, res) => {
 
     res.json({ tournament });
   } catch (err) {
-    console.error("PATCH /tournaments/:id error: ", err);
+    console.error("PATCH /tournament/:id error: ", err);
     res.status(500).json({ error: "Server Error" });
   }
 });
 
 /*
-   Route Name   : DELETE /tournaments/:id
+   Route Name   : DELETE /tournament/:id
    Parameter    : Request object with current user id
                   id: Int. Tournament ID.
    Return       : Json response
@@ -530,19 +530,19 @@ router.delete("/:id", async (req, res) => {
 
     res.json({ message: "Tournament deleted successfully" });
   } catch (err) {
-    console.error("DELETE /tournaments/:id error: ", err);
+    console.error("DELETE /tournament/:id error: ", err);
     res.status(500).json({ error: "Server Error" });
   }
 });
 
 /*
-   Route Name   : GET /tournaments/:id/teams
+   Route Name   : GET /tournament/:id/team
    Parameter    : id: Int. Tournament ID.
    Return       : Json response
                   teams: Array. Returns all registered teams in the tournament.
    Purpose      : Returns a list of all participating teams in the tournament.
 */
-router.get("/:id/teams", async (req, res) => {
+router.get("/:id/team", async (req, res) => {
   try {
     const { id: tournament_id } = req.params;
 
@@ -565,13 +565,13 @@ router.get("/:id/teams", async (req, res) => {
 
     res.json({ teams: teams.map((t) => t.teams) });
   } catch (err) {
-    console.error("GET /tournaments/:id/teams error: ", err);
+    console.error("GET /tournaments/:id/team error: ", err);
     res.status(500).json({ error: "Server Error" });
   }
 });
 
 /*
-   Route Name   : POST /tournaments/:id/teams
+   Route Name   : POST /tournament/:id/team
    Parameter    : Request object with current user id
                   id: Int. Tournament ID.
    Return       : Json response
@@ -579,7 +579,7 @@ router.get("/:id/teams", async (req, res) => {
    Purpose      : Registers the coach's team into a tournament.
                   Coach only.
 */
-router.post("/:id/teams", async (req, res) => {
+router.post("/:id/team", async (req, res) => {
   try {
     const userId = req.user.id;
     const { id: tournament_id } = req.params;
@@ -638,13 +638,13 @@ router.post("/:id/teams", async (req, res) => {
 
     res.status(201).json({ entry });
   } catch (err) {
-    console.error("POST /tournaments/:id/teams error: ", err);
+    console.error("POST /tournament/:id/team error: ", err);
     res.status(500).json({ error: "Server Error" });
   }
 });
 
 /*
-   Route Name   : DELETE /tournaments/:id/teams
+   Route Name   : DELETE /tournament/:id/team
    Parameter    : Request object with current user id
                   id: Int. Tournament ID.
    Return       : Json response
@@ -652,7 +652,7 @@ router.post("/:id/teams", async (req, res) => {
    Purpose      : Withdraws the coach's team from a tournament.
                   Coach only.
 */
-router.delete("/:id/teams", async (req, res) => {
+router.delete("/:id/team", async (req, res) => {
   try {
     const userId = req.user.id;
     const { id: tournament_id } = req.params;
@@ -687,13 +687,13 @@ router.delete("/:id/teams", async (req, res) => {
 
     res.json({ message: "Team withdrawn from tournament successfully" });
   } catch (err) {
-    console.error("DELETE /tournaments/:id/teams error: ", err);
+    console.error("DELETE /tournament/:id/team error: ", err);
     res.status(500).json({ error: "Server Error" });
   }
 });
 
 /*
-   Route Name   : POST /tournaments/:id/organizers
+   Route Name   : POST /tournament/:id/organizer
    Parameter    : Request object with current user id
                   id: Int. Tournament ID.
                   user_id: UUID. The user to add as an organizer.
@@ -702,7 +702,7 @@ router.delete("/:id/teams", async (req, res) => {
                   organizer: Object. Returns the created user_tournament row.
    Purpose      : Adds a user as a tournament organizer. Owner only.
 */
-router.post("/:id/organizers", async (req, res) => {
+router.post("/:id/organizer", async (req, res) => {
   try {
     const userId = req.user.id;
     const { id: tournament_id } = req.params;
@@ -754,21 +754,21 @@ router.post("/:id/organizers", async (req, res) => {
 
     res.status(201).json({ organizer });
   } catch (err) {
-    console.error("POST /tournaments/:id/organizers error: ", err);
+    console.error("POST /tournament/:id/organizer error: ", err);
     res.status(500).json({ error: "Server Error" });
   }
 });
 
 /*
-   Route Name   : DELETE /tournaments/:id/organizers
+   Route Name   : DELETE /tournament/:id/organizer
    Parameter    : Request object with current user id
                   id: Int. Tournament ID.
                   user_id: UUID. The organizer to remove.
    Return       : Json response
                   message: String. Success message.
-   Purpose      : Removes a user from tournament organizers. Owner only.
+   Purpose      : Removes a user from tournament organizer. Owner only.
 */
-router.delete("/:id/organizers", async (req, res) => {
+router.delete("/:id/organizer", async (req, res) => {
   try {
     const userId = req.user.id;
     const { id: tournament_id } = req.params;
@@ -818,7 +818,7 @@ router.delete("/:id/organizers", async (req, res) => {
 
     res.json({ message: "Organizer removed successfully" });
   } catch (err) {
-    console.error("DELETE /tournaments/:id/organizers error: ", err);
+    console.error("DELETE /tournament/:id/organizer error: ", err);
     res.status(500).json({ error: "Server Error" });
   }
 });
