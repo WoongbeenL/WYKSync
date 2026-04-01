@@ -3,7 +3,7 @@
  * Project      : PROG3221 - Capstone Project
  * Programmers  : Will Lee
  * Date         : 2/17/2026
- * Description  : This is a js file that creates a supabase module to be used by middleware and routes.
+ * Description  : This is a js file that creates a middleware to be used by routes after authentication.
  */
 
 const supabase = require("../lib/supabase");
