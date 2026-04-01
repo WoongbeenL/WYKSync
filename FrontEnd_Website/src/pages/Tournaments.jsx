@@ -541,7 +541,7 @@ export default function Tournaments({ user }) {
 
   const fetchTournamentParticipants = async (tournamentId) => {
     const result = await requestBackendWithFallback(
-      [`/tournament/${tournamentId}/teams`],
+      [`/tournament/${tournamentId}/team`],
       {
         requireAuth: true,
         fallbackError: "Could not load tournament participants.",
@@ -865,12 +865,19 @@ export default function Tournaments({ user }) {
   };
 
   // Team name is used for registration if the user already has a team profile.
-  const getRegistrationIdentity = () => teamProfile?.teamName || user;
+  const getRegistrationIdentity = () => (teamProfile?.teamName || "").trim();
 
   // Adds the current user's team to the selected tournament.
   const joinTournament = async () => {
-    if (!selectedTournament || !user) return;
-    if (!teamProfile) return;
+    if (!selectedTournament) return;
+    if (!user) {
+      setApiError("Please log in to sign up for this tournament.");
+      return;
+    }
+    if (!teamProfile) {
+      setApiError("You need a team profile before registering.");
+      return;
+    }
     if (!backendUrl) {
       setApiError("VITE_BACKEND_URL is missing.");
       return;
@@ -879,14 +886,20 @@ export default function Tournaments({ user }) {
     const capacity = Number(selectedTournament.teams);
     const participants = selectedTournament.participants || [];
     const registrationIdentity = getRegistrationIdentity();
-    const alreadyRegistered =
-      participants.includes(registrationIdentity) || participants.includes(user);
+    const alreadyRegistered = participants.includes(registrationIdentity);
 
-    if (alreadyRegistered || participants.length >= capacity) return;
+    if (alreadyRegistered) {
+      setApiError("Your team is already registered for this tournament.");
+      return;
+    }
+    if (capacity > 0 && participants.length >= capacity) {
+      setApiError("This tournament is already full.");
+      return;
+    }
 
     setApiError("");
     const response = await requestBackendWithFallback(
-      [`/tournament/${selectedTournament.id}/teams`],
+      [`/tournament/${selectedTournament.id}/team`],
       {
         method: "POST",
         requireAuth: true,
@@ -894,12 +907,23 @@ export default function Tournaments({ user }) {
       }
     );
 
-    if (response.error && response.status !== 409) {
+    if (response.status === 409) {
+      setApiError(response.error || "Your team is already registered for this tournament.");
+      return;
+    }
+    if (response.error) {
       setApiError(response.error);
       return;
     }
 
     const updatedParticipants = await fetchTournamentParticipants(selectedTournament.id);
+    const isRegisteredAfterJoin = updatedParticipants.includes(registrationIdentity);
+
+    if (!isRegisteredAfterJoin) {
+      setApiError("The signup request finished, but your team was not returned in the participant list.");
+      return;
+    }
+
     const updatedTournament = {
       ...selectedTournament,
       participants: updatedParticipants,
@@ -907,11 +931,16 @@ export default function Tournaments({ user }) {
     };
 
     updateSelectedTournament(updatedTournament);
+    setApiError("");
   };
 
   // Removes the current user's team from the selected tournament.
   const leaveTournament = async () => {
-    if (!selectedTournament || !user) return;
+    if (!selectedTournament) return;
+    if (!user) {
+      setApiError("Please log in to withdraw from this tournament.");
+      return;
+    }
     if (!backendUrl) {
       setApiError("VITE_BACKEND_URL is missing.");
       return;
@@ -919,11 +948,18 @@ export default function Tournaments({ user }) {
     const registrationIdentity = getRegistrationIdentity();
 
     const participants = selectedTournament.participants || [];
-    if (!participants.includes(registrationIdentity) && !participants.includes(user)) return;
+    if (!registrationIdentity) {
+      setApiError("Your team profile is missing, so we could not identify your registration.");
+      return;
+    }
+    if (!participants.includes(registrationIdentity)) {
+      setApiError("Your team is not currently registered for this tournament.");
+      return;
+    }
 
     setApiError("");
     const response = await requestBackendWithFallback(
-      [`/tournament/${selectedTournament.id}/teams`],
+      [`/tournament/${selectedTournament.id}/team`],
       {
         method: "DELETE",
         requireAuth: true,
@@ -941,11 +977,12 @@ export default function Tournaments({ user }) {
       ...selectedTournament,
       participants: updatedParticipants,
       standings: selectedTournament.standings.filter(
-        (item) => item.team !== registrationIdentity && item.team !== user
+        (item) => item.team !== registrationIdentity
       ),
     };
 
     updateSelectedTournament(updatedTournament);
+    setApiError("");
   };
 
   const filteredTournaments = useMemo(() => {
@@ -1036,6 +1073,11 @@ export default function Tournaments({ user }) {
       if (!active) return;
 
       setHasCheckedSession(true);
+
+      if (!user) {
+        return;
+      }
+
       await fetchTournaments();
     };
 
@@ -1044,7 +1086,7 @@ export default function Tournaments({ user }) {
     return () => {
       active = false;
     };
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     setTournamentMetaOverrides(readTournamentMetaOverrides());

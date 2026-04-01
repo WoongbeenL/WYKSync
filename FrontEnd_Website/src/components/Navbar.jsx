@@ -14,7 +14,7 @@ export default function Navbar() {
       <ul>
         <CustomLink href="/home">Home</CustomLink>
         <CustomLink href="/team-profile">Team Profile</CustomLink>
-        <CustomLink href="/tournaments">Tournaments</CustomLink>
+        <CustomLink href="/tournament">Tournaments</CustomLink>
         <CustomLink href="/overlay">Overlay Demo</CustomLink>
         <CustomLink href="/vetoes">Vetoes</CustomLink>
       </ul>

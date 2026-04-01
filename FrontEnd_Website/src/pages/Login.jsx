@@ -39,7 +39,7 @@ export default function Login({ onLogin }) {
   // This is our basic page redirect after the auth flow finishes.
   const goToTournaments = () => {
     // Quick route change without needing a full page reload.
-    window.history.pushState({}, "", "/tournaments");
+    window.history.pushState({}, "", "/tournament");
     window.dispatchEvent(new Event("popstate"));
   };
 

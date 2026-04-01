@@ -17,7 +17,7 @@ function App() {
   const [user, setUser] = useState(null);
   const [displayIdentity, setDisplayIdentity] = useState("");
   const [path, setPath] = useState(window.location.pathname);
-  const resolvedPath = path === "/login" && user ? "/tournaments" : path;
+  const resolvedPath = path === "/login" && user ? "/tournament" : path;
 
   // This grabs the nicer display name from the backend if the user has one saved.
   const fetchDisplayIdentity = async (token, fallbackEmail) => {
@@ -91,8 +91,8 @@ function App() {
   useEffect(() => {
     // Logged-in users should not stay on the login page, so we push them forward.
     if (path === "/login" && user) {
-      window.history.replaceState({}, "", "/tournaments");
-      setPath("/tournaments");
+      window.history.replaceState({}, "", "/tournament");
+      window.dispatchEvent(new Event("popstate"));
     }
   }, [path, user]);
 
@@ -119,7 +119,7 @@ function App() {
   // This switch chooses which page component should render for the current path.
   let page;
   switch (resolvedPath) {
-    case "/tournaments":
+    case "/tournament":
       page = <Tournaments user={user} />;
       break;
     case "/vetoes":
