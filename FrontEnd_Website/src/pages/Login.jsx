@@ -1,16 +1,17 @@
+// Login page handles login, signup, and first-time onboarding in one place.
 import { useState } from "react";
 import { isSupabaseConfigured, supabase } from "../lib/supabaseClient";
 import "./login.css";
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-// backend base url from env with trailing slash removed
+// This cleans up the backend URL just in case the env var has a trailing slash.
 const backendUrl = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, "");
 
-// builds a clearer fetch error message for backend calls
+// Small helper so the backend error messages make more sense to whoever is testing.
 const buildBackendFetchError = (action, err) =>
   `${action} failed: ${err.message}. Check VITE_BACKEND_URL, backend status, and CORS allowlist for your frontend domain.`;
 
-// parses error whether backend returns text or json
+// Backend errors can come back as text or JSON, so this tries both.
 const parseBackendError = async (response, fallback) => {
   const text = await response.text();
   if (!text) return fallback;
@@ -23,25 +24,28 @@ const parseBackendError = async (response, fallback) => {
   }
 };
 
+// One component handles the whole auth flow so the UX stays in one card.
 export default function Login({ onLogin }) {
-  // mode decides which screen to show
+  // This decides whether the card is showing login, signup, or onboarding.
   const [mode, setMode] = useState("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
-  // keep token for patch me profile call
+  // We keep the token around because onboarding needs to patch the user profile.
   const [profileToken, setProfileToken] = useState("");
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // This is our basic page redirect after the auth flow finishes.
   const goToTournaments = () => {
-    // quick route change to tournaments
-    window.history.pushState({}, "", "/tournaments");
+    // Quick route change without needing a full page reload.
+    window.history.pushState({}, "", "/tournament");
     window.dispatchEvent(new Event("popstate"));
   };
 
+  // Handles normal email/password login.
   const handleLogin = async (e) => {
-    // stops full page refresh on form submit
+    // Stops the browser from reloading the page when the form submits.
     e.preventDefault();
 
     if (!email || !password) {
@@ -62,7 +66,7 @@ export default function Login({ onLogin }) {
     setError("");
     setIsSubmitting(true);
 
-    // logs user in through supabase auth
+    // Ask Supabase to log the user in.
     const { data, error: loginError } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -74,12 +78,13 @@ export default function Login({ onLogin }) {
       return;
     }
 
-    // asks backend if user is already onboarded
+    // After auth, we ask the backend whether the user already finished setup.
     await handlePostAuth(data.session, data.user?.email || email);
   };
 
+  // Handles account creation before we move into the same post-auth flow.
   const handleSignup = async (e) => {
-    // stops full page refresh on form submit
+    // Stops the browser from reloading the page when the form submits.
     e.preventDefault();
 
     if (!email || !password) {
@@ -100,7 +105,7 @@ export default function Login({ onLogin }) {
     setError("");
     setIsSubmitting(true);
 
-    // creates account in supabase auth
+    // Creates the new auth account in Supabase.
     const { data, error: signupError } = await supabase.auth.signUp({
       email,
       password,
@@ -119,19 +124,20 @@ export default function Login({ onLogin }) {
       return;
     }
 
-    // same post auth flow as login once session exists
+    // Once a real session exists, signup uses the same next steps as login.
     await handlePostAuth(data.session, data.user?.email || email);
   };
 
+  // Shared post-auth check to decide if the user enters the app or finishes onboarding.
   const handlePostAuth = async (session, userEmail) => {
-    // frontend cannot continue without backend url
+    // Frontend cannot continue this part without the backend URL.
     if (!backendUrl) {
       setIsSubmitting(false);
       setError("Backend URL is missing. Add VITE_BACKEND_URL.");
       return;
     }
 
-    // token is required for protected backend routes
+    // Protected backend routes need the access token.
     if (!session?.access_token) {
       setIsSubmitting(false);
       setError("Auth token missing. Please try logging in again.");
@@ -139,7 +145,7 @@ export default function Login({ onLogin }) {
     }
 
     try {
-      // gets profile + onboarding status from backend
+      // Load the user's backend profile and onboarding flag.
       const meResponse = await fetch(`${backendUrl}/me`, {
         headers: {
           Authorization: `Bearer ${session.access_token}`,
@@ -158,7 +164,7 @@ export default function Login({ onLogin }) {
 
       const meData = await meResponse.json();
 
-      // onboarded users go straight into app
+      // If onboarding is already done, we send them right into the app.
       if (meData.is_onboarded) {
         setIsSubmitting(false);
         onLogin(userEmail);
@@ -166,7 +172,7 @@ export default function Login({ onLogin }) {
         return;
       }
 
-      // not onboarded users are sent to profile setup step
+      // Otherwise we keep them here and switch the form into onboarding mode.
       setIsSubmitting(false);
       setProfileToken(session.access_token);
       setDisplayName(meData.display_name || "");
@@ -177,11 +183,12 @@ export default function Login({ onLogin }) {
     }
   };
 
+  // Handles the short onboarding step where a display name gets saved.
   const handleOnboarding = async (e) => {
-    // stops full page refresh on form submit
+    // Stops the browser from reloading the page when the form submits.
     e.preventDefault();
 
-    // read latest display name from the submitted form
+    // We read the latest form value directly so we always save the current text.
     const formData = new FormData(e.currentTarget);
     const typedDisplayName = String(formData.get("display_name") || "").trim();
 
@@ -197,7 +204,7 @@ export default function Login({ onLogin }) {
 
     let token = profileToken;
     if (!token && supabase) {
-      // fallback if token state was cleared
+      // Fallback in case the saved token was cleared for some reason.
       const { data: sessionData } = await supabase.auth.getSession();
       token = sessionData.session?.access_token || "";
     }
@@ -212,7 +219,7 @@ export default function Login({ onLogin }) {
     setIsSubmitting(true);
 
     try {
-      // saves display name and completes onboarding
+      // Save the display name and mark onboarding as done on the backend.
       const response = await fetch(`${backendUrl}/me/profile`, {
         method: "PATCH",
         headers: {
@@ -243,8 +250,8 @@ export default function Login({ onLogin }) {
     }
   };
 
+  // Switching tabs should also reset old error messages so the UI feels cleaner.
   const switchMode = (nextMode) => {
-    // switching tabs should also clear stale error text
     setMode(nextMode);
     setError("");
   };

@@ -1,6 +1,9 @@
+// Home page gives a quick intro to the project and the team behind it.
 import "./home.css";
 
+// This page is mostly static content with a little bit of mapped team data.
 export default function Home() {
+  // Keeping the team members in an array makes the cards easier to render and update.
   const teamMembers = [
     {
       role: "Frontend Developer",
@@ -21,6 +24,7 @@ export default function Home() {
 
   return (
     <div className="home">
+      {/* Hero section is the first thing users see when they land on the site. */}
       <section className="hero">
         <h1>WYKSync</h1>
         <h3>Real-Time Valorant Broadcast Overlays</h3>
@@ -33,6 +37,7 @@ export default function Home() {
         </div>  
       </section>
     <section className="section">
+      {/* This explains the problem our capstone is trying to solve. */}
       <h2>The Problem</h2>
       <p>
         WYKSync was created to simplify and help improve esports and collegiate broadcasts.
@@ -52,6 +57,7 @@ export default function Home() {
     </section>
     
     <section className="features">
+      {/* Quick feature list so visitors can scan what the platform does. */}
       <h2>Platform Features</h2>
       <ul>
         <li>Manage Tournaments</li>
@@ -65,6 +71,7 @@ export default function Home() {
     </section>
 
     <section className="meet">
+      {/* Team section is generated from the array above instead of hardcoding each card. */}
       <h2>Meet the Team</h2>
       <p className="meet-subtitle">
         Built by a student team of three developers with hands-on experience in esports production.
@@ -90,7 +97,6 @@ export default function Home() {
       <h2>Ready to start broadcasting smarter?</h2>
       <div className="hero-buttons">
         <button onClick={() => (window.location.href = "/overlay")}>Open Overlay Demo</button>
-        <button>Contact Us</button>
       </div>
     </section>
   </div>
