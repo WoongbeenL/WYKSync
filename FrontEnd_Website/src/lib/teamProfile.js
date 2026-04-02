@@ -96,7 +96,7 @@ export const fetchCurrentUserTeamProfile = async (userIdentifier) => {
     return { teamProfile: null, error: "You must be logged in." };
   }
 
-  const result = await requestBackendWithFallback(["/me/team", "/team/current"], {
+  const result = await requestBackendWithFallback(["/me/team"], {
     requireAuth: true,
     fallbackError: "Could not load team profile.",
     allowNotFound: true,
@@ -122,7 +122,8 @@ export const fetchCurrentUserTeamProfile = async (userIdentifier) => {
   const cachedTeam = readCachedTeamProfile(userIdentifier);
   return {
     teamProfile: cachedTeam,
-    error: result.error,
+    error:
+      result.error === "join_code query parameter is required" ? null : result.error,
   };
 };
 
