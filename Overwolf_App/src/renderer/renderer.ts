@@ -6,8 +6,9 @@ declare const wyksync: {
   sendTeamConfig: (config: {
     teamA?: { name?: string; logo?: string };
     teamB?: { name?: string; logo?: string };
+    startingSide?: string;
   }) => Promise<boolean>;
-  fetchMatchConfig: (matchCode: string, apiUrl: string) => Promise<{
+  fetchMatchConfig: (apiUrl: string) => Promise<{
     success: boolean;
     match?: any;
     error?: string;
@@ -27,13 +28,12 @@ const btnApply = document.getElementById('btn-apply') as HTMLButtonElement;
 const btnReset = document.getElementById('btn-reset') as HTMLButtonElement;
 const confirmMsg = document.getElementById('confirm-msg') as HTMLDivElement;
 
-// Match Code Fetch elements
-const matchCodeInput = document.getElementById('match-code') as HTMLInputElement;
+// Fetch elements
 const apiUrlInput = document.getElementById('api-url') as HTMLInputElement;
 const btnFetch = document.getElementById('btn-fetch') as HTMLButtonElement;
 const fetchStatus = document.getElementById('fetch-status') as HTMLDivElement;
-const mapPoolArea = document.getElementById('map-pool-area') as HTMLDivElement;
-const mapPoolList = document.getElementById('map-pool-list') as HTMLDivElement;
+const fetchDetailArea = document.getElementById('fetch-detail-area') as HTMLDivElement;
+const fetchDetailList = document.getElementById('fetch-detail-list') as HTMLDivElement;
 
 function updateStatus(status: string): void {
   statusEl.textContent = status;
@@ -82,13 +82,8 @@ function setFetchStatus(msg: string, type: 'success' | 'error' | 'loading'): voi
 }
 
 btnFetch.addEventListener('click', async () => {
-  const matchCode = matchCodeInput.value.trim().toUpperCase();
   const apiUrl = apiUrlInput.value.trim();
 
-  if (!matchCode) {
-    setFetchStatus('Enter a match code', 'error');
-    return;
-  }
   if (!apiUrl) {
     setFetchStatus('Enter an API URL', 'error');
     return;
@@ -96,10 +91,10 @@ btnFetch.addEventListener('click', async () => {
 
   btnFetch.disabled = true;
   setFetchStatus('Fetching...', 'loading');
-  mapPoolArea.style.display = 'none';
+  fetchDetailArea.style.display = 'none';
 
   try {
-    const result = await wyksync.fetchMatchConfig(matchCode, apiUrl);
+    const result = await wyksync.fetchMatchConfig(apiUrl);
 
     if (!result.success) {
       setFetchStatus('✕ ' + (result.error || 'Fetch failed'), 'error');
@@ -109,28 +104,75 @@ btnFetch.addEventListener('click', async () => {
     }
 
     const match = result.match;
-    setFetchStatus('✓ Match loaded — applied to overlay', 'success');
-    addLog('Match config fetched:', match);
+    setFetchStatus('✓ Data loaded — review fields below, then click Apply', 'success');
+    addLog('Overlay data fetched:', match);
 
-    // Auto-populate the manual team fields so user can see/tweak
+    // Auto-fill team name fields
     if (match.teamA) {
-      if (match.teamA.name) (document.getElementById('name-a') as HTMLInputElement).value = match.teamA.name;
-      if (match.teamA.logo) (document.getElementById('logo-a') as HTMLInputElement).value = match.teamA.logo;
+      (document.getElementById('name-a') as HTMLInputElement).value = match.teamA.name || '';
+      (document.getElementById('logo-a') as HTMLInputElement).value = match.teamA.logo || '';
     }
     if (match.teamB) {
-      if (match.teamB.name) (document.getElementById('name-b') as HTMLInputElement).value = match.teamB.name;
-      if (match.teamB.logo) (document.getElementById('logo-b') as HTMLInputElement).value = match.teamB.logo;
+      (document.getElementById('name-b') as HTMLInputElement).value = match.teamB.name || '';
+      (document.getElementById('logo-b') as HTMLInputElement).value = match.teamB.logo || '';
     }
 
-    // Display map pool if present
+    // Auto-fill map pool selects from picks (ignoring bans)
     if (match.mapPool && Array.isArray(match.mapPool) && match.mapPool.length > 0) {
-      mapPoolArea.style.display = 'block';
-      let html = match.mapPool.map((m: string) => `<span class="map-tag">${m}</span>`).join('');
-      if (match.bestOf) {
-        html += `<span class="best-of-tag">Bo${match.bestOf}</span>`;
+      const count = match.mapPool.length;
+
+      // Set best-of format based on number of picked maps
+      const validFormats = [1, 3, 5];
+      const bestOf = validFormats.includes(count) ? count : (count <= 1 ? 1 : count <= 3 ? 3 : 5);
+      boFormatEl.value = String(bestOf);
+      updateMapVisibility();
+
+      // Fill each map select with the picked map
+      for (let i = 0; i < count && i < 5; i++) {
+        const mapName = match.mapPool[i];
+        const sel = document.getElementById(`map-${i + 1}`) as HTMLSelectElement;
+        if (sel) {
+          // Find matching option (case-insensitive)
+          const opts = Array.from(sel.options);
+          const matchOpt = opts.find(o => o.value.toLowerCase() === mapName.toLowerCase());
+          if (matchOpt) {
+            sel.value = matchOpt.value;
+          } else {
+            sel.value = mapName; // try direct set
+          }
+        }
+        // Reset scores for picked maps
+        (document.getElementById(`map-${i + 1}-score-a`) as HTMLInputElement).value = '0';
+        (document.getElementById(`map-${i + 1}-score-b`) as HTMLInputElement).value = '0';
       }
-      mapPoolList.innerHTML = html;
+
+      // Mark first map as current by default
+      const firstRadio = document.getElementById('map-1-current') as HTMLInputElement;
+      if (firstRadio) firstRadio.checked = true;
     }
+
+    // Build detail display: show picks and bans
+    fetchDetailArea.style.display = 'block';
+    let detailHtml = '';
+
+    // Show picks
+    if (match.mapPool && match.mapPool.length > 0) {
+      detailHtml += '<div class="fetch-section-label">PICKS (Map Pool)</div><div class="fetch-tags">';
+      detailHtml += match.mapPool.map((m: string) => `<span class="map-tag pick">${m}</span>`).join('');
+      if (match.bestOf) {
+        detailHtml += `<span class="best-of-tag">Bo${match.bestOf}</span>`;
+      }
+      detailHtml += '</div>';
+    }
+
+    // Show bans
+    if (match.bans && match.bans.length > 0) {
+      detailHtml += '<div class="fetch-section-label">BANS</div><div class="fetch-tags">';
+      detailHtml += match.bans.map((b: any) => `<span class="map-tag ban">${b.map} <small>(${b.banned_by})</small></span>`).join('');
+      detailHtml += '</div>';
+    }
+
+    fetchDetailList.innerHTML = detailHtml;
   } catch (e: any) {
     setFetchStatus('✕ ' + (e.message || 'Unknown error'), 'error');
     addLog('Match fetch error:', e);
@@ -140,7 +182,7 @@ btnFetch.addEventListener('click', async () => {
 });
 
 // Allow Enter key to trigger fetch
-matchCodeInput.addEventListener('keydown', (e: KeyboardEvent) => {
+apiUrlInput.addEventListener('keydown', (e: KeyboardEvent) => {
   if (e.key === 'Enter') btnFetch.click();
 });
 
@@ -185,10 +227,12 @@ btnApply.addEventListener('click', async () => {
   const logoA = (document.getElementById('logo-a') as HTMLInputElement).value.trim();
   const nameB = (document.getElementById('name-b') as HTMLInputElement).value.trim();
   const logoB = (document.getElementById('logo-b') as HTMLInputElement).value.trim();
+  const startingSide = (document.getElementById('starting-side') as HTMLSelectElement).value;
 
   const teamConfig = {
     teamA: { name: nameA || undefined, logo: logoA || undefined },
     teamB: { name: nameB || undefined, logo: logoB || undefined },
+    startingSide,
   };
 
   const mapPoolConfig = collectMapPool();
@@ -220,7 +264,9 @@ btnReset.addEventListener('click', async () => {
   // Reset BO format to BO3
   boFormatEl.value = '3';
   updateMapVisibility();
-  await wyksync.sendTeamConfig({ teamA: { name: '', logo: '' }, teamB: { name: '', logo: '' } });
+  // Reset starting side
+  (document.getElementById('starting-side') as HTMLSelectElement).value = 'a';
+  await wyksync.sendTeamConfig({ teamA: { name: '', logo: '' }, teamB: { name: '', logo: '' }, startingSide: 'a' });
   await wyksync.sendMapPoolConfig({ format: 3, maps: [] });
   showConfirm('✓ Reset to defaults');
 });

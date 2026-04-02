@@ -379,13 +379,13 @@
       background: rgba(255, 255, 255, 0.12);
     }
 
-    /* Match Code Fetch */
-    .match-code-row {
+    /* Match Code Fetch / Tournament API */
+    .fetch-row {
       display: flex;
       gap: 8px;
     }
 
-    .match-code-row input {
+    .fetch-row input {
       flex: 1;
     }
 
@@ -430,36 +430,51 @@
       color: #fbbf24;
     }
 
-    .map-pool-area {
+    .fetch-detail-area {
       margin-top: 10px;
       padding-top: 8px;
       border-top: 1px solid rgba(201, 168, 76, 0.15);
     }
 
-    .map-pool-label {
+    .fetch-section-label {
       font-size: 0.5rem;
       font-weight: 700;
-      color: #C9A84C;
+      color: #888;
       text-transform: uppercase;
       letter-spacing: 1.5px;
       margin-bottom: 6px;
+      margin-top: 6px;
     }
 
-    .map-pool-list {
+    .fetch-tags {
       display: flex;
       flex-wrap: wrap;
       gap: 6px;
     }
 
     .map-tag {
-      background: rgba(201, 168, 76, 0.12);
-      border: 1px solid rgba(201, 168, 76, 0.3);
       border-radius: 4px;
       padding: 3px 8px;
       font-size: 0.6rem;
       font-weight: 600;
-      color: #C9A84C;
       letter-spacing: 0.5px;
+    }
+
+    .map-tag.pick {
+      background: rgba(74, 222, 128, 0.12);
+      border: 1px solid rgba(74, 222, 128, 0.3);
+      color: #4ade80;
+    }
+
+    .map-tag.ban {
+      background: rgba(239, 68, 68, 0.12);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: #ef4444;
+    }
+
+    .map-tag.ban small {
+      opacity: 0.6;
+      margin-left: 2px;
     }
 
     .best-of-tag {
@@ -471,6 +486,13 @@
       font-weight: 600;
       color: #aaa;
       letter-spacing: 0.5px;
+    }
+
+    .logo-hint {
+      font-size: 0.45rem;
+      color: #555;
+      font-style: italic;
+      margin-top: 2px;
     }
   </style>
 </head>
@@ -492,32 +514,32 @@
     <div class="websocket-url">ws://localhost:8765</div>
   </div>
 
-  <!-- Match Code Fetch -->
+  <!-- Tournament API Fetch -->
   <div class="card card-gold">
-    <div class="card-title">⚡ Match Code — Fetch from Website</div>
+    <div class="card-title">Tournament API — Fetch Match Data</div>
     <div class="field">
       <label>API Endpoint URL</label>
-      <input type="text" id="api-url" placeholder="https://wyksync.onrender.com/match"
-        value="https://wyksync.onrender.com/match">
-    </div>
-    <div class="field">
-      <label>Match Code</label>
-      <div class="match-code-row">
-        <input type="text" id="match-code" placeholder="e.g. ABC123" maxlength="12"
-          style="text-transform:uppercase; letter-spacing:2px; font-weight:700; font-size:0.9rem;">
+      <div class="fetch-row">
+        <input type="text" id="api-url" placeholder="https://wyksync.onrender.com/tournament/24/overlay"
+          value="https://wyksync.onrender.com/tournament/24/overlay">
         <button class="fetch-btn" id="btn-fetch">FETCH</button>
       </div>
     </div>
+    <div class="field">
+      <label>Match Code</label>
+      <input type="text" id="match-code" placeholder="e.g. ABC123" maxlength="12"
+        style="text-transform:uppercase; letter-spacing:2px; font-weight:700; font-size:0.9rem;">
+      <div class="logo-hint">Reserved for future use</div>
+    </div>
     <div class="fetch-status" id="fetch-status"></div>
-    <div class="map-pool-area" id="map-pool-area" style="display:none;">
-      <div class="map-pool-label">MAP POOL</div>
-      <div class="map-pool-list" id="map-pool-list"></div>
+    <div class="fetch-detail-area" id="fetch-detail-area" style="display:none;">
+      <div id="fetch-detail-list"></div>
     </div>
   </div>
 
   <!-- Match Setup (Manual) -->
   <div class="card card-gold">
-    <div class="card-title">⚙ Match Setup — Team Logos & Names</div>
+    <div class="card-title">Match Setup — Team Logos & Names</div>
     <div class="teams-grid">
       <div class="team-block">
         <div class="team-block-title">Team A (Left)</div>
@@ -542,14 +564,21 @@
         </div>
       </div>
     </div>
-    <button class="apply-btn" id="btn-apply">▶ Apply to Overlay</button>
+    <div class="format-row" style="margin-top:10px;">
+      <label class="format-label">Starting Attackers</label>
+      <select id="starting-side" class="format-select">
+        <option value="a">Team A (Left)</option>
+        <option value="b">Team B (Right)</option>
+      </select>
+    </div>
+    <button class="apply-btn" id="btn-apply">Apply to Overlay</button>
     <button class="reset-btn" id="btn-reset">Reset</button>
     <div class="confirm-msg" id="confirm-msg"></div>
   </div>
 
   <!-- Series Map Pool -->
   <div class="card card-gold">
-    <div class="card-title">🗺 Series Map Pool</div>
+    <div class="card-title">Series Map Pool</div>
     <div class="format-row">
       <label class="format-label">Format</label>
       <select id="bo-format" class="format-select">

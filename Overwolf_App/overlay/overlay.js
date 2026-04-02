@@ -185,6 +185,7 @@ let buyPhaseActive = false;
 let buyFadeTimeout = null;
 let needsCardIntro = true; // true when player cards need entrance animation
 let mapPoolData = null; // { maps: [{ name, scoreA, scoreB, isCurrent }] }
+let startingSide = 'a'; // which team starts on attack: 'a' or 'b'
 
 function connect() {
   ws = new WebSocket(CONFIG.wsUrl);
@@ -219,6 +220,10 @@ function applyTeamConfig(cfg) {
     if (cfg.teamB.logo !== undefined) {
       setLogo('b', cfg.teamB.logo);
     }
+  }
+  // Starting side config
+  if (cfg.startingSide) {
+    startingSide = cfg.startingSide; // 'a' or 'b'
   }
   // Map pool / series info
   if (cfg.mapPool && Array.isArray(cfg.mapPool) && cfg.mapPool.length > 0) {
@@ -359,13 +364,15 @@ function render() {
     }
 
     // Attack / Defense side labels
+    // startingSide tells us which configured team starts on attack.
+    // Game's attackingTeam (0 or 1) tells us the current attacker index.
+    // If startingSide is 'a', team A = game team 0 starts ATK.
+    // If startingSide is 'b', team B = game team 1 starts ATK (labels flip).
     const atkTeam = gameData.attackingTeam;
-    if (atkTeam === 0) {
-      el.sideA.textContent = 'ATK';
-      el.sideB.textContent = 'DEF';
-    } else if (atkTeam === 1) {
-      el.sideA.textContent = 'DEF';
-      el.sideB.textContent = 'ATK';
+    const aIsAtk = startingSide === 'a' ? (atkTeam === 0) : (atkTeam === 1);
+    if (atkTeam === 0 || atkTeam === 1) {
+      el.sideA.textContent = aIsAtk ? 'ATK' : 'DEF';
+      el.sideB.textContent = aIsAtk ? 'DEF' : 'ATK';
     } else {
       el.sideA.textContent = '';
       el.sideB.textContent = '';
