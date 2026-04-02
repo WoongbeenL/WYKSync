@@ -29,13 +29,12 @@ export class Application {
       return true;
     });
 
-    // Render Request for match info
-    ipcMain.handle('fetch-match-config', async (_event, matchCode: string, apiUrl: string) => {
+    // Render Request for match info — fetches tournament overlay data
+    ipcMain.handle('fetch-match-config', async (_event, apiUrl: string) => {
       try {
-        const url = `${apiUrl}?match_code=${encodeURIComponent(matchCode)}`;
-        console.log(`[Match] Fetching match config from: ${url}`);
+        console.log(`[Match] Fetching overlay config from: ${apiUrl}`);
 
-        const response = await fetch(url);
+        const response = await fetch(apiUrl);
 
         if (!response.ok) {
           const errBody = await response.text();
@@ -44,37 +43,44 @@ export class Application {
         }
 
         const data = await response.json();
-        console.log('[Match] Received match data:', JSON.stringify(data));
+        console.log('[Match] Received overlay data:', JSON.stringify(data));
 
-        const match = data.match || data;
+        // Support both { overlay: {...} } and flat structures
+        const overlay = data.overlay || data;
 
-        const config: any = {};
-        if (match.teamA) {
-          config.teamA = {
-            name: match.teamA.name || undefined,
-            logo: match.teamA.logo || undefined,
+        const result: any = {};
+
+        // Team A
+        if (overlay.team_a) {
+          result.teamA = {
+            name: overlay.team_a.name || '',
+            tricode: overlay.team_a.tricode || '',
+            logo: overlay.team_a.logo_url || overlay.team_a.logo || '',
           };
         }
-        if (match.teamB) {
-          config.teamB = {
-            name: match.teamB.name || undefined,
-            logo: match.teamB.logo || undefined,
+        // Team B
+        if (overlay.team_b) {
+          result.teamB = {
+            name: overlay.team_b.name || '',
+            tricode: overlay.team_b.tricode || '',
+            logo: overlay.team_b.logo_url || overlay.team_b.logo || '',
           };
         }
-        if (match.mapPool) {
-          config.mapPool = match.mapPool;
-        }
-        if (match.bestOf !== undefined) {
-          config.bestOf = match.bestOf;
+
+        // Extract picks (the map pool) — ignore bans
+        if (overlay.picks && Array.isArray(overlay.picks)) {
+          result.mapPool = overlay.picks.map((p: any) => p.map);
+          result.bestOf = overlay.picks.length;
+          result.picksDetail = overlay.picks; // full pick details for the UI
         }
 
-        this.webSocketService.broadcast({
-          type: 'team-config',
-          timestamp: Date.now(),
-          config
-        });
+        // Pass bans along for display purposes
+        if (overlay.bans && Array.isArray(overlay.bans)) {
+          result.bans = overlay.bans;
+        }
 
-        return { success: true, match: match };
+        // Do NOT auto-broadcast to overlay — let the user review and click Apply
+        return { success: true, match: result };
       } catch (err: any) {
         console.error('[Match] Fetch error:', err);
         return { success: false, error: err.message || 'Unknown error' };

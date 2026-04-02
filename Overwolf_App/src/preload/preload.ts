@@ -17,9 +17,9 @@ contextBridge.exposeInMainWorld('wyksync', {
   sendTeamConfig: (config: { teamA?: { name?: string; logo?: string }; teamB?: { name?: string; logo?: string } }) =>
     ipcRenderer.invoke('send-team-config', config),
 
-  // Fetch match config from website API using a match code
-  fetchMatchConfig: (matchCode: string, apiUrl: string) =>
-    ipcRenderer.invoke('fetch-match-config', matchCode, apiUrl),
+  // Fetch overlay config from tournament API
+  fetchMatchConfig: (apiUrl: string) =>
+    ipcRenderer.invoke('fetch-match-config', apiUrl),
 
   // Send map pool / series config to overlay via WebSocket broadcast
   sendMapPoolConfig: (config: { format: number; maps: Array<{ name: string; scoreA: number; scoreB: number; isCurrent: boolean }> }) =>
