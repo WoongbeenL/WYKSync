@@ -1,78 +1,100 @@
 /* Veto page styling for the map selection workflow. */
-.vetoes{
+.vetoes {
   min-height: 100vh;
-  background: radial-gradient(circle at top, #0f0f0f, #000);
   color: white;
-  padding: 4rem 6rem;
-  font-family: Arial, Helvetica, sans-serif;
+  padding: 2.25rem 0 3.5rem;
+}
+
+.vetoes-shell {
+  width: min(1180px, 100%);
+  margin: 0 auto;
+  display: grid;
+  gap: 1.5rem;
+}
+
+.vetoes-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.95fr);
+  gap: 1.25rem;
+  padding: 1.5rem;
+  border-radius: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    radial-gradient(circle at top right, rgba(255, 70, 85, 0.2), transparent 34%),
+    linear-gradient(135deg, rgba(17, 24, 39, 0.96), rgba(7, 10, 18, 0.98));
+  box-shadow: 0 28px 70px rgba(0, 0, 0, 0.28);
+}
+
+.veto-panel {
+  background: linear-gradient(180deg, rgba(15, 19, 30, 0.96), rgba(10, 13, 21, 0.94));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 24px;
+  padding: 1.35rem;
+  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.2);
 }
 
 /* Top dropdown controls for map pool and veto format. */
-.dropdown_menus{
-  display: flex;
-  flex-wrap: wrap;
+.dropdown_menus {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 1rem;
-  align-items: flex-end;
-  justify-content: center;
-  margin-bottom: 1.2rem;
+  align-content: center;
 }
 
 .dropdown_menus label {
   display: flex;
   flex-direction: column;
-  align-items: center;
   gap: 0.45rem;
-  min-width: 220px;
   font-size: 0.95rem;
   color: #d7d7d7;
   font-weight: 600;
 }
 
-.dropdown_menus select {
+.dropdown_menus select,
+.acting-role select {
   appearance: none;
   width: 100%;
-  border: 1px solid #2f2f2f;
-  border-radius: 8px;
-  background: #151515;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
   color: #fff;
-  padding: 0.6rem 2rem 0.6rem 0.7rem;
+  padding: 0.75rem 2rem 0.75rem 0.8rem;
   font-size: 0.95rem;
   line-height: 1.2;
 }
 
-.dropdown_menus select:focus {
+.dropdown_menus select:focus,
+.acting-role select:focus,
+.team-input-group input:focus {
   outline: none;
-  border-color: #ffffff;
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.15);
+  border-color: #ff4655;
+  box-shadow: 0 0 0 2px rgba(255, 70, 85, 0.14);
 }
 
-.dropdown_menus select option {
+.dropdown_menus select option,
+.acting-role select option {
   background: #151515;
   color: #fff;
 }
 
-@media (max-width: 720px) {
-  .dropdown_menus {
-    flex-direction: column;
-    align-items: center;
-  }
-
-  .dropdown_menus label {
-    min-width: 0;
-    width: min(100%, 320px);
-  }
+.title_n_paragraph {
+  display: grid;
+  gap: 0.8rem;
 }
 
-.title_n_paragraph h1{
-  font-size: 4rem;
-  color: #ff4655;
-  margin-bottom: 1rem;
+.title_n_paragraph h1 {
+  font-size: clamp(2.2rem, 4vw, 3.4rem);
+  color: #ffffff;
+  margin: 0;
+  line-height: 0.98;
 }
 
 .title_n_paragraph p {
-  font-size: 1.1rem;
-  line-height: 1.6;
-  color: #aaa;
+  margin: 0;
+  font-size: 1.05rem;
+  line-height: 1.7;
+  color: #cfd5e6;
+  max-width: 60ch;
 }
 
 /* Team name inputs near the start of the flow. */
@@ -80,101 +102,114 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 0.8rem;
-  margin: 1rem 0 0.6rem;
+  margin: 0 0 0.6rem;
 }
 
 .team-input-group input {
   width: 100%;
-  background: #1c1c1c;
-  border: 1px solid #333;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   color: #fff;
-  padding: 0.7rem;
-  border-radius: 6px;
-}
-
-.team-input-group input:focus {
-  outline: none;
-  border-color: #ff4655;
+  padding: 0.85rem 0.9rem;
+  border-radius: 12px;
 }
 
 .final {
   margin-top: 1.5rem;
+  display: grid;
+  gap: 1rem;
+}
+
+.veto-status-panel {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.veto-status-panel h3,
+.picked-maps h4,
+.ban-history h4 {
+  margin: 0;
+  color: #ffffff;
+}
+
+.veto-status-panel p,
+.picked-maps p {
+  margin: 0;
+  color: #d7def0;
+  line-height: 1.55;
 }
 
 /* Current acting role selector. */
 .acting-role {
-  margin-top: 0.6rem;
+  margin-top: 0.2rem;
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.65rem;
   font-size: 0.95rem;
   font-weight: 600;
   color: #d7d7d7;
+  flex-wrap: wrap;
 }
 
 .acting-role select {
-  appearance: none;
-  border: 1px solid #2f2f2f;
-  border-radius: 8px;
-  background: #151515;
-  color: #fff;
-  padding: 0.5rem 1.8rem 0.5rem 0.65rem;
-  font-size: 0.92rem;
-}
-
-.acting-role select:focus {
-  outline: none;
-  border-color: #ffffff;
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.15);
+  width: auto;
+  min-width: 180px;
 }
 
 .decider-buttons,
-.manual-order {
+.manual-order,
+.centered-flow {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.65rem;
+  gap: 0.75rem;
   margin-top: 0.9rem;
   align-items: center;
   justify-content: center;
 }
 
-.manual-order p {
+.manual-order p,
+.veto-choice-block p {
   width: 100%;
   margin: 0;
   color: #cfcfcf;
   text-align: center;
 }
 
+.veto-inline-error {
+  text-align: center;
+}
+
 /* Buttons used through the setup flow. */
-.flow-btn {
-  background: #151515;
+.flow-btn,
+.side-picker button {
+  background: linear-gradient(135deg, #ff4655, #ff6e7b);
   color: #fff;
-  border: 1px solid #2f2f2f;
-  border-radius: 8px;
-  padding: 0.55rem 0.95rem;
+  border: none;
+  border-radius: 12px;
+  padding: 0.7rem 1rem;
   font-size: 0.95rem;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
-  transition: border-color 0.16s ease, background-color 0.16s ease;
+  transition: transform 0.16s ease, box-shadow 0.16s ease;
 }
 
-.flow-btn:hover {
-  background: #1f1f1f;
-  border-color: #fff;
+.flow-btn:hover,
+.side-picker button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 18px 30px rgba(255, 70, 85, 0.24);
 }
 
-.flow-btn:focus-visible {
+.flow-btn:focus-visible,
+.side-picker button:focus-visible {
   outline: none;
-  border-color: #fff;
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.15);
+  box-shadow: 0 0 0 3px rgba(255, 70, 85, 0.18);
 }
 
 /* Main map card button styles. */
 .map-btn {
-  margin: 0.4rem;
   padding: 0;
   border: 2px solid transparent;
-  border-radius: 10px;
+  border-radius: 18px;
   cursor: pointer;
   overflow: hidden;
   text-align: left;
@@ -183,26 +218,26 @@
   align-items: flex-end;
   min-height: 220px;
   width: 100%;
+  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
 }
 
 /* Grid wrappers for different map pool layouts. */
 .map-grid {
-  margin-top: 1rem;
   display: grid;
-  gap: 0.65rem;
+  gap: 0.85rem;
 }
 
 .map-grid-vertical {
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
 }
 
 .map-grid-square {
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
 }
 
 .map-grid-square .map-btn {
   aspect-ratio: 1 / 1;
-  min-height: 120px;
+  min-height: 130px;
 }
 
 .map-grid-vertical .map-btn {
@@ -218,16 +253,22 @@
   object-fit: cover;
 }
 
+.map-btn::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 25%, rgba(0, 0, 0, 0.78) 100%);
+}
+
 .map-btn-label {
   position: relative;
   z-index: 1;
   width: 100%;
-  padding: 0.6rem 0.7rem;
+  padding: 0.7rem 0.8rem;
   font-weight: 700;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   color: #fff;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
-  background: linear-gradient(180deg, rgba(0, 0, 0, 0.18) 0%, rgba(0, 0, 0, 0.92) 100%);
   border-top: 1px solid rgba(255, 255, 255, 0.12);
   backdrop-filter: blur(1px);
 }
@@ -239,8 +280,9 @@
 }
 
 .map-btn.available:hover:not(:disabled) {
-  border-color: #fff;
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.18);
+  transform: translateY(-2px);
+  border-color: #ff4655;
+  box-shadow: 0 22px 34px rgba(0, 0, 0, 0.28);
 }
 
 .map-btn.banned {
@@ -276,10 +318,10 @@
 /* Small badge in the corner for picked/decider maps. */
 .map-btn-status {
   position: absolute;
-  top: 0.45rem;
-  left: 0.45rem;
+  top: 0.7rem;
+  left: 0.7rem;
   z-index: 2;
-  padding: 0.22rem 0.5rem;
+  padding: 0.24rem 0.55rem;
   border-radius: 999px;
   font-size: 0.74rem;
   font-weight: 700;
@@ -296,33 +338,37 @@
   color: #3b2c00;
 }
 
+.veto-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
 /* Veto log area that reads almost like a chat feed. */
 .ban-history {
-  margin-top: 1rem;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  gap: 0.85rem;
 }
 
 .veto-log-chat {
   width: 100%;
-  max-width: 420px;
-  max-height: 180px;
+  max-height: 240px;
   overflow-y: auto;
-  background: #111;
-  border: 1px solid #2a2a2a;
-  border-radius: 8px;
-  padding: 0.6rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 0.75rem;
 }
 
 .veto-log-message {
   margin: 0 0 0.45rem;
-  padding: 0.45rem 0.6rem;
-  background: #1c1c1c;
-  border-radius: 6px;
+  padding: 0.55rem 0.7rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
   color: #e9e9e9;
   font-size: 0.9rem;
-  line-height: 1.35;
+  line-height: 1.4;
 }
 
 .veto-log-message:last-child {
@@ -331,21 +377,21 @@
 
 /* Side picker buttons after a map is chosen. */
 .side-picker {
-  margin-top: 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
 }
 
-.side-picker button {
-  margin-right: 0.5rem;
-  background: #ff4655;
-  border: none;
-  color: #fff;
-  padding: 0.45rem 0.85rem;
-  border-radius: 6px;
-  cursor: pointer;
+.side-picker p {
+  width: 100%;
+  margin: 0;
+  color: #d7def0;
 }
 
 .picked-maps {
-  margin-top: 1rem;
+  display: grid;
+  gap: 0.65rem;
 }
 
 /* Shared error styling for invalid team inputs. */
@@ -357,4 +403,26 @@
   margin: 0.35rem 0 0;
   font-size: 0.82rem;
   color: #ff9da7;
+}
+
+@media (max-width: 900px) {
+  .vetoes-hero {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 700px) {
+  .vetoes {
+    padding-top: 1.25rem;
+  }
+
+  .vetoes-hero,
+  .veto-panel {
+    padding: 1rem;
+    border-radius: 20px;
+  }
+
+  .map-grid-vertical {
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  }
 }
