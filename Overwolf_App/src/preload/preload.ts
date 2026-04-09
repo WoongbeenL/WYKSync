@@ -1,3 +1,14 @@
+/* 
+ *  FILE          : preload.ts
+ *  PROJECT       : SENG3221 - WYKSync
+ *  PROGRAMMER    : Ygnacio Maza, Krystin Theoret, Will Lee
+ *  DATE          : 2026-08-04
+ *  DESCRIPTION   :
+ *    Electron preload script. Exposes the wyksync API bridge to the
+ *    renderer process via contextBridge, providing IPC methods for
+ *    status updates, game info, team config, and map pool config.
+ */
+
 const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('wyksync', {

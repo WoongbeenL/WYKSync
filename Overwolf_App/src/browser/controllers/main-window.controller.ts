@@ -1,3 +1,14 @@
+/* 
+ *  FILE          : main-window.controller.ts
+ *  PROJECT       : SENG3221 - WYKSync
+ *  PROGRAMMER    : Ygnacio Maza, Krystin Theoret, Will Lee
+ *  DATE          : 2026-08-04
+ *  DESCRIPTION   :
+ *    Controller for the Electron main window. Creates the BrowserWindow,
+ *    loads the renderer HTML, registers IPC handlers for get-info and
+ *    set-features, and forwards status/log updates to the renderer.
+ */
+
 import { BrowserWindow, ipcMain } from 'electron';
 import path from 'path';
 import { GepService } from '../services/gep.service';

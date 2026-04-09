@@ -1,3 +1,14 @@
+/* 
+ *  FILE          : application.ts
+ *  PROJECT       : SENG3221 - WYKSync
+ *  PROGRAMMER    : Ygnacio Maza, Krystin Theoret, Will Lee
+ *  DATE          : 2026-08-04
+ *  DESCRIPTION   :
+ *    Main application class. Wires GEP, WebSocket, and main window
+ *    services together, registers IPC handlers for team config,
+ *    tournament API fetch, and map pool broadcast to the overlay.
+ */
+
 import { GepService } from './services/gep.service';
 import { WebSocketService } from './services/websocket.service';
 import { MainWindowController } from './controllers/main-window.controller';

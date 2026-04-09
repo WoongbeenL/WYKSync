@@ -1,3 +1,14 @@
+/* 
+ *  FILE          : index.ts
+ *  PROJECT       : SENG3221 - WYKSync
+ *  PROGRAMMER    : Ygnacio Maza, Krystin Theoret, Will Lee
+ *  DATE          : 2026-08-04
+ *  DESCRIPTION   :
+ *    Electron main process entry point. Bootstraps the GEP, WebSocket,
+ *    and main window services, then starts the application when Electron
+ *    is ready and handles shutdown on window close.
+ */
+
 import { app as ElectronApp } from 'electron';
 import { Application } from './application';
 import { GepService } from './services/gep.service';

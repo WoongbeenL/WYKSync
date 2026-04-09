@@ -1,3 +1,14 @@
+/* 
+ *  FILE          : overlay-styles.css
+ *  PROJECT       : SENG3221 - WYKSync
+ *  PROGRAMMER    : Ygnacio Maza, Krystin Theoret, Will Lee
+ *  DATE          : 2026-08-04
+ *  DESCRIPTION   :
+ *    All CSS styles for the broadcast overlay. Includes design tokens,
+ *    top bar scoreboard, player cards, buy phase panels, series tracker,
+ *    animations, and responsive layout rules.
+ */
+
 /* ============================
    ROOT & RESET
    ============================ */

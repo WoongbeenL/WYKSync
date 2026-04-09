@@ -1,3 +1,14 @@
+/* 
+ *  FILE          : renderer.ts
+ *  PROJECT       : SENG3221 - WYKSync
+ *  PROGRAMMER    : Ygnacio Maza, Krystin Theoret, Will Lee
+ *  DATE          : 2026-08-04
+ *  DESCRIPTION   :
+ *    Renderer process script for the Electron control window. Manages
+ *    UI event handlers for team config, tournament API fetching, map
+ *    pool selection, and sends configuration to the overlay via IPC.
+ */
+
 declare const wyksync: {
   onStatusUpdate: (callback: (status: string) => void) => void;
   onLogMessage: (callback: (...args: any[]) => void) => void;

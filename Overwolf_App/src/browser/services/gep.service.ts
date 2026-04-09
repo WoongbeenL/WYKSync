@@ -1,3 +1,15 @@
+/* 
+ *  FILE          : gep.service.ts
+ *  PROJECT       : SENG3221 - WYKSync
+ *  PROGRAMMER    : Ygnacio Maza, Krystin Theoret, Will Lee
+ *  DATE          : 2026-08-04
+ *  DESCRIPTION   :
+ *    Game Event Provider service. Interfaces with the Overwolf GEP
+ *    package to detect Valorant, set required features, poll live
+ *    match data, parse player rosters/scoreboards, and emit game
+ *    state updates.
+ */
+
 import { app as electronApp } from 'electron';
 import { overwolf } from '@overwolf/ow-electron';
 import EventEmitter from 'events';

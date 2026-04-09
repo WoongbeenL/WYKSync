@@ -1,3 +1,15 @@
+/* 
+ *  FILE          : overlay.js
+ *  PROJECT       : SENG3221 - WYKSync
+ *  PROGRAMMER    : Ygnacio Maza, Krystin Theoret, Will Lee
+ *  DATE          : 2026-08-04
+ *  DESCRIPTION   :
+ *    Client-side logic for the broadcast overlay. Handles WebSocket
+ *    connection, game data rendering, player card generation, buy
+ *    phase display, series tracker updates, and agent/weapon/shield
+ *    asset lookups.
+ */
+
 // ========================================
 // CONFIG
 // ========================================

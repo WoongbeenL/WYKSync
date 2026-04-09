@@ -1,3 +1,14 @@
+/* 
+ *  FILE          : websocket.service.ts
+ *  PROJECT       : SENG3221 - WYKSync
+ *  PROGRAMMER    : Ygnacio Maza, Krystin Theoret, Will Lee
+ *  DATE          : 2026-08-04
+ *  DESCRIPTION   :
+ *    WebSocket and HTTP server service. Serves the overlay static files
+ *    over HTTP, manages WebSocket client connections, broadcasts game
+ *    data and config messages, and exposes status/data REST endpoints.
+ */
+
 import { WebSocketServer, WebSocket } from 'ws';
 import { createServer, IncomingMessage, ServerResponse } from 'http';
 import { readFileSync, existsSync } from 'fs';
