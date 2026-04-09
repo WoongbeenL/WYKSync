@@ -22,6 +22,7 @@
 
 /* This controls the multi-column link layout. */
 .sb__footer-links {
+  /* Wrap is important here so the columns can drop under each other on smaller screens. */
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
@@ -62,6 +63,7 @@
 }
 
 .sb__footer-links-div p {
+  /* Paragraph tags are used as the visible text inside the footer links. */
   font-size: 15px;
   line-height: 1.4;
   margin: 0.4rem 0;

@@ -1,9 +1,11 @@
 // Team profile helpers keep the page components from getting overloaded with API details.
 import { requestBackend, requestBackendWithFallback } from "./backendApi";
 
+// Local storage key is based on the current user so different accounts do not overlap.
 const getTeamProfileStorageKey = (userIdentifier) =>
   `team-profile:${String(userIdentifier || "").trim().toLowerCase()}`;
 
+// Reads any saved team info from local storage so the page can feel faster on refresh.
 const readCachedTeamProfile = (userIdentifier) => {
   if (typeof window === "undefined" || !userIdentifier) return null;
 
@@ -21,6 +23,7 @@ const readCachedTeamProfile = (userIdentifier) => {
 export const getCachedTeamProfileForCurrentUser = (userIdentifier) =>
   readCachedTeamProfile(userIdentifier);
 
+// Saves or clears the cached team info after create, update, join, or delete actions.
 const writeCachedTeamProfile = (userIdentifier, teamProfile) => {
   if (typeof window === "undefined" || !userIdentifier) return;
 
@@ -70,6 +73,7 @@ const normalizeJoinPreview = (payload) => {
   };
 };
 
+// Helper for the join-code flow so we can fetch the team details after a successful join.
 const fetchTeamByJoinCode = async ({ joinCode, role }) => {
   const result = await requestBackend(
     `/team?join_code=${encodeURIComponent(String(joinCode || "").trim().toUpperCase())}`,
@@ -104,6 +108,7 @@ export const fetchCurrentUserTeamProfile = async (userIdentifier) => {
 
   const normalizedTeam = normalizeTeamProfile(result.data);
   if (normalizedTeam) {
+    // If the backend returns live data, we refresh the cache with the newer version.
     writeCachedTeamProfile(userIdentifier, normalizedTeam);
     return {
       teamProfile: normalizedTeam,
@@ -122,6 +127,7 @@ export const fetchCurrentUserTeamProfile = async (userIdentifier) => {
   const cachedTeam = readCachedTeamProfile(userIdentifier);
   return {
     teamProfile: cachedTeam,
+    // This keeps older backend quirks from showing as scary errors in the UI.
     error:
       result.error === "join_code query parameter is required" ? null : result.error,
   };
@@ -234,6 +240,7 @@ export const disbandTeamForCurrentUser = async ({
   });
 
   if (!result.error) {
+    // Once the team is deleted we also wipe the local cache for that user.
     writeCachedTeamProfile(userIdentifier, null);
   }
 

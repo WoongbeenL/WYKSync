@@ -1,5 +1,6 @@
 // Placeholder overlay page for now.
 export default function Overlay(){
-    // This will probably get replaced with the real overlay preview later.
+    // Right now this page just proves the route exists on the frontend side.
+    // We kept it simple until the dedicated overlay experience is fully wired in.
     return <h1>Overlay Demo</h1>
 }

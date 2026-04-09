@@ -1,4 +1,5 @@
 /* Veto page styling for the map selection workflow. */
+/* This page has the busiest layout, so most of the CSS is about spacing and readability. */
 .vetoes {
   min-height: 100vh;
   color: white;

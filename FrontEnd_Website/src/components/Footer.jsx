@@ -7,6 +7,7 @@ const Footer=()=>{
     return (
         <div className="footer">
             <div className="sb__footer section_padding">
+                {/* The footer is split into columns so links are easier to scan. */}
                 <div className="sb__footer-links">
                     {/* These columns are grouped so the footer feels more organized. */}
                     <div className="sb__footer-links-div">
@@ -64,6 +65,7 @@ const Footer=()=>{
                         </a>
                     </div>
                 </div>
+                {/* Simple divider before the copyright line. */}
                 <hr></hr>
                 <div className="sb__footer-below"></div>
                 <div className="sb__footer-copyright">

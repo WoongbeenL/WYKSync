@@ -7,6 +7,7 @@
 }
 
 .tournaments-hero {
+  /* Hero uses a two-column layout so the intro and stats can sit side by side. */
   display: grid;
   grid-template-columns: minmax(0, 1.35fr) minmax(320px, 1fr);
   gap: 1.25rem;
@@ -125,6 +126,7 @@
 
 /* The create tournament form area. */
 .tournament-input {
+  /* Auto-fit lets the form reorganize itself nicely on different screen widths. */
   background: rgba(8, 11, 19, 0.62);
   padding: 1.5rem;
   border-radius: 20px;
@@ -318,6 +320,7 @@
 
 /* Individual tournament card styling. */
 .tournament-card {
+  /* Each tournament card acts like a quick preview before opening the detail panel. */
   background: linear-gradient(180deg, rgba(17, 21, 33, 0.96), rgba(10, 13, 21, 0.96));
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 22px;
@@ -531,6 +534,7 @@
 .tournament-content p,
 .detail-section p,
 .detail-section h3 {
+  /* Long tournament names and rule text should wrap instead of breaking the layout. */
   overflow-wrap: anywhere;
   word-break: break-word;
 }
@@ -647,6 +651,7 @@
 }
 
 .single-elim-bracket {
+  /* Bracket columns are responsive so they can collapse cleanly on smaller screens. */
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 1rem;
@@ -906,6 +911,7 @@
 
 .participants-table-wrap .standings-table {
   width: min(100%, 520px);
+  /* Fixed layout stops one huge team name from stretching the whole table. */
   table-layout: fixed;
 }
 

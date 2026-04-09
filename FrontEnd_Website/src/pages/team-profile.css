@@ -20,6 +20,7 @@
   text-align: left;
 }
 
+/* Long names or codes should wrap instead of pushing the card wider. */
 .team-profile-card h2,
 .team-profile-card p,
 .team-profile-dialog p,
@@ -114,6 +115,7 @@
 }
 
 .team-profile-dialog h3 {
+  /* Dialog title stays short, but we still style it clearly for emphasis. */
   margin: 0 0 0.75rem;
   color: #fff;
 }
@@ -170,6 +172,7 @@
 }
 
 .team-preview-card {
+  /* Small preview card used after a join-code lookup succeeds. */
   border: 1px solid #2f2f2f;
   border-radius: 8px;
   padding: 0.9rem;
