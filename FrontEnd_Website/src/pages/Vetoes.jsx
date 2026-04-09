@@ -352,276 +352,289 @@ export default function Vetoes() {
 
   return (
     <div className="vetoes">
-      <div className="dropdown_menus">
-         <label>
-        Pick a Map Pool:
-        <select value={selectedMapPool} onChange={handleChange}>
-          <option value="all">All Maps</option>
-          <option value="comp">Competitive Pool</option>
-          {/*TODO: Add functionality to be given a checklist for custom*/}
-          <option value="custom">Custom</option>
-        </select>
-      </label>
-       <label>
-        Pick a Map Veto:
-        <select value={selectedVeto} onChange={vetoPick}>
-          {/*TODO: Add functionality to modify the way vetoes go depending on this choice.*/}
-          <option value="bo1">Best of 1</option>
-          <option value="bo3">Best of 3</option>
-          <option value="bo5">Best of 5</option>
-          <option value="custom">Custom</option>
-        </select>
-      </label>
-      </div>
-
-      <div className="title_n_paragraph">
-        <h1>Map Vetoes</h1>
-        <p>
-          Enter both team names to begin the veto process.
-        </p>
-      </div>
-
-    {/*TODO: Replace with login needed to continue. */}
-      {/* Team input area starts the whole veto flow. */}
-      <div className="team-inputs">
-        <div className="team-input-group">
-          <input
-            className={teamInputErrors.teamA ? "field-error" : ""}
-            type="text"
-            placeholder="Team A Name"
-            value={teamA}
-            onChange={(e) => {
-              setTeamA(e.target.value);
-              clearTeamInputError("teamA");
-            }}
-          />
-          {teamInputErrors.teamA && <p className="input-error-text">{teamInputErrors.teamA}</p>}
-        </div>
-        <div className="team-input-group">
-          <input
-            className={teamInputErrors.teamB ? "field-error" : ""}
-            type="text"
-            placeholder="Team B Name"
-            value={teamB}
-            onChange={(e) => {
-              setTeamB(e.target.value);
-              clearTeamInputError("teamB");
-            }}
-          />
-          {teamInputErrors.teamB && <p className="input-error-text">{teamInputErrors.teamB}</p>}
-        </div>
-      </div>
-      {teamInputErrors.general && <p className="input-error-text">{teamInputErrors.general}</p>}
-
-      {/* User picks how team order should be decided. */}
-      {!mode && (
-        <div className="decider-buttons">
-          <button
-            className="flow-btn"
-            onClick={() => {
-              if (!validateTeamInputs()) return;
-              setMode("coin");
-            }}
-          >
-            Coin Flip
-          </button>
-          <button
-            className="flow-btn"
-            onClick={() => {
-              if (!validateTeamInputs()) return;
-              setMode("manual");
-            }}
-          >
-            Manual Team Order
-          </button>
-        </div>
-      )}
-
-      {/* If coin flip mode was picked, show the flip button first. */}
-      {mode === "coin" && !coinWinner && (
-        <button className="flow-btn" onClick={runCoinFlip}>Flip Coin</button>
-        )}
-
-      {/* Once there is a winner, let them choose team order. */}
-      {coinWinner && !team1 && (
-        <>
-          <p>{coinWinner} won the coin flip!</p>
-          <p>Choose your team:</p>
-
-          <button className="flow-btn" onClick={() => chooseTeam("team1")}>
-            Be Team 1
-          </button>
-
-          <button className="flow-btn" onClick={() => chooseTeam("team2")}>
-            Be Team 2
-          </button>
-        </>
-      )}
-      {/* Main veto interface after both team slots are set. */}
-      {team1 && team2 && (
-        <div className='final'>
-          <>
-          <h3>Final Teams</h3>
-          <p>Team 1: {team1} | Team 2: {team2}</p>
-          <label className="acting-role">
-            <span>You are:</span>
-            <select value={actingAs} onChange={(e) => setActingAs(e.target.value)}>
-              <option value="spectator">Spectator</option>
-              <option value="team1">{team1}</option>
-              <option value="team2">{team2}</option>
-            </select>
-          </label>
-          {!vetoComplete && currentAction && (
+      <div className="vetoes-shell">
+        <section className="vetoes-hero">
+          <div className="title_n_paragraph">
+            <h1>Map Vetoes</h1>
             <p>
-              Current action: <strong>{currentAction.label}</strong>
+              Enter both team names, choose the format, and walk through the veto
+              flow with a cleaner centered layout.
             </p>
-          )}
-          {selectedVeto === "bo3" && !vetoComplete && (
-            <p>Map 3 (Decider): TBD</p>
-          )}
-          {vetoComplete && (
-            <p>
-              {selectedVeto === "bo3"
-                ? `Veto complete. Map 3 (Decider): ${deciderMap || "TBD"}`
-                : `Veto complete. Final map: ${deciderMap || availableMaps.join(", ")}`}
-            </p>
-          )}
-          </>
-          <>
-          {/* Map cards act like the main control surface for bans and picks. */}
-          <div className={`map-grid ${selectedMapPool === "all" ? "map-grid-square" : "map-grid-vertical"}`}>
-          {activeMaps.map((map) => {
-            const mapState = mapStates[map] || {
-              status: "available",
-              by: null,
-              mapNumber: null,
-            };
-            const actingTeamName =
-              actingAs === "team1" ? team1 : actingAs === "team2" ? team2 : null;
-            const isMapStep =
-              currentAction && (currentAction.type === "ban" || currentAction.type === "pick");
-            const isLocked =
-              vetoComplete ||
-              !isMapStep ||
-              !actingTeamName ||
-              actingTeamName !== currentAction.team;
-            const isBanned = mapState.status === "banned";
-            const isPicked = mapState.status === "picked";
-            const isDecider = mapState.status === "decider";
-            return (
-              <button
-                key={map}
-                onClick={() => handleMapAction(map)}
-                disabled={isLocked || isBanned || isPicked || isDecider}
-                className={
-                  isBanned
-                    ? "map-btn banned"
-                    : isPicked
-                      ? "map-btn picked"
-                      : isDecider
-                        ? "map-btn decider"
-                        : "map-btn available"
-                }
-                title={
-                  isBanned
-                    ? `Banned by ${mapState.by}`
-                    : isPicked
-                      ? `Picked by ${mapState.by} (Map ${mapState.mapNumber})`
-                      : isDecider
-                        ? "Final decider map"
-                        : isLocked
-                          ? "Not your turn"
-                          : currentAction?.type === "pick"
-                            ? `Pick ${map}`
-                            : `Ban ${map}`
-                }
-              >
-                <img
-                  className="map-btn-image"
-                  src={MAP_IMAGE_FILENAMES[map]}
-                  alt={`${map} map`}
-                  loading="lazy"
-                  onError={(event) => {
-                    event.currentTarget.onerror = null;
-                    event.currentTarget.src = getFallbackMapImage(map);
-                  }}
-                />
-                {isPicked && (
-                  <span className="map-btn-status map-btn-status-picked">
-                    Map {mapState.mapNumber}
-                  </span>
-                )}
-                {isDecider && (
-                  <span className="map-btn-status map-btn-status-decider">
-                    Decider
-                  </span>
-                )}
-                <span className="map-btn-label">
-                  {map}
-                  {isPicked && ` (Map ${mapState.mapNumber})`}
-                  {isDecider && " (Decider)"}
-                </span>
-              </button>
-            );
-          })}
           </div>
-          </>
-          {currentAction?.type === "side" && (
-            <div className="side-picker">
-              <p>{currentAction.label}</p>
-              {SIDE_OPTIONS.map((side) => (
-                <button
-                  key={side}
-                  type="button"
-                  onClick={() => handleSidePick(side)}
-                >
-                  {side}
-                </button>
-              ))}
+          <div className="dropdown_menus">
+            <label>
+              Pick a Map Pool:
+              <select value={selectedMapPool} onChange={handleChange}>
+                <option value="all">All Maps</option>
+                <option value="comp">Competitive Pool</option>
+                {/*TODO: Add functionality to be given a checklist for custom*/}
+                <option value="custom">Custom</option>
+              </select>
+            </label>
+            <label>
+              Pick a Map Veto:
+              <select value={selectedVeto} onChange={vetoPick}>
+                {/*TODO: Add functionality to modify the way vetoes go depending on this choice.*/}
+                <option value="bo1">Best of 1</option>
+                <option value="bo3">Best of 3</option>
+                <option value="bo5">Best of 5</option>
+                <option value="custom">Custom</option>
+              </select>
+            </label>
+          </div>
+        </section>
+
+        <section className="veto-panel">
+          {/*TODO: Replace with login needed to continue. */}
+          {/* Team input area starts the whole veto flow. */}
+          <div className="team-inputs">
+            <div className="team-input-group">
+              <input
+                className={teamInputErrors.teamA ? "field-error" : ""}
+                type="text"
+                placeholder="Team A Name"
+                value={teamA}
+                onChange={(e) => {
+                  setTeamA(e.target.value);
+                  clearTeamInputError("teamA");
+                }}
+              />
+              {teamInputErrors.teamA && <p className="input-error-text">{teamInputErrors.teamA}</p>}
+            </div>
+            <div className="team-input-group">
+              <input
+                className={teamInputErrors.teamB ? "field-error" : ""}
+                type="text"
+                placeholder="Team B Name"
+                value={teamB}
+                onChange={(e) => {
+                  setTeamB(e.target.value);
+                  clearTeamInputError("teamB");
+                }}
+              />
+              {teamInputErrors.teamB && <p className="input-error-text">{teamInputErrors.teamB}</p>}
+            </div>
+          </div>
+          {teamInputErrors.general && <p className="input-error-text veto-inline-error">{teamInputErrors.general}</p>}
+
+          {/* User picks how team order should be decided. */}
+          {!mode && (
+            <div className="decider-buttons">
+              <button
+                className="flow-btn"
+                onClick={() => {
+                  if (!validateTeamInputs()) return;
+                  setMode("coin");
+                }}
+              >
+                Coin Flip
+              </button>
+              <button
+                className="flow-btn"
+                onClick={() => {
+                  if (!validateTeamInputs()) return;
+                  setMode("manual");
+                }}
+              >
+                Manual Team Order
+              </button>
             </div>
           )}
 
-          {pickedMaps.length > 0 && (
-            <div className="picked-maps">
-              <h4>Map Picks</h4>
-              {pickedMaps
-                .slice()
-                .sort((a, b) => a.mapNumber - b.mapNumber)
-                .map((entry) => (
-                  <p key={`${entry.map}-${entry.mapNumber}`}>
-                    Map {entry.mapNumber}: {entry.map} (picked by {entry.pickedBy})
-                    {entry.side ? `, side by ${entry.sideBy}: ${entry.side}` : ""}
+          {/* If coin flip mode was picked, show the flip button first. */}
+          {mode === "coin" && !coinWinner && (
+            <div className="centered-flow">
+              <button className="flow-btn" onClick={runCoinFlip}>Flip Coin</button>
+            </div>
+          )}
+
+          {/* Once there is a winner, let them choose team order. */}
+          {coinWinner && !team1 && (
+            <div className="centered-flow veto-choice-block">
+              <p>{coinWinner} won the coin flip!</p>
+              <p>Choose your team:</p>
+
+              <button className="flow-btn" onClick={() => chooseTeam("team1")}>
+                Be Team 1
+              </button>
+
+              <button className="flow-btn" onClick={() => chooseTeam("team2")}>
+                Be Team 2
+              </button>
+            </div>
+          )}
+
+          {/* Main veto interface after both team slots are set. */}
+          {team1 && team2 && (
+            <div className="final">
+              <div className="veto-panel veto-status-panel">
+                <h3>Final Teams</h3>
+                <p>Team 1: {team1} | Team 2: {team2}</p>
+                <label className="acting-role">
+                  <span>You are:</span>
+                  <select value={actingAs} onChange={(e) => setActingAs(e.target.value)}>
+                    <option value="spectator">Spectator</option>
+                    <option value="team1">{team1}</option>
+                    <option value="team2">{team2}</option>
+                  </select>
+                </label>
+                {!vetoComplete && currentAction && (
+                  <p>
+                    Current action: <strong>{currentAction.label}</strong>
                   </p>
-                ))}
-              {selectedVeto === "bo3" && (
-                <p>Map 3 (Decider): {deciderMap || "TBD"}</p>
+                )}
+                {selectedVeto === "bo3" && !vetoComplete && (
+                  <p>Map 3 (Decider): TBD</p>
+                )}
+                {vetoComplete && (
+                  <p>
+                    {selectedVeto === "bo3"
+                      ? `Veto complete. Map 3 (Decider): ${deciderMap || "TBD"}`
+                      : `Veto complete. Final map: ${deciderMap || availableMaps.join(", ")}`}
+                  </p>
+                )}
+              </div>
+
+              {/* Map cards act like the main control surface for bans and picks. */}
+              <div className="veto-panel veto-board-panel">
+                <div className={`map-grid ${selectedMapPool === "all" ? "map-grid-square" : "map-grid-vertical"}`}>
+                  {activeMaps.map((map) => {
+                    const mapState = mapStates[map] || {
+                      status: "available",
+                      by: null,
+                      mapNumber: null,
+                    };
+                    const actingTeamName =
+                      actingAs === "team1" ? team1 : actingAs === "team2" ? team2 : null;
+                    const isMapStep =
+                      currentAction && (currentAction.type === "ban" || currentAction.type === "pick");
+                    const isLocked =
+                      vetoComplete ||
+                      !isMapStep ||
+                      !actingTeamName ||
+                      actingTeamName !== currentAction.team;
+                    const isBanned = mapState.status === "banned";
+                    const isPicked = mapState.status === "picked";
+                    const isDecider = mapState.status === "decider";
+                    return (
+                      <button
+                        key={map}
+                        onClick={() => handleMapAction(map)}
+                        disabled={isLocked || isBanned || isPicked || isDecider}
+                        className={
+                          isBanned
+                            ? "map-btn banned"
+                            : isPicked
+                              ? "map-btn picked"
+                              : isDecider
+                                ? "map-btn decider"
+                                : "map-btn available"
+                        }
+                        title={
+                          isBanned
+                            ? `Banned by ${mapState.by}`
+                            : isPicked
+                              ? `Picked by ${mapState.by} (Map ${mapState.mapNumber})`
+                              : isDecider
+                                ? "Final decider map"
+                                : isLocked
+                                  ? "Not your turn"
+                                  : currentAction?.type === "pick"
+                                    ? `Pick ${map}`
+                                    : `Ban ${map}`
+                        }
+                      >
+                        <img
+                          className="map-btn-image"
+                          src={MAP_IMAGE_FILENAMES[map]}
+                          alt={`${map} map`}
+                          loading="lazy"
+                          onError={(event) => {
+                            event.currentTarget.onerror = null;
+                            event.currentTarget.src = getFallbackMapImage(map);
+                          }}
+                        />
+                        {isPicked && (
+                          <span className="map-btn-status map-btn-status-picked">
+                            Map {mapState.mapNumber}
+                          </span>
+                        )}
+                        {isDecider && (
+                          <span className="map-btn-status map-btn-status-decider">
+                            Decider
+                          </span>
+                        )}
+                        <span className="map-btn-label">
+                          {map}
+                          {isPicked && ` (Map ${mapState.mapNumber})`}
+                          {isDecider && " (Decider)"}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {currentAction?.type === "side" && (
+                <div className="side-picker veto-panel">
+                  <p>{currentAction.label}</p>
+                  {SIDE_OPTIONS.map((side) => (
+                    <button
+                      key={side}
+                      type="button"
+                      onClick={() => handleSidePick(side)}
+                    >
+                      {side}
+                    </button>
+                  ))}
+                </div>
               )}
-            </div>
-          )}
 
-          {actionHistory.length > 0 && (
-            <div className="ban-history">
-              <h4>Veto Log</h4>
-              <div className="veto-log-chat">
-                {actionHistory.map((entry, index) => (
-                  <p className="veto-log-message" key={`${entry.team}-${entry.action}-${entry.detail}-${index}`}>
-                    {index + 1}. {entry.team} {entry.action} {entry.detail}
-                  </p>
-                ))}
+              <div className="veto-summary-grid">
+                {pickedMaps.length > 0 && (
+                  <div className="picked-maps veto-panel">
+                    <h4>Map Picks</h4>
+                    {pickedMaps
+                      .slice()
+                      .sort((a, b) => a.mapNumber - b.mapNumber)
+                      .map((entry) => (
+                        <p key={`${entry.map}-${entry.mapNumber}`}>
+                          Map {entry.mapNumber}: {entry.map} (picked by {entry.pickedBy})
+                          {entry.side ? `, side by ${entry.sideBy}: ${entry.side}` : ""}
+                        </p>
+                      ))}
+                    {selectedVeto === "bo3" && (
+                      <p>Map 3 (Decider): {deciderMap || "TBD"}</p>
+                    )}
+                  </div>
+                )}
+
+                {actionHistory.length > 0 && (
+                  <div className="ban-history veto-panel">
+                    <h4>Veto Log</h4>
+                    <div className="veto-log-chat">
+                      {actionHistory.map((entry, index) => (
+                        <p className="veto-log-message" key={`${entry.team}-${entry.action}-${entry.detail}-${index}`}>
+                          {index + 1}. {entry.team} {entry.action} {entry.detail}
+                        </p>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
-        </div>
-      )}
 
-     {/* Manual mode buttons only show if that flow was selected. */}
-      {mode === "manual" && (
-        <div className="manual-order">
-          <p>Manually choose which team goes first.</p>
-          <button className="flow-btn" onClick={() => startManualOrder(teamA)}>{teamA} goes first</button>
-          <button className="flow-btn" onClick={() => startManualOrder(teamB)}>{teamB} goes first</button>
-        </div>
-      )}
+          {/* Manual mode buttons only show if that flow was selected. */}
+          {mode === "manual" && (
+            <div className="manual-order">
+              <p>Manually choose which team goes first.</p>
+              <button className="flow-btn" onClick={() => startManualOrder(teamA)}>{teamA} goes first</button>
+              <button className="flow-btn" onClick={() => startManualOrder(teamB)}>{teamB} goes first</button>
+            </div>
+          )}
+        </section>
+      </div>
     </div>
   );
 }

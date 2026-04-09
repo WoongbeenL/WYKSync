@@ -1007,6 +1007,34 @@ export default function Tournaments({ user }) {
     (safeCurrentPage - 1) * pageSize,
     safeCurrentPage * pageSize
   );
+  const tournamentMetrics = useMemo(() => {
+    const statusCounts = tournaments.reduce(
+      (counts, tournament) => {
+        const normalizedStatus = String(tournament.status || "upcoming").toLowerCase();
+        if (normalizedStatus === "live") {
+          counts.live += 1;
+        } else if (normalizedStatus === "completed") {
+          counts.completed += 1;
+        } else {
+          counts.upcoming += 1;
+        }
+
+        return counts;
+      },
+      { upcoming: 0, live: 0, completed: 0 }
+    );
+
+    const totalRegistrations = tournaments.reduce(
+      (sum, tournament) => sum + (tournament.participants?.length || 0),
+      0
+    );
+
+    return {
+      ...statusCounts,
+      totalRegistrations,
+      filteredCount: filteredTournaments.length,
+    };
+  }, [tournaments, filteredTournaments]);
   const bracketRounds = useMemo(() => {
     if (!selectedTournament || selectedTournament.format !== "single elim") {
       return [];
@@ -1158,8 +1186,35 @@ export default function Tournaments({ user }) {
 
   return (
     <div className="tournaments">
-      {!selectedTournament && <h1>Tournaments</h1>}
-      {apiError && hasCheckedSession && <p className="team-required-error">{apiError}</p>}
+      {!selectedTournament && (
+        <section className="tournaments-hero">
+          <div className="tournaments-hero-copy">
+            <h1>Tournaments</h1>
+            <p className="tournaments-intro">
+              Manage brackets, review registrations, and present a cleaner event hub
+              before demos and grading.
+            </p>
+          </div>
+          <div className="tournament-stat-grid">
+            <article className="tournament-stat-card">
+              <span>Showing</span>
+              <strong>{tournamentMetrics.filteredCount}</strong>
+              <p>{dateFilter ? "matching the selected date" : "available tournaments"}</p>
+            </article>
+            <article className="tournament-stat-card">
+              <span>Live Now</span>
+              <strong>{tournamentMetrics.live}</strong>
+              <p>{tournamentMetrics.upcoming} upcoming events queued</p>
+            </article>
+            <article className="tournament-stat-card">
+              <span>Registrations</span>
+              <strong>{tournamentMetrics.totalRegistrations}</strong>
+              <p>{tournamentMetrics.completed} tournaments already completed</p>
+            </article>
+          </div>
+        </section>
+      )}
+      {apiError && hasCheckedSession && <p className="tournament-alert">{apiError}</p>}
       {selectedTournament ? (
         <div className="tournament-details">
           {/* Detail view replaces the grid when one tournament is selected. */}
@@ -1241,7 +1296,7 @@ export default function Tournaments({ user }) {
                   >
                     <option value="upcoming">Upcoming</option>
                     <option value="live">Live</option>
-                    <option value="complete">Completed</option>
+                    <option value="completed">Completed</option>
                   </select>
                 </div>
 
@@ -1705,254 +1760,313 @@ export default function Tournaments({ user }) {
       ) : (
         <>
           {user ? (
-            <div className="tournament-input">
-              {/* Create form only shows for logged-in users. */}
-              <div className="input-group">
-                <label htmlFor="tournament-name">Tournament Name</label>
-                <input
-                  id="tournament-name"
-                  className={formErrors.name ? "field-error" : ""}
-                  type="text"
-                  value={name}
-                  onChange={(e) => {
-                    setName(e.target.value);
-                    clearFieldError("name");
-                  }}
-                />
-                {formErrors.name && <p className="input-error-text">{formErrors.name}</p>}
+            <section className="tournament-panel tournament-form-panel">
+              <div className="panel-heading">
+                <div>
+                  <p className="panel-kicker">Organizer Tools</p>
+                  <h2>Create a Tournament</h2>
+                </div>
+                <p className="panel-copy">
+                  Fill in the basics once, then use the detail view to review brackets,
+                  participants, and final event settings.
+                </p>
               </div>
+              <div className="tournament-input">
+                {/* Create form only shows for logged-in users. */}
+                <div className="input-group">
+                  <label htmlFor="tournament-name">Tournament Name</label>
+                  <input
+                    id="tournament-name"
+                    className={formErrors.name ? "field-error" : ""}
+                    type="text"
+                    value={name}
+                    onChange={(e) => {
+                      setName(e.target.value);
+                      clearFieldError("name");
+                    }}
+                  />
+                  {formErrors.name && <p className="input-error-text">{formErrors.name}</p>}
+                </div>
 
-              <div className="input-group">
-                <label htmlFor="tournament-min-teams">Minimum Teams</label>
-                <select
-                  id="tournament-min-teams"
-                  className={formErrors.minTeams ? "field-error" : ""}
-                  value={minTeams}
-                  onChange={(e) => {
-                    const nextMinTeams = e.target.value;
-                    setMinTeams(nextMinTeams);
-                    clearFieldError("minTeams");
-                    if (Number(maxTeams) < Number(nextMinTeams)) {
-                      setMaxTeams(nextMinTeams);
-                      clearFieldError("maxTeams");
-                    }
-                  }}
-                >
-                  {teamSizeOptions.map((option) => (
-                    <option key={`min-${option}`} value={option}>
-                      {option}
-                    </option>
-                  ))}
-                </select>
-                {formErrors.minTeams && <p className="input-error-text">{formErrors.minTeams}</p>}
-              </div>
-
-              <div className="input-group">
-                <label htmlFor="tournament-max-teams">Maximum Teams</label>
-                <select
-                  id="tournament-max-teams"
-                  className={formErrors.maxTeams ? "field-error" : ""}
-                  value={maxTeams}
-                  onChange={(e) => {
-                    setMaxTeams(e.target.value);
-                    clearFieldError("maxTeams");
-                  }}
-                >
-                  {teamSizeOptions
-                    .filter((option) => option >= Number(minTeams))
-                    .map((option) => (
-                      <option key={`max-${option}`} value={option}>
+                <div className="input-group">
+                  <label htmlFor="tournament-min-teams">Minimum Teams</label>
+                  <select
+                    id="tournament-min-teams"
+                    className={formErrors.minTeams ? "field-error" : ""}
+                    value={minTeams}
+                    onChange={(e) => {
+                      const nextMinTeams = e.target.value;
+                      setMinTeams(nextMinTeams);
+                      clearFieldError("minTeams");
+                      if (Number(maxTeams) < Number(nextMinTeams)) {
+                        setMaxTeams(nextMinTeams);
+                        clearFieldError("maxTeams");
+                      }
+                    }}
+                  >
+                    {teamSizeOptions.map((option) => (
+                      <option key={`min-${option}`} value={option}>
                         {option}
                       </option>
                     ))}
-                </select>
-                {formErrors.maxTeams && <p className="input-error-text">{formErrors.maxTeams}</p>}
-              </div>
+                  </select>
+                  {formErrors.minTeams && <p className="input-error-text">{formErrors.minTeams}</p>}
+                </div>
 
-              <div className="input-group">
-                <label htmlFor="tournament-prize-pool">Prize Pool ($)</label>
-                <input
-                  id="tournament-prize-pool"
-                  className={formErrors.prizePool ? "field-error" : ""}
-                  type="number"
-                  value={prizePool}
-                  onChange={(e) => {
-                    setPrizePool(e.target.value);
-                    clearFieldError("prizePool");
-                  }}
-                />
-                {formErrors.prizePool && (
-                  <p className="input-error-text">{formErrors.prizePool}</p>
-                )}
-              </div>
+                <div className="input-group">
+                  <label htmlFor="tournament-max-teams">Maximum Teams</label>
+                  <select
+                    id="tournament-max-teams"
+                    className={formErrors.maxTeams ? "field-error" : ""}
+                    value={maxTeams}
+                    onChange={(e) => {
+                      setMaxTeams(e.target.value);
+                      clearFieldError("maxTeams");
+                    }}
+                  >
+                    {teamSizeOptions
+                      .filter((option) => option >= Number(minTeams))
+                      .map((option) => (
+                        <option key={`max-${option}`} value={option}>
+                          {option}
+                        </option>
+                      ))}
+                  </select>
+                  {formErrors.maxTeams && <p className="input-error-text">{formErrors.maxTeams}</p>}
+                </div>
 
-              <div className="input-group">
-                <label htmlFor="tournament-organizer">Organizer</label>
-                <input
-                  id="tournament-organizer"
-                  type="text"
-                  value={organizer}
-                  onChange={(e) => {
-                    setOrganizer(e.target.value);
-                  }}
-                />
-              </div>
+                <div className="input-group">
+                  <label htmlFor="tournament-prize-pool">Prize Pool ($)</label>
+                  <input
+                    id="tournament-prize-pool"
+                    className={formErrors.prizePool ? "field-error" : ""}
+                    type="number"
+                    value={prizePool}
+                    onChange={(e) => {
+                      setPrizePool(e.target.value);
+                      clearFieldError("prizePool");
+                    }}
+                  />
+                  {formErrors.prizePool && (
+                    <p className="input-error-text">{formErrors.prizePool}</p>
+                  )}
+                </div>
 
-              <div className="input-group">
-                <label htmlFor="tournament-start-date">Start Date</label>
-                <input
-                  id="tournament-start-date"
-                  className={formErrors.startDateTime ? "field-error" : ""}
-                  type="date"
-                  value={startDateTime}
-                  onChange={(e) => {
-                    setStartDateTime(e.target.value);
-                    clearFieldError("startDateTime");
-                  }}
-                />
-                {formErrors.startDateTime && (
-                  <p className="input-error-text">{formErrors.startDateTime}</p>
-                )}
-              </div>
+                <div className="input-group">
+                  <label htmlFor="tournament-organizer">Organizer</label>
+                  <input
+                    id="tournament-organizer"
+                    type="text"
+                    value={organizer}
+                    onChange={(e) => {
+                      setOrganizer(e.target.value);
+                    }}
+                  />
+                </div>
 
-              <div className="input-group">
-                <label htmlFor="tournament-end-date">End Date</label>
-                <input
-                  id="tournament-end-date"
-                  className={formErrors.endDateTime ? "field-error" : ""}
-                  type="date"
-                  value={endDateTime}
-                  onChange={(e) => {
-                    setEndDateTime(e.target.value);
-                    clearFieldError("endDateTime");
-                  }}
-                />
-                {formErrors.endDateTime && (
-                  <p className="input-error-text">{formErrors.endDateTime}</p>
-                )}
-              </div>
+                <div className="input-group">
+                  <label htmlFor="tournament-start-date">Start Date</label>
+                  <input
+                    id="tournament-start-date"
+                    className={formErrors.startDateTime ? "field-error" : ""}
+                    type="date"
+                    value={startDateTime}
+                    onChange={(e) => {
+                      setStartDateTime(e.target.value);
+                      clearFieldError("startDateTime");
+                    }}
+                  />
+                  {formErrors.startDateTime && (
+                    <p className="input-error-text">{formErrors.startDateTime}</p>
+                  )}
+                </div>
 
-              <div className="input-group">
-                <label htmlFor="tournament-format">Format</label>
-                <select
-                  id="tournament-format"
-                  value={format}
-                  onChange={(e) => setFormat(e.target.value)}
-                >
-                  {formatOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
+                <div className="input-group">
+                  <label htmlFor="tournament-end-date">End Date</label>
+                  <input
+                    id="tournament-end-date"
+                    className={formErrors.endDateTime ? "field-error" : ""}
+                    type="date"
+                    value={endDateTime}
+                    onChange={(e) => {
+                      setEndDateTime(e.target.value);
+                      clearFieldError("endDateTime");
+                    }}
+                  />
+                  {formErrors.endDateTime && (
+                    <p className="input-error-text">{formErrors.endDateTime}</p>
+                  )}
+                </div>
 
-              <div className="input-group">
-                <label htmlFor="tournament-rules">Rules Summary</label>
-                <input
-                  id="tournament-rules"
-                  className={formErrors.rules ? "field-error" : ""}
-                  type="text"
-                  value={rules}
-                  onChange={(e) => {
-                    setRules(e.target.value);
-                    clearFieldError("rules");
-                  }}
-                />
-                {formErrors.rules && <p className="input-error-text">{formErrors.rules}</p>}
-              </div>
+                <div className="input-group">
+                  <label htmlFor="tournament-format">Format</label>
+                  <select
+                    id="tournament-format"
+                    value={format}
+                    onChange={(e) => setFormat(e.target.value)}
+                  >
+                    {formatOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-              <button onClick={addTournament} disabled={isSavingTournament}>
-                {isSavingTournament ? "Saving..." : "Add Tournament"}
-              </button>
-            </div>
+                <div className="input-group">
+                  <label htmlFor="tournament-rules">Rules Summary</label>
+                  <input
+                    id="tournament-rules"
+                    className={formErrors.rules ? "field-error" : ""}
+                    type="text"
+                    value={rules}
+                    onChange={(e) => {
+                      setRules(e.target.value);
+                      clearFieldError("rules");
+                    }}
+                  />
+                  {formErrors.rules && <p className="input-error-text">{formErrors.rules}</p>}
+                </div>
+
+                <button onClick={addTournament} disabled={isSavingTournament}>
+                  {isSavingTournament ? "Saving..." : "Add Tournament"}
+                </button>
+              </div>
+            </section>
           ) : (
-            <div className="tournament-auth-cta">
+            <div className="tournament-auth-cta tournament-panel">
               <p>Log in to create a tournament.</p>
               <a href="/login">Go to Login</a>
             </div>
           )}
 
-          <div className="listing-toolbar">
-            {/* Only the date filter remains for narrowing down the tournament list. */}
-            <label className="listing-filter-button">
-              <span>Filter</span>
-              <input
-                type="date"
-                value={dateFilter}
-                onChange={(e) => setDateFilter(e.target.value)}
-              />
-            </label>
-          </div>
-
-          <div className="tournament-grid">
-            {filteredTournaments.length === 0 && (
-              <p>No tournaments match your filters.</p>
-            )}
-
-            {paginatedTournaments.map((tournament) => (
-              <div
-                key={tournament.id}
-                className="tournament-card"
-                onClick={() => setSelectedTournament(tournament)}
-              >
-                {/* Placeholder image block until real tournament images are added. */}
-                <div className="tournament-image">
-                  <img
-                    src={tournament.imageUrl || defaultTournamentImage}
-                    alt={`${tournament.name} cover`}
-                    onError={(event) => {
-                      event.currentTarget.src = defaultTournamentImage;
-                    }}
+          <section className="tournament-panel">
+            <div className="listing-toolbar">
+              <div className="listing-toolbar-copy">
+                <p className="panel-kicker">Browse Events</p>
+                <h2>Current Tournament Board</h2>
+                <p>
+                  Review cards quickly, then open a tournament for participants, rules,
+                  and bracket structure.
+                </p>
+              </div>
+              <div className="listing-toolbar-actions">
+                <label className="listing-filter-button">
+                  <span>Start date</span>
+                  <input
+                    type="date"
+                    value={dateFilter}
+                    onChange={(e) => setDateFilter(e.target.value)}
                   />
-                </div>
-
-                <div className="tournament-info">
-                  <h3>{tournament.name}</h3>
-                  <p>{tournament.teams} Teams</p>
-                  <p>{formatPrizePoolLabel(tournament.prizePool)} Prize Pool</p>
-                  <p>{formatDateTimeLabel(tournament.startDateTime)}</p>
-                  <p>Ends {formatDateTimeLabel(tournament.endDateTime)}</p>
-                  <p>{tournament.game}</p>
-                  <p className={`status-pill status-${tournament.status}`}>
-                    {tournament.status}
-                  </p>
-                  <p>By {tournament.organizer}</p>
-                </div>
-
-                {user && (
+                </label>
+                {dateFilter && (
                   <button
-                    className="delete-btn"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      deleteTournament(tournament.id);
-                    }}
+                    type="button"
+                    className="listing-reset-button"
+                    onClick={() => setDateFilter("")}
                   >
-                    Delete
+                    Clear Filter
                   </button>
                 )}
               </div>
-            ))}
-          </div>
-          <div className="pagination">
-            <button
-              type="button"
-              onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-              disabled={safeCurrentPage === 1}
-            >
-              Previous
-            </button>
-            <span>
-              Page {safeCurrentPage} of {totalPages}
-            </span>
-            <button
-              type="button"
-              onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
-              disabled={safeCurrentPage === totalPages}
-            >
-              Next
-            </button>
-          </div>
+            </div>
+
+            <div className="listing-results">
+              <span>
+                {filteredTournaments.length} result{filteredTournaments.length === 1 ? "" : "s"}
+              </span>
+              <span>
+                Page {safeCurrentPage} of {totalPages}
+              </span>
+            </div>
+
+            <div className="tournament-grid">
+              {filteredTournaments.length === 0 && (
+                <div className="tournament-empty-state">
+                  <h3>No tournaments match that filter.</h3>
+                  <p>Try clearing the date to bring the full schedule back into view.</p>
+                </div>
+              )}
+
+              {paginatedTournaments.map((tournament) => (
+                <div
+                  key={tournament.id}
+                  className="tournament-card"
+                  onClick={() => setSelectedTournament(tournament)}
+                >
+                  {/* Placeholder image block until real tournament images are added. */}
+                  <div className="tournament-image">
+                    <img
+                      src={tournament.imageUrl || defaultTournamentImage}
+                      alt={`${tournament.name} cover`}
+                      onError={(event) => {
+                        event.currentTarget.src = defaultTournamentImage;
+                      }}
+                    />
+                    <div className="tournament-card-overlay">
+                      <span>{formatTournamentFormatLabel(tournament.format)}</span>
+                      <p>{tournament.game}</p>
+                    </div>
+                  </div>
+
+                  <div className="tournament-info">
+                    <div className="tournament-card-heading">
+                      <h3>{tournament.name}</h3>
+                      <p className={`status-pill status-${tournament.status}`}>
+                        {tournament.status}
+                      </p>
+                    </div>
+                    <p className="tournament-card-organizer">By {tournament.organizer}</p>
+                    <div className="tournament-card-stats">
+                      <div>
+                        <span>Teams</span>
+                        <strong>{tournament.participants.length}/{tournament.teams}</strong>
+                      </div>
+                      <div>
+                        <span>Prize</span>
+                        <strong>{formatPrizePoolLabel(tournament.prizePool)}</strong>
+                      </div>
+                    </div>
+                    <div className="tournament-card-dates">
+                      <p>Starts {formatDateTimeLabel(tournament.startDateTime)}</p>
+                      <p>Ends {formatDateTimeLabel(tournament.endDateTime)}</p>
+                    </div>
+                  </div>
+
+                  {user && canManageTournament(tournament) && (
+                    <button
+                      className="delete-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteTournament(tournament.id);
+                      }}
+                    >
+                      Delete
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+            <div className="pagination">
+              <button
+                type="button"
+                onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                disabled={safeCurrentPage === 1}
+              >
+                Previous
+              </button>
+              <span>
+                Page {safeCurrentPage} of {totalPages}
+              </span>
+              <button
+                type="button"
+                onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                disabled={safeCurrentPage === totalPages}
+              >
+                Next
+              </button>
+            </div>
+          </section>
         </>
       )}
     </div>

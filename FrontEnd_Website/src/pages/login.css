@@ -1,4 +1,5 @@
 /* Login page card and form styles. */
+/* Everything is centered so login, signup, and onboarding all reuse the same shell. */
 .auth-page {
   min-height: calc(100vh - 160px);
   display: flex;
