@@ -1,7 +1,9 @@
+// Shared backend helpers live here so the pages do not all repeat the same fetch logic.
 import { supabase } from "./supabaseClient";
 
 export const backendUrl = (import.meta.env.VITE_BACKEND_URL || "").replace(/\/$/, "");
 
+// Tries to pull a helpful error message out of either JSON or plain text responses.
 export const parseBackendError = async (response, fallback) => {
   const text = await response.text();
   if (!text) return fallback;
@@ -20,6 +22,7 @@ export const parseBackendError = async (response, fallback) => {
   }
 };
 
+// Loads the current access token when a backend route needs authentication.
 export const getAccessToken = async () => {
   if (!supabase) {
     return { token: null, error: "Supabase auth is unavailable." };
@@ -36,6 +39,7 @@ export const getAccessToken = async () => {
   };
 };
 
+// Basic wrapper around fetch that handles auth, JSON, and common error cases.
 export const requestBackend = async (
   path,
   {
@@ -54,6 +58,7 @@ export const requestBackend = async (
   let token = null;
 
   if (requireAuth) {
+    // Protected backend routes need the logged-in user's access token.
     const tokenResult = await getAccessToken();
     if (tokenResult.error) {
       return { data: null, error: tokenResult.error, status: 0 };
@@ -72,6 +77,7 @@ export const requestBackend = async (
   }
 
   try {
+    // Main fetch call to the backend.
     const response = await fetch(`${backendUrl}${path}`, {
       method,
       headers,
@@ -108,6 +114,7 @@ export const requestBackend = async (
   }
 };
 
+// Some routes might have old/new paths, so this tries a list until one works.
 export const requestBackendWithFallback = async (
   paths,
   options

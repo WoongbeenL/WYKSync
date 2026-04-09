@@ -116,6 +116,60 @@ const deleteFromCloudinary = async (logoUrl) => {
 // Routes
 
 /*
+   Route Name   : GET /team/current
+   Parameter    : Request object with current user id
+   Return       : Json response
+                  team: Object. Returns current user's team data with role.
+   Purpose      : Returns the authenticated user's current team.
+*/
+router.get("/current", async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const { data: memberships, error: membershipError } = await supabase
+      .from("team_members")
+      .select("team_member_id, team_id, role")
+      .eq("id", userId)
+      .order("team_member_id", { ascending: false })
+      .limit(1);
+
+    if (membershipError) {
+      throw membershipError;
+    }
+
+    const membership = Array.isArray(memberships) ? memberships[0] : null;
+
+    if (!membership?.team_id) {
+      return res.status(404).json({ error: "Team not found" });
+    }
+
+    const { data: team, error: teamError } = await supabase
+      .from("teams")
+      .select("*")
+      .eq("team_id", membership.team_id)
+      .maybeSingle();
+
+    if (teamError) {
+      throw teamError;
+    }
+
+    if (!team) {
+      return res.status(404).json({ error: "Team not found" });
+    }
+
+    res.json({
+      team: {
+        ...team,
+        role: membership.role,
+      },
+    });
+  } catch (err) {
+    console.error("GET /team/current error: ", err);
+    res.status(500).json({ error: "Server Error" });
+  }
+});
+
+/*
    Route Name   : GET /team
    Parameter    : Request object with a join code
    Return       : Json response
@@ -195,13 +249,17 @@ router.post("/", upload.single("logo"), async (req, res) => {
     }
 
     // Check user is not already on a team
-    const { data: currentMember } = await supabase
+    const { data: existingMemberships, error: membershipLookupError } = await supabase
       .from("team_members")
       .select("team_member_id")
       .eq("id", userId)
-      .maybeSingle();
+      .limit(1);
 
-    if (currentMember) {
+    if (membershipLookupError) {
+      throw membershipLookupError;
+    }
+
+    if (Array.isArray(existingMemberships) && existingMemberships.length > 0) {
       return res
         .status(409)
         .json({ error: "You are already a member of a team" });

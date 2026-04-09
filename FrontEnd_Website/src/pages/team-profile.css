@@ -1,3 +1,4 @@
+/* Team profile page styles for account and team management cards. */
 .team-profile-page {
   min-height: 70vh;
   padding: 2rem;
@@ -8,6 +9,7 @@
   margin-bottom: 1.2rem;
 }
 
+/* Reusable card block for each section on the page. */
 .team-profile-card {
   max-width: 540px;
   margin: 0 auto 1rem;
@@ -18,6 +20,16 @@
   text-align: left;
 }
 
+/* Long names or codes should wrap instead of pushing the card wider. */
+.team-profile-card h2,
+.team-profile-card p,
+.team-profile-dialog p,
+.team-preview-card p {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* Shared stacked form layout. */
 .team-profile-form {
   display: flex;
   flex-direction: column;
@@ -30,6 +42,7 @@
   font-size: 0.9rem;
 }
 
+/* Inputs use the same dark theme as the rest of the app. */
 .team-profile-form input {
   background: #1c1c1c;
   border: 1px solid #333;
@@ -43,6 +56,7 @@
   border-color: #ff4655;
 }
 
+/* Main action button inside profile forms. */
 .team-profile-form button {
   width: fit-content;
   border: none;
@@ -59,6 +73,7 @@
   cursor: not-allowed;
 }
 
+/* Special button style for destructive actions like disbanding a team. */
 .team-profile-disband-btn {
   margin-top: 0.75rem;
   border: 1px solid #7d1f28;
@@ -79,6 +94,70 @@
   cursor: not-allowed;
 }
 
+.team-profile-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  background: rgba(0, 0, 0, 0.72);
+}
+
+.team-profile-dialog {
+  width: min(100%, 460px);
+  border: 1px solid #382024;
+  border-radius: 14px;
+  padding: 1.4rem;
+  background: linear-gradient(180deg, #171717 0%, #101010 100%);
+  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.45);
+}
+
+.team-profile-dialog h3 {
+  /* Dialog title stays short, but we still style it clearly for emphasis. */
+  margin: 0 0 0.75rem;
+  color: #fff;
+}
+
+.team-profile-dialog p {
+  margin: 0 0 0.75rem;
+}
+
+.team-profile-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.1rem;
+}
+
+.team-profile-dialog-cancel-btn,
+.team-profile-dialog-confirm-btn {
+  border-radius: 8px;
+  padding: 0.65rem 1rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.team-profile-dialog-cancel-btn {
+  border: 1px solid #3a3a3a;
+  background: #1b1b1b;
+  color: #f0f0f0;
+}
+
+.team-profile-dialog-confirm-btn {
+  border: 1px solid #9f2c37;
+  background: #7d1f28;
+  color: #fff3f4;
+}
+
+.team-profile-dialog-cancel-btn:disabled,
+.team-profile-dialog-confirm-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* Success and error feedback colors. */
 .team-profile-error {
   color: #ff9da7;
 }
@@ -93,6 +172,7 @@
 }
 
 .team-preview-card {
+  /* Small preview card used after a join-code lookup succeeds. */
   border: 1px solid #2f2f2f;
   border-radius: 8px;
   padding: 0.9rem;

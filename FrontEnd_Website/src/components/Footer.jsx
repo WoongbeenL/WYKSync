@@ -1,15 +1,15 @@
+// Footer shows extra project links and the social icons at the bottom of the page.
 import React from "react";
 import './footer.css';
-import fb from '../assets/fb.png';
-import twitter from '../assets/twitter.png';
-import linkedin from '../assets/linkedin.webp';
-import instagram from '../assets/insta.webp';
 
+// Keeping this as a small reusable footer component makes the layout cleaner.
 const Footer=()=>{
     return (
         <div className="footer">
             <div className="sb__footer section_padding">
+                {/* The footer is split into columns so links are easier to scan. */}
                 <div className="sb__footer-links">
+                    {/* These columns are grouped so the footer feels more organized. */}
                     <div className="sb__footer-links-div">
                         <h4>Platform</h4>
                         <a href="/overlay">
@@ -64,16 +64,8 @@ const Footer=()=>{
                             <p>Contact Us</p>
                         </a>
                     </div>
-                    <div className="sb__footer-links-div">
-                        <h4>Follow Us</h4>
-                        <div className="socialmedia">
-                            <p><img src={fb} alt=""/></p>
-                            <p><img src={twitter} alt=""/></p>
-                            <p><img src={linkedin} alt=""/></p>
-                            <p><img src={instagram} alt=""/></p>
-                        </div>
-                    </div>
                 </div>
+                {/* Simple divider before the copyright line. */}
                 <hr></hr>
                 <div className="sb__footer-below"></div>
                 <div className="sb__footer-copyright">

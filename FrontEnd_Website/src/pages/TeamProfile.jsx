@@ -1,8 +1,10 @@
+// Team profile page lets users manage both their account info and their team info.
 import { useEffect, useState } from "react";
 import {
   createTeamForCurrentUser,
   disbandTeamForCurrentUser,
   fetchCurrentUserTeamProfile,
+  getCachedTeamProfileForCurrentUser,
   previewTeamJoin,
   updateTeamForCurrentUser,
 } from "../lib/teamProfile";
@@ -10,9 +12,10 @@ import { supabase } from "../lib/supabaseClient";
 import { backendUrl, parseBackendError } from "../lib/backendApi";
 import "./team-profile.css";
 
+// This page has a few different forms, so there is a decent amount of state to track.
 export default function TeamProfile({ user, onProfileUpdated }) {
   const [teamName, setTeamName] = useState("");
-  const [joinCode, setJoinCode] = useState("");
+  const [teamTricode, setTeamTricode] = useState("");
   const [teamProfile, setTeamProfile] = useState(null);
   const [joinPreviewCode, setJoinPreviewCode] = useState("");
   const [joinPreview, setJoinPreview] = useState(null);
@@ -22,6 +25,7 @@ export default function TeamProfile({ user, onProfileUpdated }) {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [isDisbandDialogOpen, setIsDisbandDialogOpen] = useState(false);
   const [currentEmail, setCurrentEmail] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [newEmail, setNewEmail] = useState("");
@@ -30,15 +34,24 @@ export default function TeamProfile({ user, onProfileUpdated }) {
   const [isAccountLoading, setIsAccountLoading] = useState(false);
   const [isSavingDisplayName, setIsSavingDisplayName] = useState(false);
   const [isSavingEmail, setIsSavingEmail] = useState(false);
+  const isCoach = teamProfile?.role === "coach";
 
   useEffect(() => {
     let active = true;
 
+    // Loads the current user's team profile when the page opens or the user changes.
     const loadTeamProfile = async () => {
       if (!user) {
         setTeamProfile(null);
         setIsLoading(false);
         return;
+      }
+
+      const cachedTeam = getCachedTeamProfileForCurrentUser(user);
+      if (cachedTeam) {
+        setTeamProfile(cachedTeam);
+        setTeamName(cachedTeam.teamName || "");
+        setTeamTricode(cachedTeam.tricode || "");
       }
 
       setIsLoading(true);
@@ -52,7 +65,7 @@ export default function TeamProfile({ user, onProfileUpdated }) {
       }
       setTeamProfile(loadedProfile);
       setTeamName(loadedProfile?.teamName || "");
-      setJoinCode(loadedProfile?.joinCode || "");
+      setTeamTricode(loadedProfile?.tricode || "");
       setIsLoading(false);
     };
 
@@ -66,6 +79,7 @@ export default function TeamProfile({ user, onProfileUpdated }) {
   useEffect(() => {
     let active = true;
 
+    // Loads the account section separately because it comes from auth + backend profile data.
     const loadAccountProfile = async () => {
       if (!user) {
         setCurrentEmail("");
@@ -137,6 +151,7 @@ export default function TeamProfile({ user, onProfileUpdated }) {
     };
   }, [user]);
 
+  // Saves the display name shown in the user's backend profile.
   const handleSaveDisplayName = async (event) => {
     event.preventDefault();
 
@@ -198,6 +213,7 @@ export default function TeamProfile({ user, onProfileUpdated }) {
     }
   };
 
+  // Starts the email change flow through Supabase auth.
   const handleSaveEmail = async (event) => {
     event.preventDefault();
 
@@ -238,6 +254,7 @@ export default function TeamProfile({ user, onProfileUpdated }) {
     }
   };
 
+  // Creates a brand new team for the logged-in user.
   const handleCreateTeam = async (event) => {
     event.preventDefault();
     setError("");
@@ -247,16 +264,42 @@ export default function TeamProfile({ user, onProfileUpdated }) {
       setError("Team name is required.");
       return;
     }
+    if (teamTricode.trim().length < 2 || teamTricode.trim().length > 4) {
+      setError("Team tricode must be 2 to 4 characters.");
+      return;
+    }
 
     setIsSaving(true);
     const { teamProfile: createdTeam, error: createError } = await createTeamForCurrentUser({
       teamName,
-      joinCode,
+      tricode: teamTricode,
       userIdentifier: user,
     });
     setIsSaving(false);
 
     if (createError) {
+      if (createError === "You are already a member of a team") {
+        const cachedTeam = getCachedTeamProfileForCurrentUser(user);
+        if (cachedTeam) {
+          setTeamProfile(cachedTeam);
+          setTeamName(cachedTeam.teamName || "");
+          setTeamTricode(cachedTeam.tricode || "");
+          setSuccess("Loaded your existing team profile.");
+          return;
+        }
+
+        const { teamProfile: existingTeam } = await fetchCurrentUserTeamProfile(user);
+        if (existingTeam) {
+          setTeamProfile(existingTeam);
+          setTeamName(existingTeam.teamName || "");
+          setTeamTricode(existingTeam.tricode || "");
+          setSuccess("Loaded your existing team profile.");
+          return;
+        }
+
+        setError("You are already a member of a team.");
+        return;
+      }
       setError(createError);
       if (createdTeam) setTeamProfile(createdTeam);
       return;
@@ -264,10 +307,11 @@ export default function TeamProfile({ user, onProfileUpdated }) {
 
     setTeamProfile(createdTeam);
     setTeamName(createdTeam?.teamName || "");
-    setJoinCode(createdTeam?.joinCode || "");
+    setTeamTricode(createdTeam?.tricode || "");
     setSuccess("Team profile created.");
   };
 
+  // Updates the current team's name.
   const handleUpdateTeam = async (event) => {
     event.preventDefault();
     setError("");
@@ -277,12 +321,17 @@ export default function TeamProfile({ user, onProfileUpdated }) {
       setError("Team name is required.");
       return;
     }
+    if (teamTricode.trim().length < 2 || teamTricode.trim().length > 4) {
+      setError("Team tricode must be 2 to 4 characters.");
+      return;
+    }
 
     setIsSaving(true);
     const { teamProfile: updatedTeam, error: updateError } =
       await updateTeamForCurrentUser({
+        teamId: teamProfile?.teamId,
         teamName,
-        joinCode,
+        tricode: teamTricode,
         userIdentifier: user,
       });
     setIsSaving(false);
@@ -294,20 +343,32 @@ export default function TeamProfile({ user, onProfileUpdated }) {
 
     setTeamProfile(updatedTeam);
     setTeamName(updatedTeam?.teamName || "");
-    setJoinCode(updatedTeam?.joinCode || "");
+    setTeamTricode(updatedTeam?.tricode || "");
     setSuccess("Team profile updated.");
   };
 
+  const openDisbandDialog = () => {
+    setError("");
+    setSuccess("");
+    setIsDisbandDialogOpen(true);
+  };
+
+  const closeDisbandDialog = () => {
+    if (isSaving) return;
+    setIsDisbandDialogOpen(false);
+  };
+
+  // Deletes the current team after an in-app confirmation step.
   const handleDisbandTeam = async () => {
     if (!user || !teamProfile) return;
-
-    const confirmed = window.confirm(`Disband "${teamProfile.teamName}"?`);
-    if (!confirmed) return;
 
     setError("");
     setSuccess("");
     setIsSaving(true);
-    const { error: disbandError } = await disbandTeamForCurrentUser(user);
+    const { error: disbandError } = await disbandTeamForCurrentUser({
+      teamId: teamProfile?.teamId,
+      userIdentifier: user,
+    });
     setIsSaving(false);
 
     if (disbandError) {
@@ -317,12 +378,16 @@ export default function TeamProfile({ user, onProfileUpdated }) {
 
     setTeamProfile(null);
     setTeamName("");
-    setJoinCode("");
+    setTeamTricode("");
+    setIsDisbandDialogOpen(false);
     setSuccess("Team disbanded.");
   };
 
+  // Uses the join code flow and switches the page into the joined team view on success.
   const handlePreviewJoin = async (event) => {
     event.preventDefault();
+    setError("");
+    setSuccess("");
     setJoinPreview(null);
     setJoinPreviewError("");
 
@@ -332,7 +397,12 @@ export default function TeamProfile({ user, onProfileUpdated }) {
     }
 
     setIsPreviewingJoin(true);
-    const { preview, error: previewError } = await previewTeamJoin({
+    const {
+      preview,
+      teamProfile: joinedTeam,
+      didJoin,
+      error: previewError,
+    } = await previewTeamJoin({
       joinCode: joinPreviewCode,
       userIdentifier: user,
     });
@@ -340,6 +410,20 @@ export default function TeamProfile({ user, onProfileUpdated }) {
 
     if (previewError) {
       setJoinPreviewError(previewError);
+      return;
+    }
+
+    if (didJoin) {
+      if (joinedTeam) {
+        setTeamProfile(joinedTeam);
+        setTeamName(joinedTeam.teamName || "");
+        setTeamTricode(joinedTeam.tricode || "");
+        setJoinPreviewCode("");
+        setSuccess(`Joined ${joinedTeam.teamName}.`);
+        return;
+      }
+
+      setSuccess("Joined the team.");
       return;
     }
 
@@ -372,6 +456,7 @@ export default function TeamProfile({ user, onProfileUpdated }) {
               <p>
                 <strong>Current Email:</strong> {currentEmail || user}
               </p>
+              {/* Separate forms keep display-name and email updates independent from each other. */}
               <form className="team-profile-form" onSubmit={handleSaveDisplayName}>
                 <input
                   type="text"
@@ -414,6 +499,9 @@ export default function TeamProfile({ user, onProfileUpdated }) {
             <strong>Role:</strong> {teamProfile.role}
           </p>
           <p>
+            <strong>Tricode:</strong> {teamProfile.tricode || "Not set"}
+          </p>
+          <p>
             <strong>Join Code:</strong> {teamProfile.joinCode || "Not set"}
           </p>
           <p className="team-profile-ready">
@@ -428,22 +516,33 @@ export default function TeamProfile({ user, onProfileUpdated }) {
             />
             <input
               type="text"
-              placeholder="Join Code"
-              value={joinCode}
-              onChange={(event) => setJoinCode(event.target.value)}
+              placeholder="Tricode"
+              value={teamTricode}
+              maxLength={4}
+              onChange={(event) =>
+                setTeamTricode(
+                  event.target.value.replace(/[^a-zA-Z]/g, "").toUpperCase().slice(0, 4)
+                )
+              }
             />
             <button type="submit" disabled={isSaving}>
               {isSaving ? "Saving Team..." : "Update Team"}
             </button>
           </form>
-          <button
-            type="button"
-            className="team-profile-disband-btn"
-            onClick={handleDisbandTeam}
-            disabled={isSaving}
-          >
-            {isSaving ? "Disbanding..." : "Disband Team"}
-          </button>
+          {isCoach ? (
+            <button
+              type="button"
+              className="team-profile-disband-btn"
+              onClick={openDisbandDialog}
+              disabled={isSaving}
+            >
+              Disband Team
+            </button>
+          ) : (
+            <p className="team-profile-note">
+              Only the coach can disband this team.
+            </p>
+          )}
           {error && <p className="team-profile-error">{error}</p>}
           {success && <p className="team-profile-success">{success}</p>}
         </div>
@@ -451,6 +550,7 @@ export default function TeamProfile({ user, onProfileUpdated }) {
 
       {user && !isLoading && !teamProfile && (
         <>
+          {/* If no team exists yet, the page shows create and join-preview options. */}
           <form className="team-profile-card team-profile-form" onSubmit={handleCreateTeam}>
             <h2>Create Team</h2>
             <input
@@ -461,9 +561,14 @@ export default function TeamProfile({ user, onProfileUpdated }) {
             />
             <input
               type="text"
-              placeholder="Join Code (optional)"
-              value={joinCode}
-              onChange={(event) => setJoinCode(event.target.value)}
+              placeholder="Tricode"
+              value={teamTricode}
+              maxLength={4}
+              onChange={(event) =>
+                setTeamTricode(
+                  event.target.value.replace(/[^a-zA-Z]/g, "").toUpperCase().slice(0, 4)
+                )
+              }
             />
             {error && <p className="team-profile-error">{error}</p>}
             {success && <p className="team-profile-success">{success}</p>}
@@ -473,7 +578,7 @@ export default function TeamProfile({ user, onProfileUpdated }) {
           </form>
 
           <form className="team-profile-card team-profile-form" onSubmit={handlePreviewJoin}>
-            <h2>Preview Team Join</h2>
+            <h2>Join Team</h2>
             <input
               type="text"
               placeholder="Join Code"
@@ -481,7 +586,7 @@ export default function TeamProfile({ user, onProfileUpdated }) {
               onChange={(event) => setJoinPreviewCode(event.target.value)}
             />
             <button type="submit" disabled={isPreviewingJoin}>
-              {isPreviewingJoin ? "Previewing..." : "Preview Team"}
+              {isPreviewingJoin ? "Joining Team..." : "Join Team"}
             </button>
             {joinPreviewError && <p className="team-profile-error">{joinPreviewError}</p>}
             {joinPreview && (
@@ -496,6 +601,46 @@ export default function TeamProfile({ user, onProfileUpdated }) {
             )}
           </form>
         </>
+      )}
+
+      {isDisbandDialogOpen && teamProfile && (
+        <div className="team-profile-dialog-backdrop" onClick={closeDisbandDialog}>
+          <div
+            className="team-profile-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="disband-team-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <h3 id="disband-team-title">Disband team?</h3>
+            <p>
+              This will permanently remove <strong>{teamProfile.teamName}</strong> and disconnect
+              every member from it.
+            </p>
+            <p className="team-profile-note">
+              This action cannot be undone.
+            </p>
+            {error && <p className="team-profile-error">{error}</p>}
+            <div className="team-profile-dialog-actions">
+              <button
+                type="button"
+                className="team-profile-dialog-cancel-btn"
+                onClick={closeDisbandDialog}
+                disabled={isSaving}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="team-profile-dialog-confirm-btn"
+                onClick={handleDisbandTeam}
+                disabled={isSaving}
+              >
+                {isSaving ? "Disbanding..." : "Yes, Disband Team"}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {user && !isLoading && teamProfile && error && <p className="team-profile-error">{error}</p>}
