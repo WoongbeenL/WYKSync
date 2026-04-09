@@ -20,6 +20,14 @@
   text-align: left;
 }
 
+.team-profile-card h2,
+.team-profile-card p,
+.team-profile-dialog p,
+.team-preview-card p {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
 /* Shared stacked form layout. */
 .team-profile-form {
   display: flex;

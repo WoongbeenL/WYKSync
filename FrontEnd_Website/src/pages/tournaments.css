@@ -393,12 +393,16 @@
   padding: 1.15rem;
   display: grid;
   gap: 0.9rem;
+  min-width: 0;
 }
 
 .tournament-info h3 {
   margin: 0;
   color: #ffffff;
   font-size: 1.2rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .tournament-card-heading {
@@ -406,6 +410,7 @@
   align-items: start;
   justify-content: space-between;
   gap: 0.75rem;
+  min-width: 0;
 }
 
 .tournament-card-organizer,
@@ -413,6 +418,8 @@
   margin: 0;
   color: #c3cbdf;
   line-height: 1.5;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .tournament-card-stats {
@@ -520,6 +527,14 @@
   box-shadow: 0 22px 60px rgba(0, 0, 0, 0.22);
 }
 
+.tournament-details h2,
+.tournament-content p,
+.detail-section p,
+.detail-section h3 {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
 .tournament-topbar {
   display: flex;
   justify-content: space-between;
@@ -606,6 +621,10 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 0.7rem 1.2rem;
+}
+
+.detail-grid > * {
+  min-width: 0;
 }
 
 .detail-section h3 {
@@ -803,6 +822,9 @@
   padding: 0.55rem 0.75rem;
   border-radius: 8px;
   font-weight: 600;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .bracket-team-team {
@@ -884,6 +906,7 @@
 
 .participants-table-wrap .standings-table {
   width: min(100%, 520px);
+  table-layout: fixed;
 }
 
 .participants-list {
@@ -906,6 +929,8 @@
   border: 1px solid #2f2f2f;
   padding: 0.55rem;
   text-align: left;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .standings-table th {
