@@ -1,0 +1,78 @@
+.overlay-page {
+  min-height: 100vh;
+  padding: 2.5rem 1rem 4rem;
+  background:
+    radial-gradient(circle at top, rgba(211, 47, 47, 0.16), transparent 30%),
+    linear-gradient(180deg, #111827 0%, #050816 100%);
+  color: #f8fafc;
+}
+
+.overlay-page__header {
+  max-width: 900px;
+  margin: 0 auto 2rem;
+  text-align: center;
+}
+
+.overlay-page__eyebrow {
+  margin: 0 0 0.5rem;
+  font-size: 0.8rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #fca5a5;
+}
+
+.overlay-page__header h1 {
+  margin: 0;
+  font-size: clamp(2rem, 4vw, 3.25rem);
+}
+
+.overlay-page__intro {
+  margin: 0.75rem auto 0;
+  max-width: 40rem;
+  color: #cbd5e1;
+}
+
+.overlay-gallery {
+  max-width: 1500px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+}
+
+.overlay-card {
+  padding: 1.5rem;
+  border: 1px solid rgba(248, 250, 252, 0.12);
+  border-radius: 20px;
+  background: rgba(15, 23, 42, 0.88);
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.28);
+}
+
+.overlay-card h2 {
+  margin: 0 0 1.25rem;
+  font-size: clamp(1.5rem, 2.4vw, 2rem);
+}
+
+.overlay-card img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 70vh;
+  object-fit: contain;
+  border-radius: 14px;
+  border: 1px solid rgba(248, 250, 252, 0.08);
+}
+
+@media (max-width: 640px) {
+  .overlay-page {
+    padding: 2rem 1rem 3rem;
+  }
+
+  .overlay-card {
+    padding: 1rem;
+  }
+
+  .overlay-card img {
+    max-height: none;
+  }
+}
